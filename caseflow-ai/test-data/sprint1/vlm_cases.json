@@ -1,0 +1,78 @@
+[
+  {
+    "id": "CASE-VLM-001",
+    "title": "Biên lai thanh toán ngân hàng số hiển thị rõ ràng",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "document_type": "RECEIPT",
+      "student_identifier": "SV2026-101",
+      "transaction_id": "TXN-998811",
+      "amount": 10500000.0,
+      "payment_status": "SUCCESS",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "amount",
+        "left_value": "10500000.0",
+        "right_value": "10500000.0",
+        "comparison_status": "MATCH"
+      }
+    ],
+    "expected_decision": "AUTO_RESOLVE",
+    "expected_escalation": null
+  },
+  {
+    "id": "CASE-VLM-002",
+    "title": "Biên lai mờ không thể nhận dạng số tiền",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "document_type": "RECEIPT",
+      "amount": null,
+      "visual_quality": "BLURRY",
+      "uncertain_fields": ["amount"]
+    },
+    "comparisons": [],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "FACT_UNKNOWN"
+  },
+  {
+    "id": "CASE-VLM-003",
+    "title": "Ảnh chụp màn hình cổng chuyển khoản bị cắt xén mất số tiền",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "document_type": "RECEIPT",
+      "student_identifier": "SV2026-103",
+      "visual_quality": "POOR",
+      "uncertain_fields": ["amount", "transaction_id"]
+    },
+    "comparisons": [],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "FACT_UNKNOWN"
+  },
+  {
+    "id": "CASE-VLM-004",
+    "title": "Bản quét PDF hóa đơn điện tử độ phân giải cao hợp lệ",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "document_type": "RECEIPT",
+      "student_identifier": "SV2026-104",
+      "transaction_id": "TXN-772244",
+      "amount": 15000000.0,
+      "payment_status": "SUCCESS",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "amount",
+        "left_value": "15000000.0",
+        "right_value": "15000000.0",
+        "comparison_status": "MATCH"
+      }
+    ],
+    "expected_decision": "AUTO_RESOLVE",
+    "expected_escalation": null
+  }
+]

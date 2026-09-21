@@ -1,0 +1,11 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/caseflow-ai/backend/.venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/caseflow-ai/backend"
+  ],
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}/caseflow-ai/backend"
+  ],
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.diagnosticMode": "workspace"
+}

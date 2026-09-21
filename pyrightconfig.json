@@ -1,0 +1,13 @@
+{
+  "venvPath": "caseflow-ai/backend",
+  "venv": ".venv",
+  "extraPaths": [
+    "caseflow-ai/backend"
+  ],
+  "include": [
+    "caseflow-ai/backend/app",
+    "caseflow-ai/backend/tests",
+    "caseflow-ai/backend/migrations"
+  ],
+  "pythonVersion": "3.12"
+}

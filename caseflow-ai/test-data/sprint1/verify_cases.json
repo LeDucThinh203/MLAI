@@ -1,0 +1,193 @@
+[
+  {
+    "id": "CASE-VERIFY-001",
+    "title": "Biên lai Techcombank khớp hoàn toàn hệ thống",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "student_identifier": "SV2026-001",
+      "amount": 10500000.0,
+      "transaction_id": "FT-2026-001",
+      "payment_status": "SUCCESS",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "amount",
+        "left_value": "10500000.0",
+        "right_value": "10500000.0",
+        "comparison_status": "MATCH"
+      },
+      {
+        "field_name": "student_identifier",
+        "left_value": "SV2026-001",
+        "right_value": "SV2026-001",
+        "comparison_status": "MATCH"
+      },
+      {
+        "field_name": "transaction_id",
+        "left_value": "FT-2026-001",
+        "right_value": "FT-2026-001",
+        "comparison_status": "MATCH"
+      }
+    ],
+    "expected_decision": "AUTO_RESOLVE",
+    "expected_escalation": null
+  },
+  {
+    "id": "CASE-VERIFY-002",
+    "title": "Mâu thuẫn số tiền nộp giữa biên lai và hệ thống",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "student_identifier": "SV2026-002",
+      "amount": 12500000.0,
+      "transaction_id": "FT-2026-002",
+      "payment_status": "SUCCESS",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "amount",
+        "left_value": "12500000.0",
+        "right_value": "10500000.0",
+        "comparison_status": "MISMATCH"
+      }
+    ],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "DATA_CONFLICT"
+  },
+  {
+    "id": "CASE-VERIFY-003",
+    "title": "Biên lai Vietcombank hợp lệ khớp học phí",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "student_identifier": "SV2026-015",
+      "amount": 8200000.0,
+      "payment_status": "SUCCESS",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "amount",
+        "left_value": "8200000.0",
+        "right_value": "8200000.0",
+        "comparison_status": "MATCH"
+      }
+    ],
+    "expected_decision": "AUTO_RESOLVE",
+    "expected_escalation": null
+  },
+  {
+    "id": "CASE-VERIFY-004",
+    "title": "Sai lệch mã giao dịch đối soát ngân hàng",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "student_identifier": "SV2026-016",
+      "amount": 10500000.0,
+      "transaction_id": "TXN-WRONG-999",
+      "payment_status": "SUCCESS",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "transaction_id",
+        "left_value": "TXN-WRONG-999",
+        "right_value": "TXN-EXPECTED-111",
+        "comparison_status": "MISMATCH"
+      }
+    ],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "DATA_CONFLICT"
+  },
+  {
+    "id": "CASE-VERIFY-005",
+    "title": "Thanh toán học phần thực tập hè khớp danh sách",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "student_identifier": "SV2026-017",
+      "amount": 3500000.0,
+      "payment_status": "PAID",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "amount",
+        "left_value": "3500000.0",
+        "right_value": "3500000.0",
+        "comparison_status": "MATCH"
+      }
+    ],
+    "expected_decision": "AUTO_RESOLVE",
+    "expected_escalation": null
+  },
+  {
+    "id": "CASE-VERIFY-006",
+    "title": "Biên lai nộp lệ phí tốt nghiệp trực tuyến",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "student_identifier": "SV2026-018",
+      "amount": 1200000.0,
+      "payment_status": "COMPLETED",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "amount",
+        "left_value": "1200000.0",
+        "right_value": "1200000.0",
+        "comparison_status": "MATCH"
+      }
+    ],
+    "expected_decision": "AUTO_RESOLVE",
+    "expected_escalation": null
+  },
+  {
+    "id": "CASE-VERIFY-007",
+    "title": "Khấu trừ học bổng khuyến khích học tập khớp SIS",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "student_identifier": "SV2026-019",
+      "amount": 5000000.0,
+      "payment_status": "SUCCESS",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "amount",
+        "left_value": "5000000.0",
+        "right_value": "5000000.0",
+        "comparison_status": "MATCH"
+      }
+    ],
+    "expected_decision": "AUTO_RESOLVE",
+    "expected_escalation": null
+  },
+  {
+    "id": "CASE-VERIFY-008",
+    "title": "Mâu thuẫn mã số sinh viên ghi trên biên lai chuyển khoản",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "student_identifier": "SV2026-020",
+      "amount": 10500000.0,
+      "payment_status": "SUCCESS",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "student_identifier",
+        "left_value": "SV2026-020",
+        "right_value": "SV2026-999",
+        "comparison_status": "MISMATCH"
+      }
+    ],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "DATA_CONFLICT"
+  }
+]

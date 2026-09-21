@@ -1,0 +1,90 @@
+[
+  {
+    "id": "CASE-ESC-001",
+    "title": "Minh chứng biên lai bị mờ thông tin (FACT_UNKNOWN)",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "student_identifier": "SV2026-003",
+      "visual_quality": "BLURRY",
+      "uncertain_fields": ["amount", "transaction_id"]
+    },
+    "comparisons": [],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "FACT_UNKNOWN"
+  },
+  {
+    "id": "CASE-ESC-002",
+    "title": "Tình huống xin hoãn nghĩa vụ quân sự ngoài quy chế (POLICY_OUT_OF_SCOPE)",
+    "case_type": "SPECIAL_PETITION_UNKNOWN",
+    "facts": {
+      "student_identifier": "SV2026-004",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "POLICY_OUT_OF_SCOPE"
+  },
+  {
+    "id": "CASE-ESC-003",
+    "title": "Đơn xin miễn giảm học phí đặc cách thẩm quyền Lãnh đạo (AUTHORITY_REQUIRED)",
+    "case_type": "SPECIAL_EXEMPTION",
+    "facts": {
+      "student_identifier": "SV2026-005",
+      "amount": 25000000.0,
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "AUTHORITY_REQUIRED"
+  },
+  {
+    "id": "CASE-ESC-004",
+    "title": "Giao dịch học phí giá trị lớn vượt hạn mức AI 50 triệu (AUTHORITY_REQUIRED)",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "student_identifier": "SV2026-006",
+      "amount": 85000000.0,
+      "payment_status": "SUCCESS",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [
+      {
+        "field_name": "amount",
+        "left_value": "85000000.0",
+        "right_value": "85000000.0",
+        "comparison_status": "MATCH"
+      }
+    ],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "AUTHORITY_REQUIRED"
+  },
+  {
+    "id": "CASE-ESC-005",
+    "title": "Đơn xin bảo lưu kết quả học tập đột xuất (POLICY_OUT_OF_SCOPE)",
+    "case_type": "UNREGISTERED_LEAVE_PETITION",
+    "facts": {
+      "student_identifier": "SV2026-007",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "POLICY_OUT_OF_SCOPE"
+  },
+  {
+    "id": "CASE-ESC-006",
+    "title": "Biên lai nộp thiếu thông tin mã sinh viên bắt buộc (FACT_UNKNOWN)",
+    "case_type": "TUITION_STATUS",
+    "facts": {
+      "amount": 10500000.0,
+      "visual_quality": "CLEAR",
+      "uncertain_fields": ["student_identifier"]
+    },
+    "comparisons": [],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "FACT_UNKNOWN"
+  }
+]

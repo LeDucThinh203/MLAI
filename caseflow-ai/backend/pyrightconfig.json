@@ -1,0 +1,11 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": ["."],
+  "include": [
+    "app",
+    "tests",
+    "migrations"
+  ],
+  "pythonVersion": "3.12"
+}

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "CASE-IND-001",
+    "title": "Yêu cầu cấp giấy chứng nhận sinh viên khẩn cấp (vượt chuẩn SLA)",
+    "case_type": "URGENT_SLA_LETTER",
+    "facts": {
+      "student_identifier": "SV2026-901",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "AUTHORITY_REQUIRED"
+  },
+  {
+    "id": "CASE-IND-002",
+    "title": "Mở khóa đăng ký học phần bổ sung",
+    "case_type": "REGISTRATION_BLOCK",
+    "facts": {
+      "student_identifier": "SV2026-902",
+      "visual_quality": "CLEAR",
+      "uncertain_fields": []
+    },
+    "comparisons": [],
+    "expected_decision": "ESCALATE",
+    "expected_escalation": "POLICY_OUT_OF_SCOPE"
+  }
+]
