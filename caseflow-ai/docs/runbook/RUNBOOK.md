@@ -8,14 +8,9 @@ git clone <repository_url>
 cd caseflow-ai
 ```
 
-### Step 2: Start SQL Server Database Container
-```bash
-docker compose up -d
-```
-Verify container is healthy:
-```bash
-docker ps
-```
+### Step 2: Prepare SQL Server Database
+Install SQL Server and Microsoft ODBC Driver 18 for SQL Server on the local machine.
+Create a database named `CaseFlowAI`, then configure its instance and authentication details in `backend/.env`.
 
 ### Step 3: Set Up Python Backend Virtual Environment
 ```bash
