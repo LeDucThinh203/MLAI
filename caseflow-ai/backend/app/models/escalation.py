@@ -22,3 +22,12 @@ class Escalation(Base):
 
     case = relationship("Case", back_populates="escalations")
     target_department = relationship("Department", back_populates="escalations")
+
+    @property
+    def reason_code(self) -> str:
+        return self.escalation_type
+
+    @property
+    def uncertainty_group(self) -> Optional[str]:
+        from app.core.workflow import uncertainty_group
+        return uncertainty_group(self.escalation_type)

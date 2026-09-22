@@ -10,6 +10,18 @@ ESCALATION_SUMMARIES = {
     EscalationType.AUTHORITY_REQUIRED: "Giá trị giao dịch hoặc tính chất hồ sơ vượt hạn mức thẩm quyền quyết định tự động của AI.",
 }
 
+UNCERTAINTY_GROUPS = {
+    "FACT_UNKNOWN": "FACT_UNCERTAINTY",
+    "DATA_CONFLICT": "FACT_UNCERTAINTY",
+    "POLICY_OUT_OF_SCOPE": "POLICY_UNCERTAINTY",
+    "OWNERSHIP_UNCLEAR": "POLICY_UNCERTAINTY",
+    "AUTHORITY_REQUIRED": "AUTHORITY_UNCERTAINTY",
+}
+
+
+def uncertainty_group(reason_code: str | None) -> str | None:
+    return UNCERTAINTY_GROUPS.get(reason_code or "")
+
 
 def escalation_summary(escalation_type: str | None) -> str:
     """Return the Vietnamese explanation used in an escalation record."""

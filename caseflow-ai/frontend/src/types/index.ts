@@ -140,6 +140,8 @@ export interface Escalation {
   id: string;
   case_id: string;
   escalation_type: EscalationType;
+  reason_code: EscalationType;
+  uncertainty_group?: 'FACT_UNCERTAINTY' | 'POLICY_UNCERTAINTY' | 'AUTHORITY_UNCERTAINTY';
   target_department_id?: string;
   target_department?: Department;
   target_role: string;

@@ -21,5 +21,7 @@ class EscalationResponse(EscalationBase):
     created_at: datetime
     resolved_at: Optional[datetime] = None
     target_department: Optional[DepartmentResponse] = None
+    reason_code: str
+    uncertainty_group: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
