@@ -77,9 +77,10 @@ class UncertaintyEngine:
                 reason=f"Hình ảnh minh chứng quá mờ hoặc bị che khuất, không thể nhận diện trường thông tin: {fields_str}."
             )
 
-        # 2. Check explicitly required fields if provided
-        if required_fields:
-            missing = [rf for rf in required_fields if facts.get(rf) is None]
+        # 2. Check caller requirements or the core requirements for this case type.
+        fields_to_require = required_fields or core_fields or []
+        if fields_to_require:
+            missing = [rf for rf in fields_to_require if facts.get(rf) is None]
             if missing:
                 friendly_vi = [get_field_label_vi(f) for f in missing]
                 return UncertaintyEvaluationResult(

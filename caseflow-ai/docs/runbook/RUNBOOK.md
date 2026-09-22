@@ -65,8 +65,10 @@ pytest
 ```
 
 ### Step 11: Run Verification Harness
-Navigate to `http://localhost:5173/verify` and click **RUN ALL TESTS**, or call via cURL:
+For Sprint 1 judging, navigate to `http://localhost:5173/verify` and run **CORE VERIFY — 4 CASES**, then **ESCALATION CHALLENGE — 5 CASES** (3 AUTO_RESOLVE and 2 ESCALATE). Use **FULL REGRESSION — 20 CASES** for technical testing. API calls:
 ```bash
+curl -X POST http://localhost:8000/api/verify/core
+curl -X POST http://localhost:8000/api/verify/escalation-challenge
 curl -X POST http://localhost:8000/api/verify/run
 ```
 

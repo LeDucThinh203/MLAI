@@ -31,3 +31,14 @@ def test_uncertainty_clear_evidence():
     }
     res = engine.evaluate(facts, required_fields=["amount", "student_identifier"])
     assert res.has_uncertainty is False
+
+
+def test_tuition_missing_payment_status_is_fact_unknown():
+    engine = UncertaintyEngine()
+    result = engine.evaluate(
+        {"amount": 8200000, "student_identifier": "SV001", "visual_quality": "CLEAR"},
+        case_type="TUITION_STATUS",
+    )
+    assert result.has_uncertainty is True
+    assert result.uncertainty_type == "FACT_UNKNOWN"
+    assert "payment_status" in result.uncertain_fields

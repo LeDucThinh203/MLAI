@@ -51,6 +51,8 @@ storage/unicode-backups/
 backend/storage/unicode-backups/
 storage/evidence/*
 !storage/evidence/.gitkeep
+backend/storage/evidence/*
+!backend/storage/evidence/.gitkeep
 
 # IDEs
 .vscode/

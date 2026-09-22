@@ -35,6 +35,11 @@ def get_case(id: str, db: Session = Depends(get_db)):
 
 @router.post("/{id}/analyze")
 async def analyze_case(id: str, db: Session = Depends(get_db)):
+    case = CaseService(db).get_case_by_id(id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if case.status in {"AUTO_RESOLVED", "ESCALATED", "APPROVED", "REJECTED", "STOPPED"}:
+        raise HTTPException(status_code=409, detail="Case has reached a final state and cannot be analyzed again.")
     service = CaseAnalysisService(db)
     try:
         result = await service.analyze_case(id)
