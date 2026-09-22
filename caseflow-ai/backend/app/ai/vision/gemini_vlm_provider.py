@@ -1,5 +1,4 @@
 import json
-import os
 from typing import Optional
 from app.ai.base import BaseVisionProvider
 from app.schemas.evidence_extraction import EvidenceExtractionResult
@@ -24,12 +23,12 @@ class GeminiVLMProvider(BaseVisionProvider):
 
     async def _call_vlm(self, file_path: str, mime_type: str, prompt: str, original_filename: Optional[str] = None) -> EvidenceExtractionResult:
         if not gemini_client.is_configured:
-            logger.info("Gemini not configured; returning structured fallback result.")
+            logger.warning("Gemini not configured; evidence requires human review.")
             return EvidenceExtractionResult(
                 document_type="UNKNOWN",
-                uncertain_fields=["gemini_api_key_not_configured"],
-                visual_quality="CLEAR",
-                notes="Offline mode: Gemini API key not provided in environment."
+                uncertain_fields=["amount", "student_identifier", "transaction_id", "payment_status"],
+                visual_quality="UNREADABLE",
+                notes="VLM extraction unavailable: Gemini API key not configured."
             )
 
         try:
@@ -58,71 +57,11 @@ class GeminiVLMProvider(BaseVisionProvider):
 
         except Exception as e:
             logger.error(f"Error during Gemini VLM extraction: {e}")
-            fname = (original_filename or os.path.basename(file_path)).lower()
-            if "blurry" in fname:
-                return EvidenceExtractionResult(
-                    document_type="RECEIPT",
-                    student_identifier="SV2026-001",
-                    visual_quality="BLURRY",
-                    uncertain_fields=["amount", "transaction_id"],
-                    notes=f"Extraction fallback: {str(e)}"
-                )
-            elif "conflict" in fname:
-                return EvidenceExtractionResult(
-                    document_type="RECEIPT",
-                    student_identifier="SV2026-001",
-                    amount=12500000.0,
-                    payment_status="SUCCESS",
-                    transaction_id="VCB-987654321",
-                    institution="Vietcombank",
-                    visual_quality="CLEAR",
-                    uncertain_fields=[]
-                )
-            elif "high_value" in fname:
-                return EvidenceExtractionResult(
-                    document_type="RECEIPT",
-                    student_identifier="SV2026-001",
-                    amount=85000000.0,
-                    payment_status="SUCCESS",
-                    transaction_id="VCB-888999111",
-                    institution="Vietcombank",
-                    visual_quality="CLEAR",
-                    uncertain_fields=[]
-                )
-            elif "clear" in fname:
-                return EvidenceExtractionResult(
-                    document_type="RECEIPT",
-                    student_identifier="SV2026-001",
-                    amount=10500000.0,
-                    payment_status="SUCCESS",
-                    transaction_id="VCB-123456789",
-                    institution="Vietcombank",
-                    visual_quality="CLEAR",
-                    uncertain_fields=[]
-                )
-            elif "screenshot" in fname or "sis" in fname:
-                return EvidenceExtractionResult(
-                    document_type="SIS_SCREENSHOT",
-                    student_identifier="SV2026-001",
-                    system_status="BLOCKED",
-                    visual_quality="CLEAR",
-                    evidence_text="Cổng thông tin sinh viên SIS: Khóa đăng ký tín chỉ học kỳ mới.",
-                    uncertain_fields=[]
-                )
-            elif "dispute" in fname or "letter" in fname:
-                return EvidenceExtractionResult(
-                    document_type="CONFIRMATION_LETTER",
-                    student_identifier="SV2026-001",
-                    visual_quality="CLEAR",
-                    evidence_text="Đơn đề nghị giải quyết tranh chấp thẩm quyền giữa Phòng Đào tạo và Phòng Kế toán.",
-                    uncertain_fields=[]
-                )
-
             return EvidenceExtractionResult(
-                document_type="EXTRACTION_NOTICE",
-                uncertain_fields=["visual_quality"],
-                visual_quality="CLEAR",
-                notes=f"Gemini API Notice: {str(e)}"
+                document_type="UNKNOWN",
+                uncertain_fields=["amount", "student_identifier", "transaction_id", "payment_status"],
+                visual_quality="UNREADABLE",
+                notes="VLM extraction unavailable; human review required."
             )
 
     async def analyze_image(self, file_path: str, mime_type: str, prompt_override: Optional[str] = None, original_filename: Optional[str] = None) -> EvidenceExtractionResult:
@@ -147,4 +86,3 @@ class GeminiVLMProvider(BaseVisionProvider):
             return await self.analyze_document(file_path, mime_type, original_filename=original_filename)
         else:
             return await self.analyze_image(file_path, mime_type, original_filename=original_filename)
-

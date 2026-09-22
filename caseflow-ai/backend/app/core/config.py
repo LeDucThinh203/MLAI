@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     GEMINI_VLM_MODEL: str = "gemini-2.5-flash"
 
     # SQL Server Database
-    DB_SERVER: str = "THINH\\SQL2025"
+    DB_SERVER: str = "localhost"
     DB_PORT: Optional[int] = None
     DB_NAME: str = "CaseFlowAI"
     DB_USER: Optional[str] = None

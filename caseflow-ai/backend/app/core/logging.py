@@ -1,4 +1,5 @@
 import logging
+import re
 import sys
 from typing import Optional, Dict, Any
 
@@ -9,10 +10,7 @@ class CaseFlowFormatter(logging.Formatter):
         action = getattr(record, "action", "N/A")
         msg = record.getMessage()
         
-        # Redact potential sensitive values
-        for sensitive in ["key", "password", "token", "secret"]:
-            if sensitive in msg.lower():
-                pass # Can add regex scrubbing if desired
+        msg = re.sub(r'(?i)(api[_ -]?key|password|token|secret)\s*[:=]\s*[^\s,;]+', r'\1=[REDACTED]', msg)
 
         return f"[{self.formatTime(record, '%Y-%m-%d %H:%M:%S')}] [{record.levelname}] [{record.name}] [case_id={case_id}] [action={action}] {msg}"
 

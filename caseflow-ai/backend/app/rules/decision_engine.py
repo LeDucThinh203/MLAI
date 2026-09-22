@@ -65,26 +65,7 @@ class DecisionEngine:
                 question=f"Hồ sơ đang có sự chồng chéo hoặc đùn đẩy trách nhiệm giữa các phòng ban ({dept_str}). Đề nghị Trưởng phòng Công tác Sinh viên (đơn vị trọng tài) chỉ định đơn vị thụ lý chính dứt điểm."
             )
 
-        # STEP 2: Check High-Value Threshold (Safeguard 5: AUTHORITY_REQUIRED - > 50M VND threshold)
-        amount_val = facts.get("amount")
-        if amount_val is not None:
-            try:
-                amt_float = float(amount_val)
-                if amt_float > self.authority_engine.MAX_AUTO_RESOLVE_AMOUNT:
-                    amt_formatted = format_currency_vi(amt_float)
-                    limit_formatted = format_currency_vi(self.authority_engine.MAX_AUTO_RESOLVE_AMOUNT)
-                    return DecisionPipelineResult(
-                        decision_type="ESCALATE",
-                        reason=f"Số tiền giao dịch {amt_formatted} ({amount_val}) vượt hạn mức tự động tối đa của AI ({limit_formatted}). Bắt buộc phải có phê duyệt của Kế toán trưởng.",
-                        escalation_type="AUTHORITY_REQUIRED",
-                        target_department="FINANCE",
-                        target_role="Kế toán trưởng (Chief Accountant)",
-                        question=f"Hồ sơ có số tiền thanh toán {amt_formatted} ({amount_val}) vượt ngưỡng thẩm quyền tối đa của AI ({limit_formatted}). Kính trình Kế toán trưởng kiểm tra đối soát sao kê và ký duyệt."
-                    )
-            except (ValueError, TypeError):
-                pass
-
-        # STEP 3: Check Uncertainty / Blurry Evidence (Safeguard 1: FACT_UNKNOWN)
+        # STEP 2: Check uncertainty before using facts for policy or authority.
         uncertainty_res: UncertaintyEvaluationResult = self.uncertainty_engine.evaluate(
             facts, required_fields, case_type=case_type
         )
@@ -99,7 +80,7 @@ class DecisionEngine:
                 question=f"Minh chứng tải lên bị mờ hoặc không xác định được các thông tin: {fields_label_str}. Cán bộ vui lòng kiểm tra và gửi yêu cầu sinh viên bổ sung tài liệu rõ nét hơn."
             )
 
-        # STEP 4: Check for Data Conflicts in Comparisons (Safeguard 2: DATA_CONFLICT)
+        # STEP 3: Check for Data Conflicts in Comparisons (Safeguard 2: DATA_CONFLICT)
         if case_type == "TUITION_STATUS":
             amount_comparison = next((item for item in comparisons if item.get("field_name") == "amount"), None)
             if not amount_comparison or amount_comparison.get("comparison_status") == "UNKNOWN":
@@ -133,6 +114,23 @@ class DecisionEngine:
                     target_role="Chuyên viên Kế toán (Finance Officer)" if is_finance else "Chuyên viên Đào tạo (Academic Officer)",
                     question=f"Mục '{field_label}' thể hiện '{left_display}' (giá trị: {left_val}) trên minh chứng nhưng hệ thống SIS ghi nhận '{right_display}' (giá trị: {right_val}). Cán bộ vui lòng đối soát với sao kê ngân hàng và xác nhận dữ liệu chính xác."
                 )
+
+        # STEP 4: Only use a certain, conflict-free amount for authority checks.
+        amount_val = facts.get("amount")
+        if amount_val is not None:
+            try:
+                amt_float = float(amount_val)
+                if amt_float > self.authority_engine.MAX_AUTO_RESOLVE_AMOUNT:
+                    return DecisionPipelineResult(
+                        decision_type="ESCALATE",
+                        reason=f"Số tiền giao dịch {format_currency_vi(amt_float)} vượt hạn mức tự động tối đa của AI ({format_currency_vi(self.authority_engine.MAX_AUTO_RESOLVE_AMOUNT)}).",
+                        escalation_type="AUTHORITY_REQUIRED",
+                        target_department="FINANCE",
+                        target_role="Kế toán trưởng (Chief Accountant)",
+                        question="Kính trình Kế toán trưởng kiểm tra đối soát sao kê và ký duyệt."
+                    )
+            except (ValueError, TypeError):
+                pass
 
         # STEP 5: Check Policy Engine (Safeguard 3: POLICY_OUT_OF_SCOPE)
         policy_res: PolicyEvaluationResult = self.policy_engine.evaluate(case_type, facts, comparisons)

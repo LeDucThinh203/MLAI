@@ -19,7 +19,7 @@ FIELD_LABELS_VI: Dict[str, str] = {
 }
 
 CORE_REQUIRED_FIELDS_BY_CASE: Dict[str, List[str]] = {
-    "TUITION_STATUS": ["amount", "student_identifier"],
+    "TUITION_STATUS": ["amount", "student_identifier", "payment_status"],
     "REGISTRATION_BLOCK": ["student_identifier"],
     "SPECIAL_EXEMPTION": ["student_identifier"],
     "CROSS_DEPARTMENT_DISPUTE": ["student_identifier"],
@@ -116,4 +116,3 @@ class UncertaintyEngine:
             friendly_fields_vi=[],
             reason=None
         )
-

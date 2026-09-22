@@ -30,7 +30,7 @@ class PolicyEngine:
             
             # Check for payment success (or valid receipt with clear amount)
             payment_status = facts.get("payment_status")
-            is_successful_payment = payment_status in ["SUCCESS", "PAID", "COMPLETED"] or payment_status is None
+            is_successful_payment = payment_status in ["SUCCESS", "PAID", "COMPLETED"]
             if is_successful_payment and facts.get("amount") is not None:
                 return PolicyEvaluationResult(
                     is_applicable=True,
