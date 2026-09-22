@@ -22,6 +22,7 @@ export const CaseDetailPage: React.FC = () => {
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+  const isFinalOrEscalated = ['AUTO_RESOLVED', 'ESCALATED', 'APPROVED', 'REJECTED', 'STOPPED', 'COMPLETED'].includes(caseData?.status || '');
   const [uploading, setUploading] = useState(false);
 
   const fetchCase = async () => {
@@ -121,7 +122,7 @@ export const CaseDetailPage: React.FC = () => {
 
           <button
             onClick={handleAnalyze}
-            disabled={analyzing}
+            disabled={analyzing || isFinalOrEscalated}
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-brand-600 hover:bg-brand-700 text-white shadow disabled:opacity-50"
           >
             <FileSearch className="w-4 h-4" />

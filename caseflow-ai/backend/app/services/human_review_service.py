@@ -51,7 +51,7 @@ class HumanReviewService:
 
         # Resolve pending escalation if any
         pending_esc = self.escalation_service.get_pending_by_case(case_id)
-        if pending_esc and action in ["APPROVE", "REJECT", "OVERRIDE"]:
+        if pending_esc and action in ["APPROVE", "REJECT", "OVERRIDE", "REQUEST_INFORMATION"]:
             self.escalation_service.resolve_escalation(pending_esc.id)
 
         self.case_repo.update(case)

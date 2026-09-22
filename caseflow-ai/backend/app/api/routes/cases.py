@@ -46,6 +46,8 @@ async def analyze_case(id: str, db: Session = Depends(get_db)):
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 @router.post("/{id}/stop")
 def stop_case(id: str, reason: str = "Hồ sơ tạm dừng bởi nhân viên quản trị", db: Session = Depends(get_db)):
@@ -55,6 +57,8 @@ def stop_case(id: str, reason: str = "Hồ sơ tạm dừng bởi nhân viên qu
         return {"status": "STOPPED", "case_id": id}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 @router.post("/{id}/resume")
 def resume_case(id: str, reason: str = "Tiếp tục luồng xử lý hồ sơ", db: Session = Depends(get_db)):

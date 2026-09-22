@@ -39,7 +39,7 @@ export const HumanReviewPage: React.FC = () => {
 
     setActionLoading(true);
     const payload = {
-      reviewer_name: 'Cán bộ Nguyễn Văn A',
+      reviewer_name: 'Cán bộ xét duyệt',
       reviewer_role: activeReview.target_role || 'Chuyên viên phụ trách',
       reason: reasonInput || 'Phê duyệt theo thẩm quyền sau khi xác minh.',
     };

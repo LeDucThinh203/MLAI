@@ -66,6 +66,8 @@ class CaseService:
         case = self.repo.get_by_id(case_id)
         if not case:
             raise ValueError(f"Case {case_id} not found")
+        if case.status in {"AUTO_RESOLVED", "APPROVED", "REJECTED", "COMPLETED", "STOPPED"}:
+            raise RuntimeError(f"Cannot stop workflow from status {case.status}")
         case.status = "STOPPED"
         self.repo.update(case)
 
@@ -83,6 +85,8 @@ class CaseService:
         case = self.repo.get_by_id(case_id)
         if not case:
             raise ValueError(f"Case {case_id} not found")
+        if case.status != "STOPPED":
+            raise RuntimeError(f"Only STOPPED cases can resume; current status is {case.status}")
         case.status = "ANALYZING"
         self.repo.update(case)
 
