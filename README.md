@@ -43,22 +43,12 @@ MLAI/
     ├── docs/               Tài liệu kiến trúc và vận hành
     ├── test-data/sprint1/  Dữ liệu kiểm thử giả lập
     ├── storage/evidence/   Minh chứng mẫu cho local development
-    ├── docker-compose.yml  SQL Server bằng Docker
     └── start_all.bat       Chạy backend và frontend trên Windows
 ```
 
 ## Chạy SQL Server
 
-Cần Docker Desktop hoặc một SQL Server local có ODBC Driver 18.
-
-Nếu dùng Docker, mở terminal tại thư mục `caseflow-ai` và chạy:
-
-```powershell
-cd caseflow-ai
-docker compose up -d
-```
-
-Nếu dùng SQL Server local, tạo database tên `CaseFlowAI` và cấu hình thông tin kết nối trong `caseflow-ai/backend/.env`.
+Cần SQL Server cài trực tiếp trên máy và ODBC Driver 18 for SQL Server. Tạo database tên `CaseFlowAI`, sau đó cấu hình thông tin kết nối trong `caseflow-ai/backend/.env`.
 
 ## Chạy backend
 
@@ -79,6 +69,8 @@ DB_TRUSTED_CONNECTION=yes
 DB_TRUST_SERVER_CERTIFICATE=yes
 GEMINI_API_KEY=
 ```
+
+Nếu SQL Server của bạn dùng instance riêng, ví dụ `SQLEXPRESS`, đặt `DB_SERVER=localhost\SQLEXPRESS`. Nếu dùng tài khoản SQL Server thay cho Windows Authentication, đặt `DB_TRUSTED_CONNECTION=no` và thêm `DB_USER`, `DB_PASSWORD`.
 
 Sau đó chạy migration, dữ liệu mẫu và API:
 
