@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Segoe UI"', 'Arial', '"Helvetica Neue"', 'sans-serif'],
+      },
       colors: {
         brand: {
           50: '#f0fdfa',

@@ -1,13 +1,21 @@
 import json
-import os
 import time
 import uuid
-from typing import List, Dict, Any, Optional
+from pathlib import Path
+from typing import Any, Optional
 from sqlalchemy.orm import Session
 from app.repositories.verification_repository import VerificationRepository
 from app.models.verification_run import VerificationRun
 from app.models.verification_result import VerificationResult
 from app.rules.decision_engine import DecisionEngine, DecisionPipelineResult
+from app.core.paths import TEST_DATA_DIR, get_test_data_file
+
+VERIFICATION_FILES = (
+    "verify_cases.json",
+    "escalation_cases.json",
+    "vlm_cases.json",
+    "independent_cases.json",
+)
 
 class VerificationService:
     """
@@ -20,7 +28,7 @@ class VerificationService:
         self.repo = VerificationRepository(db)
         self.decision_engine = DecisionEngine()
 
-    async def run_all_tests(self, test_data_path: str = "test-data/sprint1") -> VerificationRun:
+    async def run_all_tests(self, test_data_path: Path = TEST_DATA_DIR) -> VerificationRun:
         start_time = time.time()
         run_code = f"VRUN-{time.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
 
@@ -34,39 +42,7 @@ class VerificationService:
         )
         self.repo.create_run(run)
 
-        # Robustly locate test_data directory
-        candidate_dirs = [
-            test_data_path,
-            os.path.join("..", test_data_path),
-            os.path.abspath("test-data/sprint1"),
-            os.path.abspath("../test-data/sprint1"),
-            os.path.join(os.path.dirname(__file__), "..", "..", "..", "test-data", "sprint1"),
-        ]
-        resolved_dir = test_data_path
-        for cd in candidate_dirs:
-            if os.path.isdir(cd):
-                resolved_dir = cd
-                break
-
-        # Load cases from test-data
-        test_files = [
-            "verify_cases.json",
-            "escalation_cases.json",
-            "vlm_cases.json",
-            "independent_cases.json"
-        ]
-
-        all_test_cases: List[Dict[str, Any]] = []
-        for tf in test_files:
-            file_path = os.path.join(resolved_dir, tf)
-            if os.path.exists(file_path):
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        if isinstance(data, list):
-                            all_test_cases.extend(data)
-                except Exception:
-                    pass
+        all_test_cases = self._load_test_cases(test_data_path)
 
         total = len(all_test_cases)
         passed = 0
@@ -132,8 +108,25 @@ class VerificationService:
 
         return run
 
-    def list_runs(self) -> List[VerificationRun]:
+    def list_runs(self) -> list[VerificationRun]:
         return self.repo.list_runs()
 
     def get_run(self, run_id: str) -> Optional[VerificationRun]:
         return self.repo.get_run_by_id(run_id)
+
+    @staticmethod
+    def _load_test_cases(directory: Path) -> list[dict[str, Any]]:
+        """Load every verification fixture with an actionable malformed-file error."""
+        cases: list[dict[str, Any]] = []
+        for name in VERIFICATION_FILES:
+            path = get_test_data_file(name) if directory == TEST_DATA_DIR else directory / name
+            if not path.is_file():
+                continue
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError as error:
+                raise ValueError(f"Fixture {path.name} is not valid JSON.") from error
+            if not isinstance(data, list):
+                raise ValueError(f"Fixture {path.name} must contain a JSON array.")
+            cases.extend(data)
+        return cases

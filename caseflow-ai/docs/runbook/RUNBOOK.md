@@ -74,3 +74,33 @@ Navigate to `http://localhost:5173/verify` and click **RUN ALL TESTS**, or call 
 ```bash
 curl -X POST http://localhost:8000/api/verify/run
 ```
+
+### Vietnamese text and legacy question marks
+
+Run these commands from `backend` using its virtual environment:
+
+```bash
+python -m alembic upgrade head
+python scripts/repair_unicode.py
+python scripts/repair_unicode.py --apply
+python scripts/check_unicode.py
+python -m pytest -q
+```
+
+Migration `0002_unicode_content` upgrades all 40 human-readable content columns
+to Unicode, including databases partially updated by hand. Updating ORM models
+alone does not change existing SQL Server columns. Restart the backend after
+updating the models.
+
+The repair command previews changes by default. With `--apply`, it saves the
+original values, record IDs and replacement values to
+`backend/storage/unicode-backups/` before updating anything. It only restores
+exact matches to known source text damaged by the legacy Vietnamese code page;
+unknown text and ordinary question punctuation are not rewritten. Keep the
+backup private and retain it for recovery. Historical audit display-name repairs
+are recorded in this backup; event IDs, actions and timestamps are preserved.
+
+`check_unicode.py` scans project text encoding and verifies Vietnamese round
+trips in a temporary table using each migrated column's actual SQL type. It does
+not modify business records. The migration intentionally refuses downgrade
+because converting back to a legacy code page can destroy Vietnamese characters.

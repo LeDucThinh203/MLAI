@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getCaseById, analyzeCase, stopCaseWorkflow, resumeCaseWorkflow } from '../api/cases';
 import { uploadEvidence, analyzeEvidence } from '../api/evidence';
-import { Case } from '../types';
+import { CaseDetail } from '../types';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import {
@@ -19,7 +19,7 @@ import {
 
 export const CaseDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [caseData, setCaseData] = useState<Case | null>(null);
+  const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -82,13 +82,11 @@ export const CaseDetailPage: React.FC = () => {
   if (loading) return <LoadingSpinner message="Đang tải chi tiết hồ sơ..." />;
   if (!caseData) return <div className="p-8 text-center text-slate-500">Không tìm thấy hồ sơ.</div>;
 
-  const anyCase = caseData as any;
-  const escalations = anyCase.escalations || [];
-  const activeEscalation = escalations.find((e: any) => e.status === 'PENDING') || escalations[0];
-  const comparisons = anyCase.comparisons || [];
-  const decisions = anyCase.decisions || [];
+  const activeEscalation = caseData.escalations.find((escalation) => escalation.status === 'PENDING') || caseData.escalations[0];
+  const comparisons = caseData.comparisons;
+  const decisions = caseData.decisions;
   const latestDecision = decisions[decisions.length - 1];
-  const auditLogs = anyCase.audit_logs || [];
+  const auditLogs = caseData.audit_logs;
 
   return (
     <div className="space-y-8">
@@ -152,9 +150,9 @@ export const CaseDetailPage: React.FC = () => {
           </label>
         </div>
 
-        {anyCase.evidence_items && anyCase.evidence_items.length > 0 ? (
+        {caseData.evidence_items.length > 0 ? (
           <div className="space-y-4">
-            {anyCase.evidence_items.map((ev: any) => (
+            {caseData.evidence_items.map((ev) => (
               <div key={ev.id} className="p-4 rounded-lg border border-slate-200 bg-slate-50 flex flex-col md:flex-row justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -199,7 +197,7 @@ export const CaseDetailPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {comparisons.map((c: any) => (
+                {comparisons.map((c) => (
                   <tr key={c.id}>
                     <td className="p-2.5 font-semibold text-slate-800">{c.field_name}</td>
                     <td className="p-2.5 font-mono">{c.left_value || 'null'}</td>
@@ -273,7 +271,7 @@ export const CaseDetailPage: React.FC = () => {
         <h2 className="text-sm font-bold uppercase text-slate-500 tracking-wider mb-4">6. AUDIT TRAIL TIMELINE</h2>
         {auditLogs.length > 0 ? (
           <div className="space-y-3 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-            {auditLogs.map((log: any) => (
+            {auditLogs.map((log) => (
               <div key={log.id} className="relative pl-8 text-xs">
                 <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-brand-500 ring-4 ring-white"></div>
                 <div className="flex items-center gap-2 font-mono text-slate-400">
