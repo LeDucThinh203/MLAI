@@ -1,88 +1,102 @@
-# CASEFLOW AI – THE ESCALATION REFEREE
+# CaseFlow AI
 
-> **Tagline:** *Automate the routine. Escalate the uncertain. Keep humans accountable.*  
-> **Challenge:** Challenge A – The Escalation Referee (MLAI Hackathon 2026)  
-> **Tên tiếng Việt:** Hệ thống AI điều phối và xử lý các hồ sơ sinh viên bị mắc kẹt giữa nhiều bộ phận.
+CaseFlow AI hỗ trợ xử lý hồ sơ sinh viên có minh chứng như biên lai, ảnh chụp SIS và PDF. Hệ thống chỉ tự động giải quyết các hồ sơ đủ dữ liệu, đúng quy chế và trong thẩm quyền; các trường hợp còn lại sẽ được chuyển đến cán bộ phù hợp kèm lý do cụ thể.
 
----
+> Dữ liệu và minh chứng trong dự án là dữ liệu giả lập phục vụ MLAI Hackathon 2026.
 
-## 1. Project Overview & Problem Statement
-Trong môi trường đại học, sinh viên thường xuyên gặp tình trạng hồ sơ bị mắc kẹt hoặc chuyển vòng quanh giữa các phòng ban (Kế hoạch Tài chính, Đào tạo, Công tác Sinh viên, CNTT):
-- Sinh viên đã nộp tiền nhưng cổng thông tin vẫn báo nợ học phí (`UNPAID`).
-- Biên lai thanh toán khác với số tiền hệ thống ghi nhận.
-- Bị khóa đăng ký môn hoặc cần giấy xác nhận trước thời hạn SLA.
+## Mục tiêu
 
-Hầu hết các giải pháp hiện nay hoặc dùng Chatbot trả lời chung chung ("Vui lòng liên hệ phòng X"), hoặc cố gắng tự động hóa quá đà gây ra sai sót tài chính và học vụ nghiêm trọng.
+- Giảm thời gian xử lý hồ sơ thường quy của sinh viên.
+- Ngăn AI tự quyết trong các trường hợp thiếu dữ liệu, mâu thuẫn hoặc vượt thẩm quyền.
+- Lưu toàn bộ tiến trình để có thể kiểm tra lại từ lúc tạo hồ sơ đến khi hoàn tất.
 
-## 2. Why This is NOT Just a Chatbot
-CaseFlow AI **không phải là chatbot hội thoại**:
-- **Deterministic Safeguards:** Gemini/VLM chỉ được dùng để trích xuất dữ kiện có cấu trúc (`Structured Facts`). Quyết định cuối cùng bắt buộc phải đi qua 4 tầng engine xác định: `PolicyEngine` → `UncertaintyEngine` → `AuthorityEngine` → `DecisionEngine`.
-- **Zero Hallucination:** Nếu ảnh chụp mờ, thiếu thông tin hoặc phát hiện mâu thuẫn dữ liệu (`DATA_CONFLICT`), hệ thống lập tức dừng lại (`HALT`) và leo thang có trách nhiệm (`ESCALATE`) đến đúng cán bộ phụ trách.
-- **Explainable & Accountable:** Thay vì câu lệnh mơ hồ "Please review", CaseFlow AI sinh ra câu hỏi cụ thể kèm số liệu đối chiếu rõ ràng để con người ra quyết định nhanh chóng.
+## Luồng xử lý
 
-## 3. Multimodal VLM Architecture & Pipeline
-```
-UPLOAD FILE → VALIDATE FILE → CHECK MIME/SIZE → SHA-256 HASH
-→ GEMINI VLM EXTRACTION → PYDANTIC VALIDATION → EVIDENCE COMPARISON
-→ DETERMINISTIC POLICY / UNCERTAINTY / AUTHORITY / DECISION ENGINES
-→ AUTO_RESOLVE / ESCALATE / HUMAN REVIEW → IMMUTABLE AUDIT LOG
+```text
+Tạo hồ sơ
+  → Tải minh chứng
+  → Gemini VLM trích xuất dữ kiện
+  → Đối soát với dữ liệu SIS mô phỏng
+  → Kiểm tra quy chế, độ tin cậy và thẩm quyền
+  → Tự xử lý hoặc chuyển cán bộ
+  → Ghi Audit Trail
 ```
 
-## 4. Human-in-the-Loop & Escalation Types
-- `FACT_UNKNOWN`: Ảnh biên lai mờ, thiếu số tiền hoặc mã giao dịch.
-- `DATA_CONFLICT`: Số tiền trên biên lai khác số tiền trên hệ thống SIS.
-- `POLICY_OUT_OF_SCOPE`: Tình huống ngoại lệ chưa có quy chế.
-- `AUTHORITY_REQUIRED`: Hồ sơ vượt quá hạn mức AI được phép giải quyết (ví dụ > 50 triệu VNĐ hoặc cần chữ ký Trưởng phòng).
-- `OWNERSHIP_UNCLEAR`: Chưa rõ đơn vị chịu trách nhiệm thụ lý.
+Hệ thống chuyển cán bộ khi minh chứng mờ/thiếu, dữ liệu mâu thuẫn, tình huống ngoài quy chế, vượt hạn mức AI hoặc chưa rõ phòng ban phụ trách.
 
-## 5. Technology Stack
-- **Backend:** Python 3.12, FastAPI, SQLAlchemy 2.x, Alembic, pyodbc, Pydantic v2, google-genai SDK, pytest.
-- **Database:** Microsoft SQL Server 2022 (Docker / local) qua ODBC Driver 18 for SQL Server.
-- **AI/VLM:** Google Gemini 2.5 Flash (Multimodal VLM + Text).
-- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, TanStack Query, Axios, Lucide Icons.
+## Công nghệ
 
-## 6. Project Directory Structure
-```
+- Frontend: React, TypeScript, Vite, Tailwind CSS
+- Backend: FastAPI, SQLAlchemy, Pydantic, Alembic
+- Database: Microsoft SQL Server qua ODBC Driver 18
+- AI: Google Gemini 2.5 Flash
+- Kiểm thử: pytest và Verification Harness
+
+## Cấu trúc thư mục
+
+```text
 caseflow-ai/
-├── backend/            # FastAPI REST API, SQLAlchemy models, AI providers, Deterministic Engines
-├── frontend/           # React + TypeScript + Vite + Tailwind UI
-├── docs/               # Architecture, Synthetic Policies, Measurements, Runbook
-├── test-data/sprint1/  # Synthetic test cases for Verification Harness
-├── scripts/            # Utility scripts
-├── storage/evidence/   # Secure local evidence file storage
-├── docker-compose.yml  # Microsoft SQL Server 2022 container
-└── README.md
+├── backend/            API, models, services, rule engine và migrations
+├── frontend/           Giao diện React
+├── docs/               Tài liệu kiến trúc và vận hành
+├── test-data/sprint1/  Dữ liệu kiểm thử giả lập
+├── storage/evidence/   Minh chứng mẫu cho local development
+├── docker-compose.yml  SQL Server bằng Docker
+└── start_all.bat       Chạy backend và frontend trên Windows
 ```
 
-## 7. Quick Start Guide
-Xem hướng dẫn chi tiết từng lệnh tại [RUNBOOK.md](file:///e:/NamHoc_2023-2024/MLAI/Team1/caseflow-ai/docs/runbook/RUNBOOK.md).
+## Chạy SQL Server
 
-1. Khởi động SQL Server 2022:
-   ```bash
-   docker compose up -d
-   ```
-2. Khởi tạo Backend:
-   ```bash
-   cd backend
-   pip install -e .
-   alembic upgrade head
-   python -m app.db.seed
-   uvicorn app.main:app --reload
-   ```
-3. Khởi tạo Frontend:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+Cần Docker Desktop hoặc một SQL Server local có ODBC Driver 18.
 
-## 8. Verification Harness
-Truy cập `/verify` trên giao diện web hoặc gọi endpoint `POST /api/verify/run` để chạy toàn bộ các bộ test case mẫu qua engine thực tế.
+Nếu dùng Docker, mở terminal tại thư mục `caseflow-ai` và chạy:
 
-## 9. Synthetic Data Disclaimer
-> [!NOTE]
-> Toàn bộ quy chế, dữ liệu sinh viên, số tiền và biên lai trong dự án này là dữ liệu giả lập (`SYNTHETIC HACKATHON DATA`) phục vụ Hackathon 2026.
+```powershell
+docker compose up -d
+```
 
-## 10. Known Limitations & Phase 2 Roadmap
-- Phase 1 tập trung vào xây dựng bộ khung chuẩn xác (`Skeleton Architecture`), hệ thống models/schemas, bộ quy tắc xác định và Verify harness.
-- Phase 2 sẽ tích hợp trọn vẹn kết nối live với cơ sở dữ liệu trường thực tế và hoàn thiện các prompt chuyên sâu.
+Nếu dùng SQL Server local, tạo database tên `CaseFlowAI` và cấu hình thông tin kết nối trong `backend/.env`.
+
+## Chạy backend
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -e .
+```
+
+Tạo file `backend/.env`:
+
+```env
+DB_SERVER=localhost
+DB_NAME=CaseFlowAI
+DB_DRIVER=ODBC Driver 18 for SQL Server
+DB_TRUSTED_CONNECTION=yes
+DB_TRUST_SERVER_CERTIFICATE=yes
+GEMINI_API_KEY=
+```
+
+Sau đó chạy migration, dữ liệu mẫu và API:
+
+```powershell
+alembic upgrade head
+python -m app.db.seed
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Backend chạy tại `http://localhost:8000`. API docs ở `http://localhost:8000/docs`.
+
+## Chạy frontend
+
+Mở một terminal khác:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Mở `http://localhost:5173` để dùng ứng dụng.
+
+Trên Windows, sau khi đã cài dependencies, có thể chạy `start_all.bat` để mở cả backend và frontend.
