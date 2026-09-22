@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MainLayout } from './layouts/MainLayout';
 import { HomePage } from './pages/HomePage';
@@ -14,9 +14,11 @@ import { NotFoundPage } from './pages/NotFoundPage';
 const queryClient = new QueryClient();
 
 export const App: React.FC = () => {
+  const Router = import.meta.env.BASE_URL === '/' ? BrowserRouter : HashRouter;
+
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter
+      <Router
         future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true,
@@ -35,7 +37,7 @@ export const App: React.FC = () => {
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      </Router>
     </QueryClientProvider>
   );
 };

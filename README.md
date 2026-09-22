@@ -124,3 +124,9 @@ npm run dev
 Mở `http://localhost:5173` để dùng ứng dụng.
 
 Trên Windows, sau khi đã cài dependencies, có thể chạy `caseflow-ai/start_all.bat` để mở cả backend và frontend.
+
+## Triển khai GitHub Pages
+
+GitHub Pages chỉ triển khai frontend. Sau khi push lên `main`, workflow `.github/workflows/deploy-pages.yml` sẽ xuất bản giao diện tại `https://leducthinh203.github.io/MLAI/`.
+
+Trước khi triển khai, vào **Settings → Secrets and variables → Actions → Variables** trên GitHub và tạo `VITE_API_BASE_URL` bằng URL HTTPS công khai của backend, ví dụ `https://caseflow-api.example.com`. Backend FastAPI và SQL Server phải chạy trên một dịch vụ hoặc máy chủ công khai riêng; GitHub Pages không chạy Python hay SQL Server.
