@@ -59,18 +59,47 @@ python -m venv .venv
 pip install -e .
 ```
 
-Tạo file `caseflow-ai/backend/.env`:
+Tạo file `caseflow-ai/backend/.env`. Có hai cách kết nối phổ biến:
+
+**Windows Authentication** — dùng tài khoản Windows đang đăng nhập. Ví dụ SQL Server chạy ở instance `SQLEXPRESS`:
 
 ```env
-DB_SERVER=localhost
+DB_SERVER=localhost\SQLEXPRESS
+DB_PORT=
 DB_NAME=CaseFlowAI
 DB_DRIVER=ODBC Driver 18 for SQL Server
 DB_TRUSTED_CONNECTION=yes
 DB_TRUST_SERVER_CERTIFICATE=yes
+DB_ENCRYPT=yes
 GEMINI_API_KEY=
 ```
 
-Nếu SQL Server của bạn dùng instance riêng, ví dụ `SQLEXPRESS`, đặt `DB_SERVER=localhost\SQLEXPRESS`. Nếu dùng tài khoản SQL Server thay cho Windows Authentication, đặt `DB_TRUSTED_CONNECTION=no` và thêm `DB_USER`, `DB_PASSWORD`.
+**SQL Server Authentication** — dùng tài khoản SQL Server, ví dụ instance mặc định ở cổng `1433`:
+
+```env
+DB_SERVER=localhost
+DB_PORT=1433
+DB_NAME=CaseFlowAI
+DB_USER=sa
+DB_PASSWORD=YourStrongPassword
+DB_DRIVER=ODBC Driver 18 for SQL Server
+DB_TRUSTED_CONNECTION=no
+DB_TRUST_SERVER_CERTIFICATE=yes
+DB_ENCRYPT=yes
+GEMINI_API_KEY=
+```
+
+Chuỗi kết nối do ứng dụng tạo tương ứng là:
+
+```text
+# Windows Authentication
+mssql+pyodbc://localhost\SQLEXPRESS/CaseFlowAI?driver=ODBC+Driver+18+for+SQL+Server&Trusted_Connection=yes&Encrypt=yes&TrustServerCertificate=yes
+
+# SQL Server Authentication
+mssql+pyodbc://sa:YourStrongPassword@localhost:1433/CaseFlowAI?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=yes
+```
+
+Không đặt `DB_USER` và `DB_PASSWORD` khi dùng Windows Authentication. Không commit file `.env` hoặc mật khẩu vào Git.
 
 Sau đó chạy migration, dữ liệu mẫu và API:
 
