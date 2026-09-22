@@ -14,3 +14,15 @@ def test_evidence_comparison_detects_mismatch():
     assert amount_comp.comparison_status == "MISMATCH"
     assert student_comp is not None
     assert student_comp.comparison_status == "MATCH"
+
+
+def test_evidence_comparison_matches_equivalent_monetary_formats():
+    service = EvidenceComparisonService()
+
+    comparisons = service.compare_facts(
+        "case-8200000",
+        {"amount": "8200000"},
+        {"amount": "8200000.00"},
+    )
+
+    assert comparisons[0].comparison_status == "MATCH"

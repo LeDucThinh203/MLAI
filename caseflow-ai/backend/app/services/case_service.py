@@ -30,6 +30,8 @@ class CaseService:
             description=payload.description,
             student_identifier=payload.student_identifier,
             case_type=payload.case_type,
+            sis_amount=payload.sis_amount,
+            sis_status=payload.sis_status,
             status="NEW",
             current_department_id=dept_id
         )
@@ -41,7 +43,7 @@ class CaseService:
             actor_type="STUDENT",
             actor_name=actor_name,
             action="SUBMITTED_CASE",
-            input_snapshot={"title": payload.title, "student_id": payload.student_identifier, "type": payload.case_type},
+            input_snapshot={"title": payload.title, "student_id": payload.student_identifier, "type": payload.case_type, "sis_amount": payload.sis_amount, "sis_status": payload.sis_status},
             reason="Hồ sơ được sinh viên khởi tạo trên hệ thống CaseFlow."
         )
 

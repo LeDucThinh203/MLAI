@@ -97,6 +97,8 @@ async def seed_5_escalations(db: Session = Depends(get_db)):
             "description": "Sinh viên gửi ảnh chụp màn hình chuyển khoản qua app ngân hàng bị mờ số tiền và mã giao dịch.",
             "student_identifier": "SV2026-001",
             "case_type": "TUITION_STATUS",
+            "sis_amount": 10_500_000,
+            "sis_status": "UNPAID",
             "file": "receipt_blurry.png",
             "evidence_type": "RECEIPT"
         },
@@ -105,6 +107,8 @@ async def seed_5_escalations(db: Session = Depends(get_db)):
             "description": "Biên lai ngân hàng thể hiện số tiền 12.500.000 VNĐ nhưng hệ thống SIS chỉ ghi nhận nợ 10.500.000 VNĐ (lệch 2.000.000 VNĐ).",
             "student_identifier": "SV2026-001",
             "case_type": "TUITION_STATUS",
+            "sis_amount": 10_500_000,
+            "sis_status": "UNPAID",
             "file": "receipt_conflict.png",
             "evidence_type": "RECEIPT"
         },
@@ -129,6 +133,8 @@ async def seed_5_escalations(db: Session = Depends(get_db)):
             "description": "Sinh viên nộp học phí toàn khóa 85.000.000 VNĐ. Số tiền vượt quá hạn mức AI được phép tự động phê duyệt (tối đa 50 triệu).",
             "student_identifier": "SV2026-001",
             "case_type": "TUITION_STATUS",
+            "sis_amount": 85_000_000,
+            "sis_status": "UNPAID",
             "file": "receipt_high_value.png",
             "evidence_type": "RECEIPT"
         }
@@ -140,7 +146,9 @@ async def seed_5_escalations(db: Session = Depends(get_db)):
             title=td["title"],
             description=td["description"],
             student_identifier=td["student_identifier"],
-            case_type=td["case_type"]
+            case_type=td["case_type"],
+            sis_amount=td.get("sis_amount"),
+            sis_status=td.get("sis_status"),
         ))
 
         file_path = os.path.join(storage_ev_dir, td["file"])

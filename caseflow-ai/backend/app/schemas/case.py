@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 from app.schemas.department import DepartmentResponse
 from app.schemas.evidence import EvidenceResponse
 from app.schemas.evidence_comparison import EvidenceComparisonResponse
@@ -15,16 +15,27 @@ class CaseBase(BaseModel):
     description: str
     student_identifier: str
     case_type: str
+    sis_amount: Optional[float] = None
+    sis_status: Optional[str] = None
     current_department_id: Optional[str] = None
 
 class CaseCreate(CaseBase):
-    pass
+    @model_validator(mode="after")
+    def require_sis_data_for_tuition(self):
+        if self.case_type == "TUITION_STATUS":
+            if self.sis_amount is None or self.sis_amount < 0:
+                raise ValueError("Hồ sơ học phí cần số tiền đối chiếu từ SIS hợp lệ.")
+            if not self.sis_status or not self.sis_status.strip():
+                raise ValueError("Hồ sơ học phí cần trạng thái đối chiếu từ SIS.")
+        return self
 
 class CaseUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
     current_department_id: Optional[str] = None
+    sis_amount: Optional[float] = None
+    sis_status: Optional[str] = None
 
 class CaseResponse(CaseBase):
     id: str

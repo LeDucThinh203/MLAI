@@ -100,6 +100,18 @@ class DecisionEngine:
             )
 
         # STEP 4: Check for Data Conflicts in Comparisons (Safeguard 2: DATA_CONFLICT)
+        if case_type == "TUITION_STATUS":
+            amount_comparison = next((item for item in comparisons if item.get("field_name") == "amount"), None)
+            if not amount_comparison or amount_comparison.get("comparison_status") == "UNKNOWN":
+                return DecisionPipelineResult(
+                    decision_type="ESCALATE",
+                    reason="Chưa có số tiền đối chiếu hợp lệ từ hệ thống SIS nên không thể tự động xác nhận học phí.",
+                    escalation_type="FACT_UNKNOWN",
+                    target_department="STUDENT_SERVICES",
+                    target_role="Cán bộ Hỗ trợ Sinh viên (Student Support Officer)",
+                    question="Vui lòng bổ sung số tiền và trạng thái ghi nhận từ hệ thống SIS để hoàn tất đối soát học phí."
+                )
+
         for comp in comparisons:
             if comp.get("comparison_status") == "MISMATCH":
                 field_raw = str(comp.get("field_name") or "")
@@ -167,4 +179,3 @@ class DecisionEngine:
             reason="Không có hành động phù hợp được xác định.",
             policy_reference=f"{policy_res.policy_code} / {policy_res.rule_code}"
         )
-

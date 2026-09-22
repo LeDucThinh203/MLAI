@@ -42,6 +42,8 @@ export interface Case {
   description: string;
   student_identifier: string;
   case_type: string;
+  sis_amount?: number;
+  sis_status?: string;
   status: CaseStatus;
   current_department_id?: string;
   current_department?: Department;

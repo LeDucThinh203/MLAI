@@ -1,3 +1,4 @@
+from decimal import Decimal, InvalidOperation
 from typing import Dict, Any, List, Optional
 from app.models.evidence_comparison import EvidenceComparison
 
@@ -26,7 +27,7 @@ class EvidenceComparisonService:
                 if left_val is None or right_val is None:
                     status = "UNKNOWN"
                     reason = f"Trường {field} không có đủ dữ liệu từ cả 2 nguồn để so sánh."
-                elif left_val.strip().lower() == right_val.strip().lower():
+                elif self._values_match(field, left_val, right_val):
                     status = "MATCH"
                     reason = f"Dữ liệu trường {field} khớp hoàn toàn."
                 else:
@@ -45,3 +46,13 @@ class EvidenceComparisonService:
                 ))
 
         return comparisons
+
+    @staticmethod
+    def _values_match(field: str, left_value: str, right_value: str) -> bool:
+        """Compare monetary values numerically so 8,200,000 equals 8200000.00."""
+        if field != "amount":
+            return left_value.strip().lower() == right_value.strip().lower()
+        try:
+            return Decimal(left_value.replace(",", "").strip()) == Decimal(right_value.replace(",", "").strip())
+        except (InvalidOperation, AttributeError):
+            return left_value.strip().lower() == right_value.strip().lower()

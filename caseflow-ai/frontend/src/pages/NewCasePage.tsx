@@ -220,6 +220,8 @@ export const NewCasePage: React.FC = () => {
   const navigate = useNavigate();
   const [studentId, setStudentId] = useState('SV2026-001');
   const [caseType, setCaseType] = useState('TUITION_STATUS');
+  const [sisAmount, setSisAmount] = useState('10500000');
+  const [sisStatus, setSisStatus] = useState('UNPAID');
   const [title, setTitle] = useState('Sinh viên đã nộp tiền học phí nhưng hệ thống vẫn báo UNPAID');
   const [description, setDescription] = useState('Em đã chuyển khoản 10.500.000 VNĐ qua ngân hàng từ hôm qua nhưng tài khoản SIS vẫn báo trạng thái nợ học phí và chưa mở đăng ký môn.');
   const [file, setFile] = useState<File | null>(null);
@@ -239,6 +241,8 @@ export const NewCasePage: React.FC = () => {
   const applyPreset = (p: PresetCase) => {
     setStudentId(p.studentId);
     setCaseType(p.caseType);
+    setSisAmount(p.badge === 'AUTHORITY_REQUIRED' ? '85000000' : '10500000');
+    setSisStatus('UNPAID');
     setTitle(p.title);
     setDescription(p.description);
     setSuggestedHint(`Minh chứng đề xuất: Chọn tệp '${p.suggestedFile}' trong thư mục storage/evidence/`);
@@ -278,6 +282,8 @@ export const NewCasePage: React.FC = () => {
       let genTitle = '';
       let genDesc = '';
       let genAmount = 10500000;
+      let generatedSisAmount = genAmount;
+      let generatedSisStatus = 'UNPAID';
       let isBlurry = false;
       let expectedEsc = '';
       let scenarioLabel = '';
@@ -286,6 +292,7 @@ export const NewCasePage: React.FC = () => {
       if (scenarioIndex === 0) {
         // High value > 50M -> AUTHORITY_REQUIRED
         genAmount = 52000000 + Math.floor(Math.random() * 38) * 1000000; // 52M to 89M
+        generatedSisAmount = genAmount;
         const amtFmt = genAmount.toLocaleString('vi-VN') + ' VNĐ';
         scenarioLabel = 'Vượt hạn mức AI (AUTHORITY_REQUIRED)';
         genTitle = `Nộp học phí đào tạo quốc tế ${amtFmt} của SV ${randomStudent} (${generatedStudentId})`;
@@ -295,6 +302,7 @@ export const NewCasePage: React.FC = () => {
       } else if (scenarioIndex === 1) {
         // Data Conflict -> DATA_CONFLICT
         genAmount = 12000000 + Math.floor(Math.random() * 15) * 500000; // 12M to 19.5M (lệch SIS 10.5M)
+        generatedSisAmount = 10500000;
         const amtFmt = genAmount.toLocaleString('vi-VN') + ' VNĐ';
         scenarioLabel = 'Mâu thuẫn dữ liệu (DATA_CONFLICT)';
         genTitle = `Khiếu nại số tiền biên lai ${amtFmt} lệch số nợ SIS 10.500.000 VNĐ (${randomStudent})`;
@@ -329,6 +337,7 @@ export const NewCasePage: React.FC = () => {
       } else {
         // Valid matching -> AUTO_RESOLVE
         genAmount = 10500000;
+        generatedSisAmount = genAmount;
         const amtFmt = genAmount.toLocaleString('vi-VN') + ' VNĐ';
         scenarioLabel = 'Khớp hoàn toàn 100% (AUTO_RESOLVE)';
         genTitle = `Xác nhận nộp học phí học kỳ chính ${amtFmt} của SV ${randomStudent}`;
@@ -350,6 +359,8 @@ export const NewCasePage: React.FC = () => {
       // Update state
       setStudentId(generatedStudentId);
       setCaseType(genCaseType);
+      setSisAmount(String(generatedSisAmount));
+      setSisStatus(generatedSisStatus);
       setTitle(genTitle);
       setDescription(genDesc);
       setFile(generatedFile);
@@ -394,6 +405,8 @@ export const NewCasePage: React.FC = () => {
         description,
         student_identifier: studentId,
         case_type: caseType,
+        sis_amount: caseType === 'TUITION_STATUS' ? Number(sisAmount) : undefined,
+        sis_status: caseType === 'TUITION_STATUS' ? sisStatus : undefined,
       });
 
       // 2. If file attached, upload evidence
@@ -432,7 +445,7 @@ export const NewCasePage: React.FC = () => {
               Tạo Hồ Sơ & Kiểm Thử Logic Thời Gian Thực
             </h2>
             <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
-              Dữ liệu không hề bị gắn cứng (hardcoded)! Mỗi lần nhấn, hệ thống sẽ bốc ngẫu nhiên sinh viên, số tiền, ngân hàng và tự động vẽ biên lai điện tử thực tế bằng Canvas để AI phân tích.
+              Mỗi lần nhấn, hệ thống sinh ngẫu nhiên sinh viên, số tiền, ngân hàng và biên lai; dữ liệu đối chiếu SIS được gửi kèm từng hồ sơ để Decision Engine kiểm tra độc lập.
             </p>
           </div>
 
@@ -575,6 +588,42 @@ export const NewCasePage: React.FC = () => {
               </select>
             </div>
           </div>
+
+          {caseType === 'TUITION_STATUS' && (
+            <fieldset className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-5">
+              <legend className="px-1 text-sm font-bold text-indigo-900">Dữ liệu hệ thống đối chiếu (SIS)</legend>
+              <p className="mb-4 text-xs text-indigo-800">Nhập đúng dữ liệu SIS của hồ sơ này. CaseFlow dùng các giá trị này để đối soát với minh chứng, không tự tạo số tiền mặc định.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Số tiền SIS (VNĐ)</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="1"
+                    value={sisAmount}
+                    onChange={(e) => setSisAmount(e.target.value)}
+                    className="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                    placeholder="VD: 8200000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Trạng thái SIS</label>
+                  <select
+                    required
+                    value={sisStatus}
+                    onChange={(e) => setSisStatus(e.target.value)}
+                    className="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                  >
+                    <option value="UNPAID">Chưa ghi nhận thanh toán (UNPAID)</option>
+                    <option value="PAID">Đã thanh toán (PAID)</option>
+                    <option value="PENDING">Đang đối soát (PENDING)</option>
+                    <option value="OVERDUE">Quá hạn thanh toán (OVERDUE)</option>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+          )}
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">Tiêu đề hồ sơ</label>

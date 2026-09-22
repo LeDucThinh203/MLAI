@@ -37,18 +37,13 @@ class CaseAnalysisService:
         evidence_items = self.evidence_repo.list_by_case(case_id)
         all_facts = await self._collect_facts(case, evidence_items)
 
-        # 2. Simulated / SIS system data comparison (Mock SIS records)
+        # 2. Compare against the SIS data captured when this case was submitted.
+        # Never invent SIS values: an absent value must remain absent and be escalated.
         if case.case_type == "TUITION_STATUS":
-            extracted_amt = all_facts.get("amount")
-            if extracted_amt is not None and float(extracted_amt) > 50000000.0:
-                sis_amount = float(extracted_amt)
-            else:
-                sis_amount = 10500000.0
             mock_sis_records = {
                 "student_identifier": case.student_identifier,
-                "system_status": "UNPAID",
-                "amount": sis_amount,
-                "transaction_id": all_facts.get("transaction_id", "SYS-NONE"),
+                "system_status": case.sis_status,
+                "amount": case.sis_amount,
             }
         else:
             mock_sis_records = {

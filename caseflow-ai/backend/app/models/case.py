@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, List
-from sqlalchemy import String, Text, Unicode, UnicodeText, DateTime, ForeignKey, Index
+from sqlalchemy import String, Text, Unicode, UnicodeText, DateTime, ForeignKey, Index, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
@@ -14,6 +14,8 @@ class Case(Base):
     description: Mapped[str] = mapped_column(UnicodeText, nullable=False)
     student_identifier: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     case_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    sis_amount: Mapped[Optional[float]] = mapped_column(Numeric(18, 2), nullable=True)
+    sis_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="NEW", index=True)
     current_department_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("Departments.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)

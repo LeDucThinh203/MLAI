@@ -6,6 +6,8 @@ export interface CreateCaseDto {
   description: string;
   student_identifier: string;
   case_type: string;
+  sis_amount?: number;
+  sis_status?: string;
   current_department_id?: string;
 }
 
