@@ -47,6 +47,8 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # Storage
+storage/unicode-backups/
+backend/storage/unicode-backups/
 storage/evidence/*
 !storage/evidence/.gitkeep
 

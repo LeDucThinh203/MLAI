@@ -16,7 +16,7 @@ class AuditLog(Base):
     input_snapshot: Mapped[Optional[str]] = mapped_column(UnicodeText, nullable=True)  # INPUT
     evidence_ids: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # EVIDENCE
     reason: Mapped[Optional[str]] = mapped_column(UnicodeText, nullable=True)  # WHY
-    policy_reference: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)  # POLICY
+    policy_reference: Mapped[Optional[str]] = mapped_column(Unicode(200), nullable=True)  # POLICY
     result_snapshot: Mapped[Optional[str]] = mapped_column(UnicodeText, nullable=True)  # RESULT
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)  # WHEN
 

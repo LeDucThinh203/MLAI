@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createCase, seed5Escalations } from '../api/cases';
 import { uploadEvidence } from '../api/evidence';
+import type { LucideIcon } from 'lucide-react';
+import { getErrorMessage } from '../utils/errors';
 import {
   Upload,
   AlertCircle,
@@ -25,7 +27,7 @@ interface PresetCase {
   title: string;
   description: string;
   suggestedFile: string;
-  icon: any;
+  icon: LucideIcon;
 }
 
 const PRESETS: PresetCase[] = [
@@ -360,8 +362,8 @@ export const NewCasePage: React.FC = () => {
         expectedEscalation: expectedEsc,
         reason: reasonText,
       });
-    } catch (err: any) {
-      setError('Lỗi khi sinh dữ liệu ngẫu nhiên: ' + (err.message || ''));
+    } catch (error: unknown) {
+      setError(`Lỗi khi sinh dữ liệu ngẫu nhiên: ${getErrorMessage(error, 'Không thể tạo dữ liệu.')}`);
     } finally {
       setRandomizing(false);
     }
@@ -373,8 +375,8 @@ export const NewCasePage: React.FC = () => {
     try {
       await seed5Escalations();
       navigate('/human-review');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Lỗi khi tạo tự động 5 ca.');
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, 'Lỗi khi tạo tự động 5 ca.'));
     } finally {
       setSeedingLoading(false);
     }
@@ -407,8 +409,8 @@ export const NewCasePage: React.FC = () => {
 
       // Navigate to detail
       navigate(`/cases/${created.id}`);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Lỗi khi tạo hồ sơ.');
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, 'Lỗi khi tạo hồ sơ.'));
     } finally {
       setLoading(false);
     }

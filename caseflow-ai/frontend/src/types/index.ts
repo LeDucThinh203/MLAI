@@ -50,6 +50,39 @@ export interface Case {
   resolved_at?: string;
 }
 
+export interface CaseDetail extends Case {
+  evidence_items: Evidence[];
+  comparisons: EvidenceComparison[];
+  decisions: CaseDecision[];
+  escalations: Escalation[];
+  human_reviews: HumanReview[];
+  audit_logs: AuditLog[];
+}
+
+export interface AnalysisResult {
+  decision: DecisionType;
+  reason: string;
+  policy_reference?: string;
+  escalation_type?: EscalationType;
+  question?: string;
+}
+
+export interface WorkflowActionResult {
+  status: CaseStatus;
+  case_id: string;
+}
+
+export interface SeedCasesResult {
+  status: 'SUCCESS';
+  message: string;
+  cases: Array<Pick<Case, 'id' | 'title'> & {
+    case_id: string;
+    decision?: DecisionType;
+    escalation_type?: EscalationType;
+    question?: string;
+  }>;
+}
+
 export interface EvidenceExtraction {
   id: string;
   evidence_id: string;

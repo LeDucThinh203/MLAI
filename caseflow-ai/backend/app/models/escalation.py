@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy import String, Text, UnicodeText, DateTime, ForeignKey
+from sqlalchemy import String, Text, Unicode, UnicodeText, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
@@ -12,7 +12,7 @@ class Escalation(Base):
     case_id: Mapped[str] = mapped_column(String(36), ForeignKey("Cases.id"), nullable=False, index=True)
     escalation_type: Mapped[str] = mapped_column(String(50), nullable=False)  # FACT_UNKNOWN, POLICY_OUT_OF_SCOPE, AUTHORITY_REQUIRED, DATA_CONFLICT, OWNERSHIP_UNCLEAR
     target_department_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("Departments.id"), nullable=True)
-    target_role: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_role: Mapped[str] = mapped_column(Unicode(100), nullable=False)
     question: Mapped[str] = mapped_column(UnicodeText, nullable=False)
     reason: Mapped[str] = mapped_column(UnicodeText, nullable=False)
     evidence_summary: Mapped[Optional[str]] = mapped_column(UnicodeText, nullable=True)

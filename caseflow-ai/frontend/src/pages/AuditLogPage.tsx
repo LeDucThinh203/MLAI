@@ -21,16 +21,23 @@ import {
 export const AuditLogPage: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [filter, setFilter] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        const data = await getAuditLogs(0, 150);
-        setLogs(data);
+        const allLogs: AuditLog[] = [];
+        let page: AuditLog[];
+        do {
+          page = await getAuditLogs(allLogs.length, 200);
+          allLogs.push(...page);
+        } while (page.length === 200);
+        setLogs(Array.from(new Map(allLogs.map((log) => [log.id, log])).values()));
       } catch (err) {
         console.error(err);
+        setError(true);
       } finally {
         setLoading(false);
       }
@@ -225,14 +232,14 @@ export const AuditLogPage: React.FC = () => {
           </span>
         );
       }
-      return <span className="font-mono text-[11px] text-slate-600 truncate max-w-xs block">{raw}</span>;
+      return <span className="font-mono text-[11px] text-slate-600 break-words block">{raw}</span>;
     } catch {
       return <span className="text-xs text-slate-600">{raw}</span>;
     }
   };
 
   // Filter logs by search input and category tab
-  const filtered = logs.filter((l) => {
+  const matchesFilter = (l: AuditLog) => {
     const matchesSearch =
       l.actor_name?.toLowerCase().includes(filter.toLowerCase()) ||
       l.action?.toLowerCase().includes(filter.toLowerCase()) ||
@@ -248,7 +255,56 @@ export const AuditLogPage: React.FC = () => {
     if (selectedCategory === 'ESCALATION') return l.action?.startsWith('ESCALATED_');
 
     return true;
+  };
+
+  const actionOrder = (action: string) => {
+    if (action === 'SUBMITTED_CASE') return 0;
+    if (action === 'UPLOADED_EVIDENCE') return 1;
+    if (action === 'EXTRACTED_FACTS') return 2;
+    if (action.startsWith('HUMAN_REVIEW_')) return 4;
+    return 3;
+  };
+  const groups = new Map<string, AuditLog[]>();
+  logs.forEach((log) => {
+    const key = log.case_id || log.id;
+    const events = groups.get(key) || [];
+    events.push(log);
+    groups.set(key, events);
   });
+  const timelines = Array.from(groups.entries()).map(([caseId, events]) => ({
+    caseId,
+    events: events.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)
+      || actionOrder(a.action) - actionOrder(b.action)),
+  })).sort((a, b) => Date.parse(b.events[b.events.length - 1].created_at)
+    - Date.parse(a.events[a.events.length - 1].created_at));
+  // Keep the entire history visible when any event matches the filters.
+  const filteredTimelines = timelines.filter(({ events }) => events.some(matchesFilter));
+
+  const getStatus = (events: AuditLog[]) => {
+    let status = 'PROCESSING';
+    for (const event of events) {
+      try {
+        const result = JSON.parse(event.result_snapshot || '{}');
+        if (result?.new_status || result?.status) {
+          status = result.new_status || result.status;
+          continue;
+        }
+      } catch { /* Older entries can contain plain text snapshots. */ }
+      if (event.action === 'AUTO_RESOLVED_CASE') status = 'AUTO_RESOLVED';
+      else if (event.action.startsWith('ESCALATED_')) status = 'ESCALATED';
+      else if (['HUMAN_REVIEW_APPROVE', 'HUMAN_REVIEW_OVERRIDE'].includes(event.action)) status = 'APPROVED';
+      else if (event.action === 'HUMAN_REVIEW_REJECT') status = 'REJECTED';
+      else if (event.action === 'HUMAN_REVIEW_REQUEST_INFORMATION') status = 'WAITING_FOR_INFORMATION';
+      else if (event.action === 'HUMAN_REVIEW_STOP') status = 'STOPPED';
+      else if (event.action === 'HUMAN_REVIEW_RESUME') status = 'ANALYZING';
+    }
+    if (['AUTO_RESOLVED', 'APPROVED'].includes(status)) return { label: 'Hoàn tất · Đã giải quyết', style: 'bg-emerald-50 text-emerald-700 border-emerald-200', done: true };
+    if (status === 'REJECTED') return { label: 'Hoàn tất · Đã từ chối', style: 'bg-rose-50 text-rose-700 border-rose-200', done: true };
+    if (status === 'ESCALATED') return { label: 'Chờ cán bộ xử lý', style: 'bg-amber-50 text-amber-800 border-amber-200', done: false };
+    if (status === 'WAITING_FOR_INFORMATION') return { label: 'Chờ bổ sung thông tin', style: 'bg-amber-50 text-amber-800 border-amber-200', done: false };
+    if (status === 'STOPPED') return { label: 'Đã tạm dừng', style: 'bg-slate-100 text-slate-700 border-slate-200', done: false };
+    return { label: 'Đang xử lý', style: 'bg-blue-50 text-blue-700 border-blue-200', done: false };
+  };
 
   // Calculate high-level stats
   const totalLogs = logs.length;
@@ -257,6 +313,7 @@ export const AuditLogPage: React.FC = () => {
   const totalHumanReviews = logs.filter((l) => l.actor_type === 'STAFF').length;
 
   if (loading) return <LoadingSpinner message="Đang tải nhật ký kiểm toán bất biến..." />;
+  if (error) return <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-rose-700">Không tải được nhật ký kiểm toán. Vui lòng tải lại trang để thử lại.</div>;
 
   return (
     <div className="space-y-6">
@@ -268,7 +325,7 @@ export const AuditLogPage: React.FC = () => {
             Nhật Ký Kiểm Toán Bất Biến (Audit Trail)
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Ghi nhận toàn bộ tiến trình: <span className="font-semibold text-slate-700">AI giải quyết tự động, AI dừng leo thang, và Quyết định cán bộ</span> với tính minh bạch tuyệt đối.
+            Mỗi hồ sơ trong một box riêng, theo dõi từ khởi tạo đến kết quả cuối cùng.
           </p>
         </div>
 
@@ -277,6 +334,7 @@ export const AuditLogPage: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <input
             type="text"
+            aria-label="Tìm nhật ký theo mã hồ sơ, tác nhân, hành động hoặc lý do"
             placeholder="Tìm theo tác nhân, hành động, lý do..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
@@ -341,7 +399,7 @@ export const AuditLogPage: React.FC = () => {
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
-          Tất cả ({totalLogs})
+          Tất cả ({timelines.length} hồ sơ)
         </button>
         <button
           onClick={() => setSelectedCategory('ESCALATION')}
@@ -395,85 +453,85 @@ export const AuditLogPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50/80 text-slate-700 border-b border-slate-200 uppercase text-[11px] tracking-wider font-bold">
-              <tr>
-                <th className="p-3.5">Thời Gian</th>
-                <th className="p-3.5">Tác Nhân (WHO)</th>
-                <th className="p-3.5">Hành Động (WHAT)</th>
-                <th className="p-3.5 min-w-[280px]">Lý Do &amp; Căn Cứ (WHY &amp; POLICY)</th>
-                <th className="p-3.5">Minh Chứng</th>
-                <th className="p-3.5">Kết Quả (RESULT)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-slate-400">
-                    Không tìm thấy sự kiện kiểm toán phù hợp với tiêu chí lọc.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/80 transition">
-                    {/* Timestamp */}
-                    <td className="p-3.5 font-mono text-slate-500 whitespace-nowrap text-[11px]">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{new Date(log.created_at).toLocaleString('vi-VN')}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <span>Hiển thị <strong className="text-slate-800">{filteredTimelines.length}/{timelines.length} hồ sơ</strong> · Giữ đầy đủ các bước khi lọc</span>
+        <span>Hồ sơ cập nhật gần nhất ở trên · Các bước từ cũ đến mới</span>
+      </div>
+
+      <div className="space-y-6">
+        {filteredTimelines.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
+            Không tìm thấy hồ sơ phù hợp với tiêu chí lọc.
+          </div>
+        ) : filteredTimelines.map(({ caseId, events }) => {
+          const first = events[0];
+          const last = events[events.length - 1];
+          const status = getStatus(events);
+          return (
+            <section key={caseId} aria-label={`Tiến trình hồ sơ ${caseId}`} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <header className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <h2 className="flex items-start gap-2 text-sm font-bold text-slate-900">
+                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                    <span>Hồ sơ <span className="font-mono break-all">{caseId}</span></span>
+                  </h2>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                    {events.some((event) => event.action === 'SUBMITTED_CASE') ? 'Khởi tạo' : 'Ghi nhận đầu tiên'}: {new Date(first.created_at).toLocaleString('vi-VN')}
+                    <span className="mx-2">→</span>
+                    {status.done ? 'Hoàn tất' : 'Cập nhật'}: {new Date(last.created_at).toLocaleString('vi-VN')}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <span className="text-xs text-slate-500">{events.length} bước</span>
+                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${status.style}`}>
+                    {status.done ? <CheckCircle className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                    {status.label}
+                  </span>
+                </div>
+              </header>
+              <ol className="px-4 py-5 sm:px-6">
+                {events.map((log, index) => (
+                  <li key={log.id} className="relative pb-6 pl-10 last:pb-0">
+                    {index < events.length - 1 && <span aria-hidden="true" className="absolute bottom-0 left-3.5 top-7 w-px bg-slate-200" />}
+                    <span aria-hidden="true" className={`absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold ${index === events.length - 1 ? status.style : 'border-brand-200 bg-brand-50 text-brand-700'}`}>
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0 rounded-xl border border-slate-100 p-3 sm:p-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">{renderActionBadge(log.action)}</div>
+                        <time dateTime={log.created_at} className="shrink-0 text-xs text-slate-500">{new Date(log.created_at).toLocaleString('vi-VN')}</time>
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        Mã HS: <span className="font-semibold text-slate-600">{log.case_id.slice(0, 8)}...</span>
+                      <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-[210px_minmax(0,1fr)]">
+                        <div>{renderActor(log.actor_type, log.actor_name)}</div>
+                        <div className="min-w-0 space-y-2 break-words text-xs text-slate-600">
+                          <p className="leading-relaxed">{log.reason || 'Không có ghi chú bổ sung.'}</p>
+                          {log.policy_reference && (
+                            <div className="rounded-lg border border-brand-100 bg-brand-50 px-3 py-2 text-brand-700">
+                              <span className="font-semibold">Căn cứ quy chế: </span>{log.policy_reference}
+                            </div>
+                          )}
+                          {log.evidence_ids && (
+                            <div className="flex items-start gap-1.5 text-slate-500">
+                              <Paperclip className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                              <span className="break-all">Minh chứng: {log.evidence_ids}</span>
+                            </div>
+                          )}
+                          {log.result_snapshot && log.result_snapshot !== 'null' && log.result_snapshot !== '-' && (
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-semibold text-slate-500">Kết quả</span>
+                              <div>{renderResult(log.result_snapshot)}</div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </td>
-
-                    {/* Actor */}
-                    <td className="p-3.5 whitespace-nowrap">
-                      {renderActor(log.actor_type, log.actor_name)}
-                    </td>
-
-                    {/* Action */}
-                    <td className="p-3.5 whitespace-nowrap">
-                      {renderActionBadge(log.action)}
-                    </td>
-
-                    {/* Reason & Policy */}
-                    <td className="p-3.5 text-slate-700">
-                      <div className="font-medium leading-relaxed">{log.reason || '-'}</div>
-                      {log.policy_reference && (
-                        <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold text-brand-700 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded">
-                          <FileCheck className="w-3 h-3 text-brand-600" /> Quy chế: {log.policy_reference}
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Evidence */}
-                    <td className="p-3.5 whitespace-nowrap">
-                      {log.evidence_ids ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200">
-                          <Paperclip className="w-3 h-3 text-slate-500" />
-                          <span>Tài liệu: {log.evidence_ids.slice(0, 8)}...</span>
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 italic text-xs">-</span>
-                      )}
-                    </td>
-
-                    {/* Result */}
-                    <td className="p-3.5 whitespace-nowrap">
-                      {renderResult(log.result_snapshot)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          );
+        })}
       </div>
     </div>
   );
 };
-

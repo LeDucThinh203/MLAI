@@ -1,5 +1,6 @@
 import json
-from typing import Dict, Any, List
+import re
+from typing import Any
 from sqlalchemy.orm import Session
 from app.repositories.case_repository import CaseRepository
 from app.repositories.evidence_repository import EvidenceRepository
@@ -11,6 +12,7 @@ from app.services.escalation_service import EscalationService
 from app.services.audit_log_service import AuditLogService
 from app.schemas.decision import CaseDecisionCreate
 from app.schemas.escalation import EscalationCreate
+from app.core.workflow import escalation_summary
 
 class CaseAnalysisService:
     def __init__(self, db: Session):
@@ -24,7 +26,7 @@ class CaseAnalysisService:
         self.escalation_service = EscalationService(db)
         self.audit_service = AuditLogService(db)
 
-    async def analyze_case(self, case_id: str) -> Dict[str, Any]:
+    async def analyze_case(self, case_id: str) -> dict[str, Any]:
         case = self.case_repo.get_by_id(case_id)
         if not case:
             raise ValueError(f"Case {case_id} not found")
@@ -32,55 +34,8 @@ class CaseAnalysisService:
         case.status = "ANALYZING"
         self.case_repo.update(case)
 
-        # 1. Gather all extractions from uploaded evidence (auto-trigger VLM if not yet extracted)
-        from app.services.evidence_service import EvidenceService
-        ev_service = EvidenceService(self.db)
-
         evidence_items = self.evidence_repo.list_by_case(case_id)
-        all_facts: Dict[str, Any] = {}
-        for ev in evidence_items:
-            extractions = self.evidence_repo.get_extractions_by_evidence(ev.id)
-            if not extractions:
-                try:
-                    extraction = await ev_service.analyze_evidence(ev.id)
-                    extractions = [extraction]
-                except Exception as e:
-                    pass
-
-            for ext in extractions:
-                try:
-                    data = json.loads(ext.structured_data_json)
-                    all_facts.update(data)
-                except Exception:
-                    pass
-
-        # 1.1 Supplement facts with text fallback if fields are missing
-        import re
-        text_content = f"{case.title} {case.description}"
-        if not all_facts.get("student_identifier"):
-            all_facts["student_identifier"] = case.student_identifier
-
-        if "amount" not in all_facts:
-            amt_match = re.search(r'(\d{1,3}(?:[.,]\d{3})+|\d{6,9})\s*(?:vnđ|vnd|đ)?', text_content, re.IGNORECASE)
-            if amt_match:
-                raw_num = amt_match.group(1).replace('.', '').replace(',', '')
-                try:
-                    val = float(raw_num)
-                    if val > 1000:
-                        all_facts["amount"] = val
-                        if "confidence" not in all_facts:
-                            all_facts["confidence"] = 0.95
-                except ValueError:
-                    pass
-
-        if "transaction_id" not in all_facts:
-            txn_match = re.search(r'([A-Z]{2,5}-\d{4,10})', text_content)
-            if txn_match:
-                all_facts["transaction_id"] = txn_match.group(1)
-
-        if case.case_type == "CROSS_DEPARTMENT_DISPUTE" or "tranh chấp" in text_content.lower() or "đùn đẩy" in text_content.lower():
-            all_facts["is_cross_department"] = True
-            all_facts["disputed_departments"] = ["Phòng Đào tạo (Academic Affairs)", "Phòng Kế toán (Finance)"]
+        all_facts = await self._collect_facts(case, evidence_items)
 
         # 2. Simulated / SIS system data comparison (Mock SIS records)
         if case.case_type == "TUITION_STATUS":
@@ -145,15 +100,6 @@ class CaseAnalysisService:
             case.status = "ESCALATED"
             dept = self.dept_repo.get_by_code(result.target_department or "STUDENT_SERVICES")
             
-            ESC_SUMMARY_VI = {
-                "FACT_UNKNOWN": "Minh chứng ảnh bị mờ hoặc không đủ dữ liệu trường bắt buộc để nhận diện.",
-                "DATA_CONFLICT": "Phát hiện sai lệch giữa số liệu trên minh chứng và dữ liệu ghi nhận tại hệ thống SIS.",
-                "POLICY_OUT_OF_SCOPE": "Tình huống hồ sơ thuộc diện chính sách ngoại lệ chưa có tiền lệ tự động trong quy chế.",
-                "OWNERSHIP_UNCLEAR": "Hồ sơ có sự tranh chấp phân định trách nhiệm tiếp nhận giữa các phòng ban.",
-                "AUTHORITY_REQUIRED": "Giá trị giao dịch hoặc tính chất hồ sơ vượt hạn mức thẩm quyền quyết định tự động của AI.",
-            }
-            summary_text = ESC_SUMMARY_VI.get(result.escalation_type or "", f"Dừng tự động và leo thang: {result.escalation_type}")
-
             escalation_rec = self.escalation_service.create_escalation(
                 EscalationCreate(
                     case_id=case_id,
@@ -162,7 +108,7 @@ class CaseAnalysisService:
                     target_role=result.target_role or "Department Officer",
                     question=result.question or "Cán bộ vui lòng xem xét và giải quyết hồ sơ.",
                     reason=result.reason,
-                    evidence_summary=summary_text
+                    evidence_summary=escalation_summary(result.escalation_type)
                 )
             )
             self.case_repo.update(case)
@@ -198,3 +144,45 @@ class CaseAnalysisService:
             "escalation_type": result.escalation_type,
             "question": result.question
         }
+
+    async def _collect_facts(self, case: Any, evidence_items: list[Any]) -> dict[str, Any]:
+        """Combine VLM data with deterministic fallback facts from the submitted case."""
+        from app.services.evidence_service import EvidenceService
+
+        facts: dict[str, Any] = {}
+        evidence_service = EvidenceService(self.db)
+        for evidence in evidence_items:
+            extractions = self.evidence_repo.get_extractions_by_evidence(evidence.id)
+            if not extractions:
+                try:
+                    extractions = [await evidence_service.analyze_evidence(evidence.id)]
+                except Exception:
+                    # The decision engine will escalate when required evidence is unavailable.
+                    continue
+            for extraction in extractions:
+                try:
+                    facts.update(json.loads(extraction.structured_data_json))
+                except (TypeError, json.JSONDecodeError):
+                    continue
+
+        content = f"{case.title} {case.description}"
+        facts.setdefault("student_identifier", case.student_identifier)
+        self._add_text_fallback_facts(facts, content)
+        if case.case_type == "CROSS_DEPARTMENT_DISPUTE" or any(term in content.lower() for term in ("tranh chấp", "đùn đẩy")):
+            facts["is_cross_department"] = True
+            facts["disputed_departments"] = ["Phòng Đào tạo (Academic Affairs)", "Phòng Kế toán (Finance)"]
+        return facts
+
+    @staticmethod
+    def _add_text_fallback_facts(facts: dict[str, Any], content: str) -> None:
+        if "amount" not in facts:
+            match = re.search(r'(\d{1,3}(?:[.,]\d{3})+|\d{6,9})\s*(?:vnđ|vnd|đ)?', content, re.IGNORECASE)
+            if match:
+                amount = float(match.group(1).replace('.', '').replace(',', ''))
+                if amount > 1_000:
+                    facts["amount"] = amount
+                    facts.setdefault("confidence", 0.95)
+        if "transaction_id" not in facts:
+            match = re.search(r'([A-Z]{2,5}-\d{4,10})', content)
+            if match:
+                facts["transaction_id"] = match.group(1)

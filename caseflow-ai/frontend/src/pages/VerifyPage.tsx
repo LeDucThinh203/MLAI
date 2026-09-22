@@ -3,6 +3,7 @@ import { runVerificationSuite } from '../api/verify';
 import { VerificationRun } from '../types';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { getErrorMessage } from '../utils/errors';
 import { PlayCircle, CheckCircle2, XCircle, Clock, ShieldCheck } from 'lucide-react';
 
 export const VerifyPage: React.FC = () => {
@@ -16,8 +17,8 @@ export const VerifyPage: React.FC = () => {
     try {
       const result = await runVerificationSuite();
       setRunResult(result);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Lỗi khi chạy bộ kiểm thử.');
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, 'Lỗi khi chạy bộ kiểm thử.'));
     } finally {
       setRunning(false);
     }

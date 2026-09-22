@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Case } from '../types';
+import { AnalysisResult, Case, CaseDetail, SeedCasesResult, WorkflowActionResult } from '../types';
 
 export interface CreateCaseDto {
   title: string;
@@ -15,8 +15,8 @@ export const getCases = async (status?: string): Promise<Case[]> => {
   return response.data;
 };
 
-export const getCaseById = async (id: string): Promise<Case> => {
-  const response = await apiClient.get<Case>(`/cases/${id}`);
+export const getCaseById = async (id: string): Promise<CaseDetail> => {
+  const response = await apiClient.get<CaseDetail>(`/cases/${id}`);
   return response.data;
 };
 
@@ -25,23 +25,22 @@ export const createCase = async (data: CreateCaseDto): Promise<Case> => {
   return response.data;
 };
 
-export const analyzeCase = async (id: string): Promise<any> => {
-  const response = await apiClient.post(`/cases/${id}/analyze`);
+export const analyzeCase = async (id: string): Promise<AnalysisResult> => {
+  const response = await apiClient.post<AnalysisResult>(`/cases/${id}/analyze`);
   return response.data;
 };
 
-export const stopCaseWorkflow = async (id: string, reason: string): Promise<any> => {
-  const response = await apiClient.post(`/cases/${id}/stop`, null, { params: { reason } });
+export const stopCaseWorkflow = async (id: string, reason: string): Promise<WorkflowActionResult> => {
+  const response = await apiClient.post<WorkflowActionResult>(`/cases/${id}/stop`, null, { params: { reason } });
   return response.data;
 };
 
-export const resumeCaseWorkflow = async (id: string, reason: string): Promise<any> => {
-  const response = await apiClient.post(`/cases/${id}/resume`, null, { params: { reason } });
+export const resumeCaseWorkflow = async (id: string, reason: string): Promise<WorkflowActionResult> => {
+  const response = await apiClient.post<WorkflowActionResult>(`/cases/${id}/resume`, null, { params: { reason } });
   return response.data;
 };
 
-export const seed5Escalations = async (): Promise<any> => {
-  const response = await apiClient.post('/cases/seed-5-escalations');
+export const seed5Escalations = async (): Promise<SeedCasesResult> => {
+  const response = await apiClient.post<SeedCasesResult>('/cases/seed-5-escalations');
   return response.data;
 };
-
