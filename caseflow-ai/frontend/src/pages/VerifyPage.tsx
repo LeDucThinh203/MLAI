@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { runVerificationSuite } from '../api/verify';
+import { runCoreVerification, runEscalationChallenge, runVerificationSuite } from '../api/verify';
 import { VerificationRun } from '../types';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { StatusBadge } from '../components/common/StatusBadge';
@@ -11,11 +11,11 @@ export const VerifyPage: React.FC = () => {
   const [runResult, setRunResult] = useState<VerificationRun | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleRunTests = async () => {
+  const handleRunTests = async (mode: 'core' | 'challenge' | 'full') => {
     setRunning(true);
     setError(null);
     try {
-      const result = await runVerificationSuite();
+      const result = mode === 'core' ? await runCoreVerification() : mode === 'challenge' ? await runEscalationChallenge() : await runVerificationSuite();
       setRunResult(result);
     } catch (error: unknown) {
       setError(getErrorMessage(error, 'Lỗi khi chạy bộ kiểm thử.'));
@@ -26,25 +26,21 @@ export const VerifyPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Header & Single Big Run Button */}
+      {/* Official judge verification modes */}
       <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center max-w-3xl mx-auto space-y-4">
         <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900">
-          Hệ Thống Kiểm Thử Chuẩn Hóa (Verify Harness)
+          CASEFLOW AI — JUDGE VERIFICATION
         </h1>
         <p className="text-sm text-slate-500 max-w-xl mx-auto">
-          Chạy toàn bộ các test case độc lập qua đường ống logic thực tế của Deterministic Decision Engine để kiểm tra tính chính xác và an toàn.
+          Mỗi bài chạy trực tiếp qua Deterministic Decision Engine và lưu kết quả có dấu thời gian.
         </p>
 
-        {/* Big CTA Button */}
-        <div className="pt-2">
-          <button
-            onClick={handleRunTests}
-            disabled={running}
-            className="inline-flex items-center gap-3 px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold text-lg rounded-xl shadow-lg transition transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            <PlayCircle className="w-6 h-6" />
-            {running ? 'ĐANG CHẠY BỘ KIỂM THỬ...' : 'RUN ALL TESTS (CHẠY TOÀN BỘ KIỂM THỬ)'}
-          </button>
+        <div className="grid gap-3 pt-2 md:grid-cols-3 text-left">
+          {[
+            ['core', 'RUN CORE VERIFY — 4 CASES', 'Kiểm tra yêu cầu Sprint 1'],
+            ['challenge', 'RUN ESCALATION CHALLENGE — 5 CASES', 'Challenge A: 3 AUTO_RESOLVE + 2 ESCALATE'],
+            ['full', 'RUN FULL REGRESSION — 20 CASES', 'Dành cho kiểm thử kỹ thuật'],
+          ].map(([mode, label, description]) => <button key={mode} onClick={() => handleRunTests(mode as 'core' | 'challenge' | 'full')} disabled={running} className="rounded-xl border border-slate-200 p-4 hover:border-brand-500 hover:bg-brand-50 disabled:opacity-50"><span className="flex items-center gap-2 font-bold text-slate-900"><PlayCircle className="w-5 h-5 text-brand-600" />{label}</span><span className="mt-2 block text-xs text-slate-500">{description}</span></button>)}
         </div>
 
         {error && (
@@ -64,6 +60,11 @@ export const VerifyPage: React.FC = () => {
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <span className="text-xs font-bold text-slate-400 uppercase">Mã lượt chạy</span>
               <p className="text-lg font-mono font-bold text-slate-800 mt-1">{runResult.run_code}</p>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm md:col-span-2">
+              <span className="text-xs font-bold text-slate-400 uppercase">Run started / Completed</span>
+              <p className="mt-1 text-sm font-semibold text-slate-800">{new Date(runResult.created_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} GMT+7</p>
+              <p className="text-sm text-slate-600">{runResult.completed_at ? new Date(runResult.completed_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) + ' GMT+7' : 'Đang chạy'}</p>
             </div>
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <span className="text-xs font-bold text-slate-400 uppercase">Tổng số Cases</span>

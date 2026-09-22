@@ -6,6 +6,12 @@ export const runVerificationSuite = async (): Promise<VerificationRun> => {
   return response.data;
 };
 
+export const runCoreVerification = async (): Promise<VerificationRun> =>
+  (await apiClient.post<VerificationRun>('/verify/core')).data;
+
+export const runEscalationChallenge = async (): Promise<VerificationRun> =>
+  (await apiClient.post<VerificationRun>('/verify/escalation-challenge')).data;
+
 export const getVerificationRuns = async (): Promise<VerificationRun[]> => {
   const response = await apiClient.get<VerificationRun[]>('/verify/runs');
   return response.data;

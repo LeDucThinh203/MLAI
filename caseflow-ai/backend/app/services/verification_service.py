@@ -17,6 +17,9 @@ VERIFICATION_FILES = (
     "independent_cases.json",
 )
 
+CORE_FILES = ("verify_cases.json",)
+CHALLENGE_FILES = ("challenge_a_cases.json",)
+
 class VerificationService:
     """
     Test and verification harness service. Runs test cases through actual
@@ -29,8 +32,17 @@ class VerificationService:
         self.decision_engine = DecisionEngine()
 
     async def run_all_tests(self, test_data_path: Path = TEST_DATA_DIR) -> VerificationRun:
+        return await self._run_suite("FULL", VERIFICATION_FILES, test_data_path)
+
+    async def run_core_tests(self, test_data_path: Path = TEST_DATA_DIR) -> VerificationRun:
+        return await self._run_suite("CORE", CORE_FILES, test_data_path, limit=4)
+
+    async def run_escalation_challenge(self, test_data_path: Path = TEST_DATA_DIR) -> VerificationRun:
+        return await self._run_suite("CHALLENGE-A", CHALLENGE_FILES, test_data_path)
+
+    async def _run_suite(self, suite: str, files: tuple[str, ...], test_data_path: Path, limit: int | None = None) -> VerificationRun:
         start_time = time.time()
-        run_code = f"VRUN-{time.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
+        run_code = f"{suite}-VRUN-{time.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
 
         run = VerificationRun(
             run_code=run_code,
@@ -42,7 +54,9 @@ class VerificationService:
         )
         self.repo.create_run(run)
 
-        all_test_cases = self._load_test_cases(test_data_path)
+        all_test_cases = self._load_test_cases(test_data_path, files)
+        if limit is not None:
+            all_test_cases = all_test_cases[:limit]
 
         total = len(all_test_cases)
         passed = 0
@@ -104,6 +118,8 @@ class VerificationService:
         run.passed_cases = passed
         run.failed_cases = failed
         run.duration_ms = total_duration
+        from datetime import datetime, timezone
+        run.completed_at = datetime.now(timezone.utc)
         self.repo.update_run(run)
 
         return run
@@ -115,10 +131,10 @@ class VerificationService:
         return self.repo.get_run_by_id(run_id)
 
     @staticmethod
-    def _load_test_cases(directory: Path) -> list[dict[str, Any]]:
+    def _load_test_cases(directory: Path, file_names: tuple[str, ...] = VERIFICATION_FILES) -> list[dict[str, Any]]:
         """Load every verification fixture with an actionable malformed-file error."""
         cases: list[dict[str, Any]] = []
-        for name in VERIFICATION_FILES:
+        for name in file_names:
             path = get_test_data_file(name) if directory == TEST_DATA_DIR else directory / name
             if not path.is_file():
                 continue

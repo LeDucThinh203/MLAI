@@ -82,14 +82,8 @@ async def seed_5_escalations(db: Session = Depends(get_db)):
     ev_service = EvidenceService(db)
     analysis_service = CaseAnalysisService(db)
 
-    # Robust search for evidence directory
-    search_dirs = [
-        os.path.join(os.getcwd(), "storage", "evidence"),
-        os.path.join(os.getcwd(), "..", "storage", "evidence"),
-        r"E:\NamHoc_2023-2024\MLAI\Team1\caseflow-ai\storage\evidence",
-        r"E:\NamHoc_2023-2024\MLAI\Team1\caseflow-ai\backend\storage\evidence",
-    ]
-    storage_ev_dir = next((d for d in search_dirs if os.path.exists(d)), search_dirs[0])
+    from app.core.paths import EVIDENCE_DIR
+    storage_ev_dir = str(EVIDENCE_DIR)
 
     test_definitions = [
         {
@@ -152,13 +146,6 @@ async def seed_5_escalations(db: Session = Depends(get_db)):
         ))
 
         file_path = os.path.join(storage_ev_dir, td["file"])
-        if not os.path.exists(file_path):
-            for d in search_dirs:
-                cand = os.path.join(d, td["file"])
-                if os.path.exists(cand):
-                    file_path = cand
-                    break
-
         if os.path.exists(file_path):
             with open(file_path, "rb") as f:
                 f_bytes = f.read()

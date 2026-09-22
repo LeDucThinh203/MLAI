@@ -14,6 +14,14 @@ async def run_verification_suite(db: Session = Depends(get_db)):
     run = await service.run_all_tests()
     return run
 
+@router.post("/core", response_model=VerificationRunResponse)
+async def run_core_verification(db: Session = Depends(get_db)):
+    return await VerificationService(db).run_core_tests()
+
+@router.post("/escalation-challenge", response_model=VerificationRunResponse)
+async def run_escalation_challenge(db: Session = Depends(get_db)):
+    return await VerificationService(db).run_escalation_challenge()
+
 @router.get("/runs", response_model=List[VerificationRunResponse])
 def list_verification_runs(db: Session = Depends(get_db)):
     service = VerificationService(db)
