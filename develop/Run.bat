@@ -37,8 +37,8 @@ if not exist "frontend\node_modules\" (
 
 echo.
 echo -------------------------------------------------------------------------------
-echo [*] Đang khởi chạy Máy chủ Backend API (Port 3001)...
-start "CaseFlow AI - Backend API [Port 3001]" cmd /k "title CaseFlow Backend && node backend/server.js"
+echo [*] Đang khởi chạy Máy chủ Python FastAPI Backend API (Port 3001)...
+start "CaseFlow AI - Python Backend API [Port 3001]" cmd /k "title CaseFlow Python Backend && python -m uvicorn backend.server:app --port 3001 --host 0.0.0.0"
 
 echo [*] Đang khởi chạy Ứng dụng Frontend React Vite (Port 5173)...
 start "CaseFlow AI - Frontend Web [Port 5173]" cmd /k "title CaseFlow Frontend && cd frontend && npm run dev"
