@@ -32,19 +32,19 @@
 ### 1. Khởi chạy Backend (Port 3001)
 ```powershell
 npm start
-# Hoặc: node Part1_JWT_Auth/backend/server.js
+# Hoặc: node backend/server.js
 ```
 
 ### 2. Khởi chạy Frontend (Port 5173)
 ```powershell
-cd Part1_JWT_Auth/frontend
+cd frontend
 npm run dev
 ```
 
-### 3. Chạy Toàn Bộ Bộ Kiểm Thử An Toàn & Phân Quyền (33 Assertions)
+### 3. Chạy Toàn Bộ Bộ Kiểm Thử An Toàn & Phân Quyền (40 Assertions)
 ```powershell
 npm test
-# Hoặc: node test/security_and_system.test.js
+# Hoặc: node test/run_security_suite.js
 ```
 
 👉 Mở trình duyệt truy cập: **`http://localhost:5173`**
@@ -66,21 +66,16 @@ npm test
 
 ```text
 Gehihi/
-├── Part1_JWT_Auth/
-│   ├── backend/
-│   │   ├── auth.js            # Router Đăng ký, Đăng nhập Bcrypt, 2FA TOTP, Refresh Token Rotation
-│   │   ├── server.js          # Express Server chính, stream minh chứng có xác thực
-│   │   └── package.json
-│   └── frontend/
-│       ├── src/
-│       │   ├── App.jsx        # Single Page Application React (Student, Reviewer, Admin, Verify)
-│       │   ├── index.css      # Dark SaaS Theme
-│       │   └── main.jsx
-│       └── package.json
-├── Part2_Case_Submission/     # Module nộp đơn, thẩm định, bình luận, điều phối phòng ban
-│   └── backend/case.js
-├── Part3_Audit_Trail/         # Module nhật ký kiểm toán (cô lập quyền SV & Cán bộ)
-│   └── backend/audit.js
+├── backend/
+│   └── server.js              # Máy chủ Backend duy nhất hợp nhất Parts 1, 2, 3 (JWT, 2FA, Case, AI, Audit)
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx            # Ứng dụng React SPA duy nhất hợp nhất toàn bộ giao diện Parts 1, 2, 3
+│   │   ├── index.css          # Dark SaaS Theme
+│   │   └── main.jsx
+│   ├── index.html
+│   ├── vite.config.js
+│   └── package.json
 ├── shared/
 │   ├── database.js            # SQLite schema migrations, index & connection
 │   ├── db.js                  # Data Access Layer duy nhất (Single Source of Truth)
@@ -88,13 +83,17 @@ Gehihi/
 │   ├── uploadService.js       # Kiểm tra Magic Bytes, nén Sharp WebP & lưu trữ an toàn
 │   ├── aiService.js           # AI Engine kết nối Gemini Multimodal OCR
 │   ├── ocrService.js          # Trích xuất thực thể văn bản
-│   ├── reportService.js       # Sinh file CSV UTF-8 BOM & Bản in HTML/PDF chuẩn mẫu
-│   └── caseflow.sqlite        # Tệp cơ sở dữ liệu SQLite thực tế
+│   └── reportService.js       # Xuất báo cáo CSV & HTML in ấn
 ├── test/
-│   └── security_and_system.test.js # Bộ kiểm thử bảo mật tự động 28 assertions
+│   ├── run_security_suite.js  # Runner tự động khởi chạy môi trường cô lập
+│   └── security_and_system.test.js # Bộ 40 test assertions kiểm thử an toàn
+├── Run.bat                    # Script khởi động 1-Click tự động mở web
 ├── RUNBOOK.md                 # Hướng dẫn vận hành & kiểm thử chi tiết
 ├── SYSTEM_OVERVIEW.md         # Giới thiệu kiến trúc & sơ đồ Mermaid
+├── DEPLOY_CLOUDFLARE_RENDER.md # Hướng dẫn deploy Cloudflare Pages + Render
 ├── docker-compose.yml         # Cấu hình container Docker
 ├── Dockerfile                 # Backend container definition
+├── render.yaml                # Cấu hình deploy tự động Render
+├── package.json
 └── README.md
 ```
