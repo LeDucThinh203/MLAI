@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  caseflow-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: caseflow-ai-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET}
+      - REFRESH_SECRET=${REFRESH_SECRET}
+      - SIGNATURE_KEY=${SIGNATURE_KEY}
+      - AI_MODE=${AI_MODE:-mock}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DATA_DIR=/app/data
+    volumes:
+      - caseflow_persistent_data:/app/data
+    networks:
+      - caseflow-network
+
+  caseflow-frontend:
+    build:
+      context: ./Part1_JWT_Auth/frontend
+      dockerfile: Dockerfile
+    container_name: caseflow-ai-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001/api}
+    depends_on:
+      - caseflow-backend
+    networks:
+      - caseflow-network
+
+volumes:
+  caseflow_persistent_data:
+    name: caseflow_persistent_data
+
+networks:
+  caseflow-network:
+    driver: bridge

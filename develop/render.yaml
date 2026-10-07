@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: caseflow-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node Part1_JWT_Auth/backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_SECRET
+        generateValue: true
+      - key: SIGNATURE_KEY
+        generateValue: true
+      - key: AI_MODE
+        value: mock
