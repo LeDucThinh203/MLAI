@@ -11,7 +11,7 @@ async def health_check():
     db_name = f"Microsoft SQL Server 2025 ({DB_SERVER} -> [{DB_NAME}])" if ACTIVE_ENGINE == 'mssql' else "SQLite Single Source of Truth"
     return {
         'status': 'healthy',
-        'server': 'CaseFlow AI Python Enterprise Engine',
+        'server': 'EduAssistant Python Enterprise Engine',
         'version': '3.0.0',
         'timestamp': datetime.utcnow().isoformat() + 'Z',
         'modules': {

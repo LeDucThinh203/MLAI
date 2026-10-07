@@ -1,7 +1,7 @@
 {
-  "name": "caseflow-ai",
+  "name": "eduassistant",
   "version": "3.0.0",
-  "description": "Nền tảng thẩm định hồ sơ sinh viên thông minh kết hợp AI Multimodal OCR (Gemini), Rule Engine, SQLite và Quy trình Ký số điện tử.",
+  "description": "EduAssistant - Nền tảng thẩm định hồ sơ sinh viên thông minh kết hợp AI Multimodal OCR (Gemini), Rule Engine, Microsoft SQL Server 2025 và Quy trình Ký số điện tử.",
   "main": "backend/server.py",
   "scripts": {
     "start": "python backend/server.py",

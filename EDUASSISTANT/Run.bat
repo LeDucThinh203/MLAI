@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
-title CaseFlow AI Launcher
+title EduAssistant Launcher
 
 echo ========================================================
-echo   CASEFLOW AI - Enterprise Platform
+echo   EDUASSISTANT - Enterprise Platform
 echo ========================================================
 echo.
 
@@ -33,10 +33,10 @@ if not exist "%~dp0frontend\node_modules\" (
 
 echo.
 echo [*] Starting Python Backend Server on port 3001...
-start "CaseFlow Backend (Python)" cmd /k "title CaseFlow Backend [3001] && cd /d "%~dp0backend" && python server.py"
+start "EduAssistant Backend (Python)" cmd /k "title EduAssistant Backend [3001] && cd /d "%~dp0backend" && python server.py"
 
 echo [*] Starting Frontend Server on port 5173...
-start "CaseFlow Frontend" cmd /k "title CaseFlow Frontend [5173] && cd /d "%~dp0frontend" && npm run dev"
+start "EduAssistant Frontend" cmd /k "title EduAssistant Frontend [5173] && cd /d "%~dp0frontend" && npm run dev"
 
 echo.
 echo [*] Waiting 3 seconds for services to initialize...
@@ -47,7 +47,7 @@ start http://localhost:5173
 
 echo.
 echo ========================================================
-echo   CASEFLOW AI IS RUNNING:
+echo   EDUASSISTANT IS RUNNING:
 echo   - Frontend: http://localhost:5173
 echo   - Backend:  http://localhost:3001/api (Python FastAPI)
 echo   - Docs:     http://localhost:3001/docs

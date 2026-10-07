@@ -1,17 +1,20 @@
 version: '3.8'
 
 services:
-  caseflow-backend:
+  eduassistant-backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: caseflow-ai-backend
+    container_name: eduassistant-backend
     restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3001
+      - DB_TYPE=${DB_TYPE:-mssql}
+      - DB_SERVER=${DB_SERVER:-THINH\SQL2025}
+      - DB_NAME=${DB_NAME:-CaseFlowAI}
       - JWT_SECRET=${JWT_SECRET}
       - REFRESH_SECRET=${REFRESH_SECRET}
       - SIGNATURE_KEY=${SIGNATURE_KEY}
@@ -19,29 +22,29 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - DATA_DIR=/app/data
     volumes:
-      - caseflow_persistent_data:/app/data
+      - eduassistant_persistent_data:/app/data
     networks:
-      - caseflow-network
+      - eduassistant-network
 
-  caseflow-frontend:
+  eduassistant-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: caseflow-ai-frontend
+    container_name: eduassistant-frontend
     restart: unless-stopped
     ports:
       - "5173:5173"
     environment:
       - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001/api}
     depends_on:
-      - caseflow-backend
+      - eduassistant-backend
     networks:
-      - caseflow-network
+      - eduassistant-network
 
 volumes:
-  caseflow_persistent_data:
-    name: caseflow_persistent_data
+  eduassistant_persistent_data:
+    name: eduassistant_persistent_data
 
 networks:
-  caseflow-network:
+  eduassistant-network:
     driver: bridge

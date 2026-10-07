@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ========================================================
-echo   CASEFLOW AI - Starting Backend and Frontend
+echo   EDUASSISTANT - Starting Backend and Frontend
 echo ========================================================
 
 :: 1. Check frontend dependencies
@@ -16,11 +16,11 @@ if not exist "%~dp0frontend\node_modules\" (
 :: 2. Launch Python Backend
 echo.
 echo [1/2] Launching Python Backend Server on port 3001...
-start "CaseFlow Backend (Python)" cmd /k "title CaseFlow Backend [3001] && cd /d "%~dp0backend" && python server.py"
+start "EduAssistant Backend (Python)" cmd /k "title EduAssistant Backend [3001] && cd /d "%~dp0backend" && python server.py"
 
 :: 3. Launch Frontend
 echo [2/2] Launching Frontend on port 5173...
-start "CaseFlow Frontend" cmd /k "title CaseFlow Frontend [5173] && cd /d "%~dp0frontend" && npm run dev"
+start "EduAssistant Frontend" cmd /k "title EduAssistant Frontend [5173] && cd /d "%~dp0frontend" && npm run dev"
 
 echo.
 echo ========================================================

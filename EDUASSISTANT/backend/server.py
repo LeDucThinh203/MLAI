@@ -1,11 +1,11 @@
 """
 ============================================================================
-CASEFLOW AI - UNIFIED ENTERPRISE BACKEND SERVER ENGINE (PYTHON FASTAPI)
+EDUASSISTANT - UNIFIED ENTERPRISE BACKEND SERVER ENGINE (PYTHON FASTAPI)
 ============================================================================
 Máy chủ Backend Python duy nhất hợp nhất toàn bộ 3 phân hệ nghiệp vụ:
   🔐 PHÂN HỆ 1: AUTHENTICATION & ACCESS CONTROL (JWT, Bcrypt, 2FA TOTP, RBAC)
   📝 PHÂN HỆ 2: CASE SUBMISSION & MULTIMODAL AI OCR WORKFLOW (Rule Engine)
-  🛡️ PHÂN HỆ 3: AUDIT TRAIL & SECURITY MONITORING (IDOR Guard, SQLite)
+  🛡️ PHÂN HỆ 3: AUDIT TRAIL & SECURITY MONITORING (IDOR Guard, SQL Server)
 ============================================================================
 """
 
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     db_status = f"SQL Server 2025 ({DB_SERVER} -> [{DB_NAME}])" if ACTIVE_ENGINE == 'mssql' else "SQLite Engine"
     print(f"""
 ╔══════════════════════════════════════════════════════════════════════════╗
-║             🚀 CASEFLOW AI - ENTERPRISE PYTHON ENGINE 3.0                ║
+║             🚀 EDUASSISTANT - ENTERPRISE PYTHON ENGINE 3.0               ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║  • Database Engine: {db_status:<50} ║
 ║  • Port: {PORT:<59} ║

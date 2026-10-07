@@ -1,3 +1,3 @@
 @echo off
-cd /d "%~dp0caseflow-ai"
+cd /d "%~dp0EDUASSISTANT"
 call Run.bat

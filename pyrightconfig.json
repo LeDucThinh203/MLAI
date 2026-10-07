@@ -1,12 +1,13 @@
 {
   "include": [
-    "caseflow-ai/backend",
-    "caseflow-ai/scripts",
-    "caseflow-ai/test"
+    "EDUASSISTANT/backend",
+    "EDUASSISTANT/scripts",
+    "EDUASSISTANT/test"
   ],
   "extraPaths": [
-    "caseflow-ai/backend",
-    "caseflow-ai"
+    "EDUASSISTANT/backend",
+    "EDUASSISTANT/backend/app",
+    "EDUASSISTANT"
   ],
   "typeCheckingMode": "standard",
   "reportOptionalSubscript": false,

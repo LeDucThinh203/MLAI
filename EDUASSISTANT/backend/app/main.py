@@ -26,7 +26,7 @@ from app.routers import (
 )
 
 app = FastAPI(
-    title="CaseFlow AI Enterprise Backend Engine",
+    title="EduAssistant Enterprise Backend Engine",
     description="Hệ thống Thẩm định Học vụ Tự động Đa phân hệ",
     version="3.0.0"
 )
