@@ -1,44 +1,70 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
+import os
+import sys
+import time
+from datetime import datetime
+
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
-from app.core.logging import logger
-from app.api.router import api_router
-from app.api.routes.health import router as health_router
+from fastapi.staticfiles import StaticFiles
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger.info("CaseFlow AI Backend starting up...")
-    yield
-    logger.info("CaseFlow AI Backend shutting down...")
-
-app = FastAPI(
-    title="CaseFlow AI - The Escalation Referee",
-    description="Automate the routine. Escalate the uncertain. Keep humans accountable.",
-    version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    lifespan=lifespan,
+from app.config import PORT
+from app.core.responses import custom_http_exception_handler
+from app.routers import (
+    auth,
+    cases,
+    evidence,
+    audits,
+    admin,
+    ai,
+    notifications,
+    health
 )
 
-# CORS Middleware
-origins = [
-    settings.FRONTEND_URL,
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-]
+app = FastAPI(
+    title="CaseFlow AI Enterprise Backend Engine",
+    description="Hệ thống Thẩm định Học vụ Tự động Đa phân hệ",
+    version="3.0.0"
+)
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Direct health endpoint at root /health
-app.include_router(health_router)
+# Exception handlers
+app.add_exception_handler(HTTPException, custom_http_exception_handler)
 
-# Mount all business routes under /api
-app.include_router(api_router, prefix="/api")
+
+# Request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration_ms = round((time.time() - start_time) * 1000)
+    print(f"[{datetime.now().strftime('%I:%M:%S %p')}] {request.method} {request.url.path} -> {response.status_code} ({duration_ms}ms)")
+    return response
+
+
+# Include modular routers
+app.include_router(auth.router)
+app.include_router(cases.router)
+app.include_router(evidence.router)
+app.include_router(audits.router)
+app.include_router(admin.router)
+app.include_router(ai.router)
+app.include_router(notifications.router)
+app.include_router(health.router)
+
+# Serve frontend build artifacts if present
+frontend_dist_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'dist')
+if os.path.exists(frontend_dist_dir):
+    app.mount("/", StaticFiles(directory=frontend_dist_dir, html=True), name="frontend")

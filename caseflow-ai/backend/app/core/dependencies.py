@@ -1,0 +1,73 @@
+from fastapi import Request, Depends, HTTPException, status
+import jwt
+from app.config import JWT_SECRET
+from app.db.db import db_service
+
+
+async def get_current_user(request: Request) -> dict:
+    auth_header = request.headers.get('Authorization') or request.headers.get('x-access-token')
+    raw_token = None
+    if auth_header:
+        raw_token = auth_header[7:] if auth_header.startswith('Bearer ') else auth_header
+    elif 'token' in request.query_params:
+        raw_token = request.query_params['token']
+
+    if not raw_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={'success': False, 'message': 'Thiếu Token trong Authorization header hoặc query param token.', 'error': 'UNAUTHORIZED'}
+        )
+
+    try:
+        decoded = jwt.decode(raw_token, JWT_SECRET, algorithms=['HS256'])
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={'success': False, 'message': 'Token không hợp lệ hoặc đã hết hạn.', 'error': 'INVALID_TOKEN'}
+        )
+
+    user = await db_service.get_user_by_id(decoded.get('id'))
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={'success': False, 'message': 'Tài khoản của phiên đăng nhập không còn tồn tại.', 'error': 'INVALID_USER'}
+        )
+
+    user_info = {
+        **decoded,
+        'role': user['role'],
+        'mustChangePassword': bool(user.get('mustChangePassword')),
+        'fullName': user['fullName'],
+        'username': user['username'],
+        'studentCode': user.get('studentCode'),
+        'department': user.get('department'),
+        'avatar': user.get('avatar')
+    }
+
+    allowed_paths = ['/auth/change-password', '/auth/me', '/auth/logout', '/api/auth/change-password', '/api/auth/me', '/api/auth/logout']
+    curr_path = request.url.path
+    if user_info['mustChangePassword'] and not any(curr_path.endswith(p) or p in curr_path for p in allowed_paths):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={'success': False, 'message': 'Tài khoản của bạn đang có yêu cầu bắt buộc đổi mật khẩu trước khi thực hiện các tác vụ khác.', 'error': 'PASSWORD_CHANGE_REQUIRED'}
+        )
+
+    return user_info
+
+
+def require_roles(*allowed_roles: str):
+    async def role_checker(current_user: dict = Depends(get_current_user)):
+        if current_user.get('role') not in allowed_roles:
+            await db_service.log_audit({
+                'action': 'ACCESS_FORBIDDEN_ATTEMPT',
+                'actor': {'id': current_user.get('id'), 'username': current_user.get('username'), 'role': current_user.get('role'), 'name': current_user.get('fullName')},
+                'input': {'requiredRoles': list(allowed_roles)},
+                'result': 'BLOCKED',
+                'reason': f"User có role {current_user.get('role')} cố gắng truy cập endpoint yêu cầu [{', '.join(allowed_roles)}]"
+            })
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={'success': False, 'message': f"Truy cập bị từ chối! Yêu cầu quyền: [{', '.join(allowed_roles)}].", 'error': 'FORBIDDEN'}
+            )
+        return current_user
+    return role_checker

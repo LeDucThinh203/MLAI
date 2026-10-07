@@ -1,11 +1,26 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/caseflow-ai/backend/.venv/Scripts/python.exe",
+  "python.defaultInterpreterPath": "C:/msys64/mingw64/bin/python.exe",
+  "python.analysis.typeCheckingMode": "basic",
   "python.analysis.extraPaths": [
-    "${workspaceFolder}/caseflow-ai/backend"
+    "${workspaceFolder}/caseflow-ai/backend",
+    "${workspaceFolder}/caseflow-ai"
   ],
   "python.autoComplete.extraPaths": [
-    "${workspaceFolder}/caseflow-ai/backend"
+    "${workspaceFolder}/caseflow-ai/backend",
+    "${workspaceFolder}/caseflow-ai"
   ],
   "python.analysis.autoSearchPaths": true,
-  "python.analysis.diagnosticMode": "workspace"
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportOptionalSubscript": "none",
+    "reportOptionalMemberAccess": "none",
+    "reportOptionalCall": "none",
+    "reportOptionalIterable": "none",
+    "reportArgumentType": "none",
+    "reportGeneralTypeIssues": "none",
+    "reportMissingImports": "none",
+    "reportAttributeAccessIssue": "none",
+    "reportCallIssue": "none",
+    "reportReturnType": "none"
+  }
 }

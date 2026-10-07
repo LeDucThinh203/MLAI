@@ -59,5 +59,11 @@ backend/storage/evidence/*
 .idea/
 *.swp
 *.swo
+
+# SQLite Databases & Journals
+*.sqlite
+*.sqlite-journal
+shared/*.sqlite
+shared/*.sqlite-journal
 .DS_Store
 Thumbs.db

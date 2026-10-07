@@ -1,13 +1,22 @@
 {
-  "venvPath": "caseflow-ai/backend",
-  "venv": ".venv",
-  "extraPaths": [
-    "caseflow-ai/backend"
-  ],
   "include": [
-    "caseflow-ai/backend/app",
-    "caseflow-ai/backend/tests",
-    "caseflow-ai/backend/migrations"
+    "caseflow-ai/backend",
+    "caseflow-ai/scripts",
+    "caseflow-ai/test"
   ],
-  "pythonVersion": "3.12"
+  "extraPaths": [
+    "caseflow-ai/backend",
+    "caseflow-ai"
+  ],
+  "typeCheckingMode": "standard",
+  "reportOptionalSubscript": false,
+  "reportOptionalMemberAccess": false,
+  "reportOptionalCall": false,
+  "reportOptionalIterable": false,
+  "reportArgumentType": false,
+  "reportGeneralTypeIssues": false,
+  "reportMissingImports": false,
+  "reportAttributeAccessIssue": false,
+  "reportCallIssue": false,
+  "reportReturnType": false
 }

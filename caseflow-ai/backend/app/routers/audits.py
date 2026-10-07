@@ -1,0 +1,55 @@
+from datetime import datetime
+from typing import Optional
+from fastapi import APIRouter, Depends, Response
+
+from app.db.db import db_service
+from app.services.report_service import generate_audits_csv
+from app.core.responses import api_response
+from app.core.dependencies import get_current_user, require_roles
+
+router = APIRouter(tags=["Audits"])
+
+
+@router.get("/api/audits")
+async def get_audits(
+    action: Optional[str] = None,
+    caseId: Optional[str] = None,
+    actorRole: Optional[str] = None,
+    date: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    filter_dict = {}
+
+    if (user.get('role') or '').upper() == 'STUDENT':
+        student_cases = await db_service.get_cases({'studentId': user['id']})
+        owned_case_ids = [c['id'] for c in student_cases]
+        filter_dict['studentVisibleFor'] = {
+            'studentId': user['id'],
+            'caseIds': owned_case_ids
+        }
+    else:
+        if action and action != 'ALL':
+            filter_dict['action'] = action
+        if caseId:
+            filter_dict['caseId'] = caseId
+        if actorRole and actorRole != 'ALL':
+            filter_dict['actorRole'] = actorRole
+
+    if date:
+        filter_dict['date'] = date
+
+    audits = await db_service.get_audits(filter_dict)
+    return api_response(200, True, 'Lấy danh sách nhật ký kiểm toán thành công.', {'audits': audits, 'total': len(audits)})
+
+
+@router.get("/api/audits/export-csv")
+@router.get("/api/audits/export")
+async def export_audits_csv(user: dict = Depends(require_roles('REVIEWER', 'ADMIN'))):
+    audits = await db_service.get_audits({})
+    csv_str = generate_audits_csv(audits)
+    filename = f"CaseFlow_Audit_Trail_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        content=csv_str.encode('utf-8'),
+        media_type='text/csv; charset=utf-8',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )

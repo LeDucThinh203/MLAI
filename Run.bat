@@ -1,3 +1,3 @@
 @echo off
 cd /d "%~dp0caseflow-ai"
-call start_all.bat
+call Run.bat

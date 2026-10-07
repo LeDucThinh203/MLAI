@@ -1,18 +1,33 @@
 @echo off
+setlocal enabledelayedexpansion
+
 echo ========================================================
 echo   CASEFLOW AI - Starting Backend and Frontend
 echo ========================================================
 
-echo [1/2] Launching Backend (FastAPI + SQL Server)...
-start "CaseFlow Backend" cmd /k "cd /d %~dp0backend && .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+:: 1. Check frontend dependencies
+if not exist "%~dp0frontend\node_modules\" (
+    echo [*] Installing frontend dependencies...
+    cd /d "%~dp0frontend"
+    call npm install
+    cd /d "%~dp0"
+)
 
-echo [2/2] Launching Frontend (React + Vite)...
-start "CaseFlow Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
+:: 2. Launch Python Backend
+echo.
+echo [1/2] Launching Python Backend Server on port 3001...
+start "CaseFlow Backend (Python)" cmd /k "title CaseFlow Backend [3001] && cd /d "%~dp0backend" && python server.py"
+
+:: 3. Launch Frontend
+echo [2/2] Launching Frontend on port 5173...
+start "CaseFlow Frontend" cmd /k "title CaseFlow Frontend [5173] && cd /d "%~dp0frontend" && npm run dev"
 
 echo.
 echo ========================================================
-echo   HE THONG DANG KHOI CHAY:
-echo   - Backend API Docs: http://localhost:8000/docs
+echo   SYSTEM IS STARTING:
 echo   - Frontend Portal:  http://localhost:5173
+echo   - Backend API:      http://localhost:3001/api (Python FastAPI)
+echo   - Swagger Docs:     http://localhost:3001/docs
+echo   - Database:         Microsoft SQL Server 2025 (THINH\SQL2025 / CaseFlowAI)
 echo ========================================================
 echo.

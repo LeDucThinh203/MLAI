@@ -72,10 +72,9 @@ caseflow-ai/
 │   └── app/                   # Máy chủ Backend Python FastAPI mở rộng (SQL Server / SQLAlchemy)
 ├── frontend/
 │   ├── src/
-│   │   ├── UnifiedPortal.jsx  # Cổng thẩm định doanh nghiệp hợp nhất Parts 1, 2, 3
-│   │   ├── App.tsx            # Trình điều hướng phân trang (Router)
-│   │   ├── index.css
-│   │   └── main.tsx
+│   │   ├── App.jsx            # Ứng dụng React SPA duy nhất hợp nhất toàn bộ giao diện Parts 1, 2, 3
+│   │   ├── index.css          # Dark SaaS Theme
+│   │   └── main.jsx
 │   ├── index.html
 │   ├── vite.config.js
 │   └── package.json
