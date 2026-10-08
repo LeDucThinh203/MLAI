@@ -211,21 +211,9 @@ const AuthPage = () => {
             EDUASSISTANT
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.86rem', fontWeight: 500 }}>
-            Hệ thống quản lý, xét duyệt & thẩm định hồ sơ sinh viên
+            Hệ thống hỗ trợ sinh viên
           </p>
 
-          {/* Feature Highlight Pills */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.7rem', padding: '3px 9px', borderRadius: '12px', background: 'rgba(79, 70, 229, 0.15)', color: '#818cf8', border: '1px solid rgba(79, 70, 229, 0.3)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Sparkles size={11} /> AI Gemini Triage
-            </span>
-            <span style={{ fontSize: '0.7rem', padding: '3px 9px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              ⚡ Sharp WebP -95%
-            </span>
-            <span style={{ fontSize: '0.7rem', padding: '3px 9px', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              🔒 JWT RBAC
-            </span>
-          </div>
         </div>
 
         {/* Tab switch giữa Đăng Nhập & Đăng Ký Sinh Viên */}
