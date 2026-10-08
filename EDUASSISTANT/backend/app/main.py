@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import PORT
-from app.core.responses import custom_http_exception_handler
+from app.core.responses import api_response, custom_http_exception_handler
 from app.routers import (
     auth,
     cases,
@@ -54,6 +54,19 @@ app.add_middleware(
 
 # Exception handlers
 app.add_exception_handler(HTTPException, custom_http_exception_handler)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Return a CORS-compatible JSON error instead of an opaque browser error."""
+    print(f"[Unhandled error] {request.method} {request.url.path}: {type(exc).__name__}: {exc}")
+    return api_response(
+        500,
+        False,
+        "Máy chủ gặp lỗi khi xử lý yêu cầu. Vui lòng thử lại.",
+        None,
+        "INTERNAL_SERVER_ERROR",
+    )
 
 
 # Request logging middleware
