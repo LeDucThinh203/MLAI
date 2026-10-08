@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Search, RefreshCw, Calendar, Download,
   Clock, User, History, CalendarDays
@@ -21,6 +21,44 @@ const AuditTrailViewer = ({
   const [actionFilter, setActionFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [groupByDay, setGroupByDay] = useState(true);
+  const [serverAudits, setServerAudits] = useState(audits);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [pagination, setPagination] = useState({ total: audits.length, totalPages: 1 });
+  const [pageLoading, setPageLoading] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    const controller = new AbortController();
+    const loadPage = async () => {
+      setPageLoading(true);
+      try {
+        const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+        if (actionFilter !== 'ALL') params.set('action', actionFilter);
+        if (roleFilter !== 'ALL') params.set('actorRole', roleFilter);
+        if (dateFilterMode === 'CUSTOM' && customDate) params.set('date', customDate);
+        if (dateFilterMode === 'TODAY') params.set('date', new Date().toISOString().slice(0, 10));
+        if (dateFilterMode === 'YESTERDAY') params.set('date', new Date(Date.now() - 86400000).toISOString().slice(0, 10));
+        if (dateFilterMode === '7DAYS') params.set('dateFrom', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10));
+        if (searchTerm.trim()) params.set('search', searchTerm.trim());
+        const response = await fetch(`${API_BASE}/audits?${params}`, { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal });
+        const payload = await response.json();
+        if (payload.success) {
+          setServerAudits(payload.data.audits || []);
+          setPagination(payload.data);
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') console.error('Không thể tải lịch sử audit:', error);
+      } finally {
+        if (!controller.signal.aborted) setPageLoading(false);
+      }
+    };
+    const delay = window.setTimeout(loadPage, searchTerm ? 250 : 0);
+    return () => { controller.abort(); window.clearTimeout(delay); };
+  }, [token, page, pageSize, dateFilterMode, customDate, roleFilter, actionFilter, searchTerm]);
+
+  useEffect(() => { setPage(1); }, [dateFilterMode, customDate, roleFilter, actionFilter, searchTerm, pageSize]);
+  const displayedAudits = token ? serverAudits : audits;
 
   // Helper date strings
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -30,12 +68,12 @@ const AuditTrailViewer = ({
   const sevenDaysAgoStr = sevenDaysAgoDate.toISOString().slice(0, 10);
 
   // Counters
-  const countToday = audits.filter(a => a.timestamp?.startsWith(todayStr)).length;
-  const countYesterday = audits.filter(a => a.timestamp?.startsWith(yesterdayStr)).length;
-  const count7Days = audits.filter(a => a.timestamp?.slice(0, 10) >= sevenDaysAgoStr).length;
+  const countToday = displayedAudits.filter(a => a.timestamp?.startsWith(todayStr)).length;
+  const countYesterday = displayedAudits.filter(a => a.timestamp?.startsWith(yesterdayStr)).length;
+  const count7Days = displayedAudits.filter(a => a.timestamp?.slice(0, 10) >= sevenDaysAgoStr).length;
 
   // Filtered Audits
-  const filteredAudits = audits.filter(a => {
+  const filteredAudits = displayedAudits.filter(a => {
     const itemDate = a.timestamp?.slice(0, 10);
     
     // Date Filtering
@@ -125,7 +163,7 @@ const AuditTrailViewer = ({
             {title}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem', margin: 0 }}>
-            {subtitle} • Hiển thị <strong>{filteredAudits.length}</strong> / <strong>{audits.length}</strong> bản ghi
+            {subtitle} • Hiển thị <strong>{filteredAudits.length}</strong> / <strong>{pagination.total || 0}</strong> bản ghi
           </p>
         </div>
 
@@ -193,7 +231,7 @@ const AuditTrailViewer = ({
                 cursor: 'pointer'
               }}
             >
-              Tất cả ngày ({audits.length})
+              Tất cả ngày ({pagination.total || 0})
             </button>
 
             <button
@@ -517,6 +555,25 @@ const AuditTrailViewer = ({
           })}
         </div>
       )}
+
+      <nav className="audit-pagination" aria-label="Phân trang lịch sử hoạt động">
+        <span>Trang <strong>{pagination.page || page}</strong> / <strong>{pagination.totalPages || 1}</strong> · {pagination.total || 0} bản ghi</span>
+        <label>
+          Hiển thị
+          <select value={pageSize} onChange={event => setPageSize(Number(event.target.value))} disabled={pageLoading}>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+          </select>
+          / trang
+        </label>
+        <div>
+          <button className="btn-secondary" onClick={() => setPage(1)} disabled={page <= 1 || pageLoading}>Đầu</button>
+          <button className="btn-secondary" onClick={() => setPage(current => current - 1)} disabled={page <= 1 || pageLoading}>Trước</button>
+          <button className="btn-secondary" onClick={() => setPage(current => current + 1)} disabled={page >= (pagination.totalPages || 1) || pageLoading}>Sau</button>
+          <button className="btn-secondary" onClick={() => setPage(pagination.totalPages || 1)} disabled={page >= (pagination.totalPages || 1) || pageLoading}>Cuối</button>
+        </div>
+      </nav>
 
     </div>
   );

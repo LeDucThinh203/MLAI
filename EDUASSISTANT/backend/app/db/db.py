@@ -770,6 +770,41 @@ class DatabaseService:
         return [format_audit_row(r) for r in rows]
 
     @staticmethod
+    async def get_audits_page(filter_dict: dict = None, page: int = 1, page_size: int = 25):
+        """Return one audit page and its total without loading the full audit trail."""
+        filter_dict = filter_dict or {}
+        where = ' WHERE 1=1'
+        params = []
+        if filter_dict.get('action') and filter_dict['action'] != 'ALL':
+            where += ' AND action = ?'; params.append(filter_dict['action'])
+        if filter_dict.get('caseId'):
+            where += ' AND caseId = ?'; params.append(filter_dict['caseId'])
+        if filter_dict.get('actorRole') and filter_dict['actorRole'] != 'ALL':
+            where += ' AND actorRole = ?'; params.append(filter_dict['actorRole'])
+        if filter_dict.get('studentVisibleFor'):
+            visible = filter_dict['studentVisibleFor']; case_ids = visible.get('caseIds', [])
+            if case_ids:
+                where += f" AND (caseId IN ({', '.join(['?'] * len(case_ids))}) OR (caseId IS NULL AND actorId = ?))"
+                params.extend(case_ids); params.append(visible.get('studentId'))
+            else:
+                where += ' AND (caseId IS NULL AND actorId = ?)'; params.append(visible.get('studentId'))
+        elif filter_dict.get('actorId'):
+            where += ' AND actorId = ?'; params.append(filter_dict['actorId'])
+        if filter_dict.get('date'):
+            where += ' AND timestamp LIKE ?'; params.append(f"{filter_dict['date']}%")
+        if filter_dict.get('dateFrom'):
+            where += ' AND timestamp >= ?'; params.append(f"{filter_dict['dateFrom']}T00:00:00")
+        if filter_dict.get('search'):
+            term = f"%{filter_dict['search'].strip().lower()}%"
+            where += " AND (LOWER(action) LIKE ? OR LOWER(COALESCE(caseId, '')) LIKE ? OR LOWER(COALESCE(actorName, '')) LIKE ? OR LOWER(COALESCE(actorUsername, '')) LIKE ? OR LOWER(COALESCE(reason, '')) LIKE ?)"
+            params.extend([term] * 5)
+
+        total = (get_one('SELECT COUNT(*) AS count FROM audits' + where, tuple(params)) or {}).get('count', 0)
+        safe_page, safe_size = max(1, int(page)), min(100, max(10, int(page_size)))
+        rows = get_all('SELECT * FROM audits' + where + ' ORDER BY timestamp DESC LIMIT ? OFFSET ?', tuple(params + [safe_size, (safe_page - 1) * safe_size]))
+        return {'audits': [format_audit_row(row) for row in rows], 'total': total, 'page': safe_page, 'pageSize': safe_size, 'totalPages': max(1, (total + safe_size - 1) // safe_size)}
+
+    @staticmethod
     async def log_audit(data: dict):
         cnt_row = get_one('SELECT COUNT(*) as cnt FROM audits')
         audit_id = f"AUDIT-{str((cnt_row.get('cnt') or 0) + 1001)}"

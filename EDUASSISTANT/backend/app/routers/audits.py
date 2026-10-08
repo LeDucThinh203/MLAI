@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Response, Query
 
 from app.db.db import db_service
 from app.services.report_service import generate_audits_csv
@@ -16,6 +16,10 @@ async def get_audits(
     caseId: Optional[str] = None,
     actorRole: Optional[str] = None,
     date: Optional[str] = None,
+    dateFrom: Optional[str] = None,
+    search: Optional[str] = Query(None, max_length=120),
+    page: int = Query(1, ge=1),
+    pageSize: int = Query(25, ge=10, le=100),
     user: dict = Depends(get_current_user)
 ):
     filter_dict = {}
@@ -37,9 +41,13 @@ async def get_audits(
 
     if date:
         filter_dict['date'] = date
+    if dateFrom:
+        filter_dict['dateFrom'] = dateFrom
+    if search and search.strip():
+        filter_dict['search'] = search
 
-    audits = await db_service.get_audits(filter_dict)
-    return api_response(200, True, 'Lấy danh sách nhật ký kiểm toán thành công.', {'audits': audits, 'total': len(audits)})
+    result = await db_service.get_audits_page(filter_dict, page, pageSize)
+    return api_response(200, True, 'Lấy danh sách nhật ký kiểm toán thành công.', result)
 
 
 @router.get("/api/audits/export-csv")
