@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -13,8 +13,16 @@ import AccountSettingsPortal from './pages/settings/AccountSettingsPortal';
 import PublicVerificationPage from './pages/public/PublicVerificationPage';
 import JudgeModePage from './pages/judge/JudgeModePage';
 
+const portalTabsByRole = {
+  ADMIN: ['admin_overview', 'admin_users', 'reviewer_queue', 'reviewer_audit', 'account_settings'],
+  REVIEWER: ['reviewer_queue', 'reviewer_audit', 'account_settings'],
+  STUDENT: ['student_submit', 'student_cases', 'student_history', 'account_settings']
+};
+
 function MainApp() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [show2FAModal, setShow2FAModal] = useState(false);
   
   const getDefaultTab = (role) => {
@@ -23,14 +31,17 @@ function MainApp() {
     return 'student_submit';
   };
 
-  const [activeTab, setActiveTab] = useState(getDefaultTab(user?.role));
   const [caseToOpen, setCaseToOpen] = useState(null);
+  const availableTabs = portalTabsByRole[user?.role] || portalTabsByRole.STUDENT;
+  const savedTab = new URLSearchParams(location.search).get('tab');
+  const activeTab = availableTabs.includes(savedTab) ? savedTab : getDefaultTab(user?.role);
 
-  useEffect(() => {
-    if (user) {
-      setActiveTab(getDefaultTab(user.role));
-    }
-  }, [user]);
+  const setActiveTab = useCallback((tab) => {
+    if (!availableTabs.includes(tab)) return;
+    const params = new URLSearchParams(location.search);
+    params.set('tab', tab);
+    navigate({ pathname: '/', search: `?${params.toString()}` });
+  }, [availableTabs, location.search, navigate]);
 
   const handleOpenCase = (caseId) => {
     if (!caseId) return;
