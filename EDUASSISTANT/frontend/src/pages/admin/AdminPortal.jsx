@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import ReviewerPortal from '../reviewer/ReviewerPortal';
 import PageSkeleton from '../../components/common/PageSkeleton';
 import PaginationControls from '../../components/common/PaginationControls';
+import AnalyticsCharts from '../../components/admin/AnalyticsCharts';
 
 const AdminPortal = ({ activeTab }) => {
   const { token } = useAuth();
@@ -223,6 +224,8 @@ const AdminPortal = ({ activeTab }) => {
               </p>
             </div>
           </div>
+
+          <AnalyticsCharts stats={stats} />
 
           {/* HÀNG BỔ SUNG: ESCALATION REFEREE, OVERRIDE & BENCHMARK METRICS */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
