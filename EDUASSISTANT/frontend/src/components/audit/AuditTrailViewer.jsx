@@ -356,13 +356,13 @@ const AuditTrailViewer = ({
             <option value="CASE_STATUS_APPROVED">✅ Duyệt chấp thuận</option>
             <option value="CASE_STATUS_REJECTED">❌ Từ chối hồ sơ</option>
             <option value="CASE_STATUS_REQUIRES_SUPPLEMENT">🔄 Yêu cầu bổ sung</option>
-            <option value="CASE_AUTO_APPROVED">⚡ Tự động duyệt (Rule Engine)</option>
-            <option value="CASE_ESCALATED">🚨 Leo thang nghiệp vụ</option>
+            <option value="CASE_AUTO_APPROVED">⚡ Hồ sơ đủ điều kiện xử lý tự động</option>
+            <option value="CASE_ESCALATED">🚨 Hồ sơ cần cán bộ xem xét</option>
             <option value="AUTH_LOGIN">🔑 Đăng nhập hệ thống</option>
             <option value="USER_PROFILE_UPDATED">👤 Cập nhật hồ sơ</option>
             <option value="USER_PASSWORD_CHANGED">🔒 Đổi mật khẩu</option>
             <option value="EVIDENCE_UPLOADED">📎 Tải lên minh chứng</option>
-            <option value="OCR_EXTRACTION_PERFORMED">✨ Quét OCR Gemini</option>
+            <option value="OCR_EXTRACTION_PERFORMED">✨ Đọc thông tin từ minh chứng</option>
             <option value="REPORT_CSV_EXPORTED">📊 Xuất báo cáo CSV</option>
           </select>
 

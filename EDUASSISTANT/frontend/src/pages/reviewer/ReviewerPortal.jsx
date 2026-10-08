@@ -15,6 +15,23 @@ import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
 import PaginationControls from '../../components/common/PaginationControls';
 
+const CATEGORY_LABELS = {
+  TUITION_DISCOUNT: 'Miễn, giảm học phí',
+  ACADEMIC_SCHOLARSHIP: 'Học bổng',
+  COMMUNITY_SERVICE: 'Hoạt động cộng đồng',
+  EMERGENCY_AID: 'Hỗ trợ khó khăn đột xuất',
+  GRADE_APPEAL: 'Phúc khảo điểm'
+};
+const PRIORITY_LABELS = { URGENT: 'Khẩn cấp', HIGH: 'Cao', MEDIUM: 'Trung bình', LOW: 'Thấp' };
+const ESCALATION_LABELS = {
+  OWNERSHIP_UNCLEAR: 'Thông tin sinh viên chưa khớp',
+  FACT_UNKNOWN: 'Thiếu hoặc khó đọc minh chứng',
+  DATA_CONFLICT: 'Thông tin kê khai chưa khớp',
+  AUTHORITY_REQUIRED: 'Cần hội đồng xem xét',
+  POLICY_OUT_OF_SCOPE: 'Yêu cầu ngoài quy định',
+  HUMAN_REVIEW: 'Cần cán bộ xem xét'
+};
+
 const ReviewerPortal = ({ activeTab }) => {
   const { token, user } = useAuth();
   const [allCases, setAllCases] = useState([]);
@@ -183,11 +200,11 @@ const ReviewerPortal = ({ activeTab }) => {
             suggestedAction: evalResult.suggestedAction
           } : null
         }));
-        setActionMessage({ type: 'success', text: `Đã chạy Rule Engine tái thẩm định thành công! (${evalResult.ruleMatched})` });
+        setActionMessage({ type: 'success', text: 'Đã đánh giá lại hồ sơ thành công.' });
         fetchReviewerData();
       }
     } catch (err) {
-      setActionMessage({ type: 'error', text: err.response?.data?.message || 'Lỗi khi chạy Rule Engine!' });
+      setActionMessage({ type: 'error', text: err.response?.data?.message || 'Không thể đánh giá lại hồ sơ.' });
     } finally {
       setReEvaluating(false);
     }
@@ -240,9 +257,9 @@ const ReviewerPortal = ({ activeTab }) => {
       case 'UNDER_REVIEW':
         return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(217, 119, 6, 0.15)', color: '#fbbf24' }}>Đang xử lý</span>;
       case 'APPROVED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(5, 150, 105, 0.15)', color: '#34d399' }}>Đã duyệt (Approved)</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(5, 150, 105, 0.15)', color: '#34d399' }}>Đã duyệt</span>;
       case 'REJECTED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(225, 29, 72, 0.15)', color: '#f87171' }}>Đã từ chối (Rejected)</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(225, 29, 72, 0.15)', color: '#f87171' }}>Đã từ chối</span>;
       case 'REQUIRES_SUPPLEMENT':
       case 'INFO_REQUESTED':
         return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)' }}>Cần bổ sung hồ sơ</span>;
@@ -261,42 +278,42 @@ const ReviewerPortal = ({ activeTab }) => {
     if (isAuto) {
       return (
         <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-          ⚡ Tự động duyệt (Rule Engine)
+          ⚡ Đủ điều kiện xử lý tự động
         </span>
       );
     }
     if (reasonCode === 'OWNERSHIP_UNCLEAR') {
       return (
         <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-          🔒 OWNERSHIP_UNCLEAR (Lệch MSSV)
+          🔒 Thông tin sinh viên chưa khớp
         </span>
       );
     }
     if (reasonCode === 'FACT_UNKNOWN') {
       return (
         <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', border: '1px solid rgba(249, 115, 22, 0.3)' }}>
-          🚨 FACT_UNKNOWN (Thiếu dữ kiện/Ảnh mờ)
+          🚨 Thiếu hoặc khó đọc minh chứng
         </span>
       );
     }
     if (reasonCode === 'DATA_CONFLICT') {
       return (
         <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'rgba(234, 179, 8, 0.15)', color: '#facc15', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
-          ⚠️ DATA_CONFLICT (Mâu thuẫn kê khai)
+          ⚠️ Thông tin kê khai chưa khớp
         </span>
       );
     }
     if (reasonCode === 'AUTHORITY_REQUIRED') {
       return (
         <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'rgba(139, 92, 246, 0.15)', color: '#c084fc', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
-          👑 AUTHORITY_REQUIRED (Cần Hội đồng)
+          👑 Cần hội đồng xem xét
         </span>
       );
     }
     if (reasonCode === 'POLICY_OUT_OF_SCOPE') {
       return (
         <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'rgba(6, 182, 212, 0.15)', color: '#22d3ee', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-          📋 POLICY_OUT_OF_SCOPE (Ngoài quy chế)
+          📋 Yêu cầu ngoài quy định
         </span>
       );
     }
@@ -328,7 +345,7 @@ const ReviewerPortal = ({ activeTab }) => {
                     {filteredCases.length} / {allCases.length}
                   </span>
                 </h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Chọn hồ sơ để xem Ma trận Rule Engine</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Chọn hồ sơ để xem thông tin và kết quả đánh giá</p>
               </div>
 
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -407,13 +424,13 @@ const ReviewerPortal = ({ activeTab }) => {
                   value={escalationFilter}
                   onChange={e => setEscalationFilter(e.target.value)}
                 >
-                  <option value="ALL">⚖️ Tất cả phân loại Rule Engine</option>
-                  <option value="AUTO_APPROVE">⚡ Tự động duyệt (Rule Engine Passed)</option>
-                  <option value="OWNERSHIP_UNCLEAR">🔒 OWNERSHIP_UNCLEAR (Lệch MSSV/Tên)</option>
-                  <option value="FACT_UNKNOWN">🚨 FACT_UNKNOWN (Thiếu dữ kiện/Ảnh mờ)</option>
-                  <option value="DATA_CONFLICT">⚠️ DATA_CONFLICT (Kê khai ≠ Minh chứng)</option>
-                  <option value="AUTHORITY_REQUIRED">👑 AUTHORITY_REQUIRED (Cần Hội đồng)</option>
-                  <option value="POLICY_OUT_OF_SCOPE">📋 POLICY_OUT_OF_SCOPE (Ngoài quy chế)</option>
+                  <option value="ALL">⚖️ Tất cả lý do cần xem xét</option>
+                  <option value="AUTO_APPROVE">⚡ Đủ điều kiện xử lý tự động</option>
+                  <option value="OWNERSHIP_UNCLEAR">🔒 Thông tin sinh viên chưa khớp</option>
+                  <option value="FACT_UNKNOWN">🚨 Thiếu hoặc khó đọc minh chứng</option>
+                  <option value="DATA_CONFLICT">⚠️ Thông tin kê khai chưa khớp</option>
+                  <option value="AUTHORITY_REQUIRED">👑 Cần hội đồng xem xét</option>
+                  <option value="POLICY_OUT_OF_SCOPE">📋 Yêu cầu ngoài quy định</option>
                 </select>
 
                 <select
@@ -564,10 +581,10 @@ const ReviewerPortal = ({ activeTab }) => {
                     disabled={reEvaluating}
                     className="btn-secondary"
                     style={{ padding: '4px 10px', fontSize: '0.75rem', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }}
-                    title="Chạy lại Rule Engine đánh giá hồ sơ"
+                    title="Đánh giá lại hồ sơ"
                   >
                     <RefreshCw size={12} className={reEvaluating ? 'animate-spin' : ''} />
-                    <span>{reEvaluating ? 'Đang chạy Rule...' : 'Tái Thẩm Định Rule'}</span>
+                    <span>{reEvaluating ? 'Đang đánh giá...' : 'Đánh giá lại'}</span>
                   </button>
                   <button
                     onClick={() => window.open(`${API_BASE}/cases/${selectedCase.id}/export-decision?token=${token}`, '_blank')}
@@ -593,8 +610,8 @@ const ReviewerPortal = ({ activeTab }) => {
                 </div>
                 <div>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Danh mục & Độ ưu tiên:</span>
-                  <p style={{ fontSize: '0.82rem', color: '#38bdf8', fontWeight: 600 }}>{selectedCase.category}</p>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Ưu tiên: <strong>{selectedCase.priority || 'MEDIUM'}</strong></span>
+                  <p style={{ fontSize: '0.82rem', color: '#38bdf8', fontWeight: 600 }}>{CATEGORY_LABELS[selectedCase.category] || selectedCase.category}</p>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Ưu tiên: <strong>{PRIORITY_LABELS[selectedCase.priority] || 'Trung bình'}</strong></span>
                 </div>
               </div>
 
@@ -621,7 +638,7 @@ const ReviewerPortal = ({ activeTab }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Cpu size={16} color={selectedCase.status === 'APPROVED' ? '#34d399' : '#fb923c'} />
                     <h4 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#f8fafc' }}>
-                      Phán Quyết Rule Engine & Ma Trận Thực Thể
+                      Kết quả đánh giá và đối chiếu thông tin
                     </h4>
                   </div>
                   <span style={{
@@ -632,7 +649,7 @@ const ReviewerPortal = ({ activeTab }) => {
                     background: selectedCase.status === 'APPROVED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                     color: selectedCase.status === 'APPROVED' ? '#34d399' : '#f87171'
                   }}>
-                    {selectedCase.status === 'APPROVED' ? '✓ ĐỦ ĐIỀU KIỆN TỰ ĐỘNG DUYỆT' : `🚨 LEO THANG: ${selectedCase.escalation?.reason || 'HUMAN_REVIEW'}`}
+                    {selectedCase.status === 'APPROVED' ? '✓ ĐỦ ĐIỀU KIỆN XỬ LÝ TỰ ĐỘNG' : `🚨 ${ESCALATION_LABELS[selectedCase.escalation?.reason] || 'Cần cán bộ xem xét'}`}
                   </span>
                 </div>
 
@@ -647,7 +664,7 @@ const ReviewerPortal = ({ activeTab }) => {
                   lineHeight: '1.45'
                 }}>
                   <div style={{ fontWeight: 700, color: selectedCase.status === 'APPROVED' ? '#34d399' : '#fb923c', marginBottom: '4px' }}>
-                    Quy tắc kích hoạt: <code>{selectedCase.ruleEngine?.ruleMatched || selectedCase.aiExtraction?.policyRuleMatch || 'RULE_EVALUATED'}</code>
+                    Kết quả kiểm tra hồ sơ
                   </div>
                   <p>{selectedCase.ruleEngine?.explanation || selectedCase.escalation?.explanation || 'Hồ sơ đã được kiểm tra tính pháp lý qua bộ quy chuẩn đào tạo.'}</p>
                   {selectedCase.escalation?.suggestedAction && (
@@ -661,15 +678,15 @@ const ReviewerPortal = ({ activeTab }) => {
                 {selectedCase.ruleEngine?.discrepancies && selectedCase.ruleEngine.discrepancies.length > 0 && (
                   <div>
                     <span style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>
-                      Bảng So Sánh Đối Chiếu Thực Thể (Form vs Gemini OCR):
+                      Đối chiếu thông tin sinh viên kê khai và thông tin trên minh chứng:
                     </span>
                     <div style={{ overflowX: 'auto' }}>
                       <table style={{ width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                           <tr style={{ background: '#1e293b', color: '#94a3b8', borderBottom: '1px solid #334155' }}>
-                            <th style={{ padding: '6px 8px', fontWeight: 600 }}>Dữ Kiện Thẩm Định</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 600 }}>Thông tin cần kiểm tra</th>
                             <th style={{ padding: '6px 8px', fontWeight: 600 }}>Sinh Viên Khai Báo</th>
-                            <th style={{ padding: '6px 8px', fontWeight: 600 }}>Gemini OCR Trích Xuất</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 600 }}>Thông tin đọc từ minh chứng</th>
                             <th style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}>Kết Quả</th>
                           </tr>
                         </thead>
@@ -926,10 +943,10 @@ const ReviewerPortal = ({ activeTab }) => {
                   border: '1px solid #1e293b'
                 }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f8fafc', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Sliders size={14} color="#f59e0b" /> Phản Hồi Đánh Giá (Adaptive Threshold Feedback)
+                    <Sliders size={14} color="#f59e0b" /> Phản hồi về kết quả đánh giá
                   </div>
                   <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '0 0 8px 0' }}>
-                    Đánh giá quyết định của hệ thống để tự động điều chỉnh ngưỡng tin cậy an toàn [0.65 - 0.90]:
+                    Cho biết kết quả gợi ý của hệ thống có phù hợp không để cải thiện việc hỗ trợ xử lý hồ sơ.
                   </p>
                   <input
                     type="text"

@@ -4,7 +4,13 @@ const STATUS = [
   ['Chờ duyệt', 'SUBMITTED', '#38bdf8'], ['Đang xử lý', 'UNDER_REVIEW', '#fbbf24'],
   ['Bổ sung', 'REQUIRES_SUPPLEMENT', '#f97316'], ['Đã duyệt', 'APPROVED', '#34d399'], ['Từ chối', 'REJECTED', '#f87171']
 ];
-const REASONS = [['OWNERSHIP_UNCLEAR', '#ef4444'], ['FACT_UNKNOWN', '#f97316'], ['DATA_CONFLICT', '#eab308'], ['AUTHORITY_REQUIRED', '#8b5cf6'], ['POLICY_OUT_OF_SCOPE', '#06b6d4']];
+const REASONS = [
+  ['OWNERSHIP_UNCLEAR', 'Thông tin sinh viên chưa khớp', '#ef4444'],
+  ['FACT_UNKNOWN', 'Thiếu hoặc khó đọc minh chứng', '#f97316'],
+  ['DATA_CONFLICT', 'Thông tin kê khai chưa khớp', '#eab308'],
+  ['AUTHORITY_REQUIRED', 'Cần hội đồng xem xét', '#8b5cf6'],
+  ['POLICY_OUT_OF_SCOPE', 'Yêu cầu ngoài quy định', '#06b6d4']
+];
 
 export default function AnalyticsCharts({ stats }) {
   const total = stats.totalCases || 0;
@@ -33,8 +39,8 @@ export default function AnalyticsCharts({ stats }) {
       </div>
     </section>
     <section className="analytics-card">
-      <div><h3>Phân tích nguyên nhân leo thang</h3><p>Xếp hạng theo tần suất Rule Engine</p></div>
-      <div className="bar-chart">{REASONS.map(([key, color]) => { const value = reasons[key] || 0; return <div className="bar-row" key={key}><span>{key.replace('_', ' ')}</span><div><b style={{ width: `${(value / maxReason) * 100}%`, background: color }} /></div><strong>{value}</strong></div>; })}</div>
+      <div><h3>Lý do cần xem xét thêm</h3><p>Xếp hạng theo số hồ sơ cần cán bộ kiểm tra</p></div>
+      <div className="bar-chart">{REASONS.map(([key, label, color]) => { const value = reasons[key] || 0; return <div className="bar-row" key={key}><span>{label}</span><div><b style={{ width: `${(value / maxReason) * 100}%`, background: color }} /></div><strong>{value}</strong></div>; })}</div>
     </section>
   </div>;
 }

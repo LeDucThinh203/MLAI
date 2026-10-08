@@ -13,6 +13,14 @@ import PageSkeleton from '../../components/common/PageSkeleton';
 import PaginationControls from '../../components/common/PaginationControls';
 import AnalyticsCharts from '../../components/admin/AnalyticsCharts';
 
+const CATEGORY_LABELS = {
+  TUITION_DISCOUNT: 'Miễn, giảm học phí',
+  ACADEMIC_SCHOLARSHIP: 'Học bổng',
+  COMMUNITY_SERVICE: 'Hoạt động cộng đồng',
+  EMERGENCY_AID: 'Hỗ trợ khó khăn đột xuất',
+  GRADE_APPEAL: 'Phúc khảo điểm'
+};
+
 const AdminPortal = ({ activeTab }) => {
   const { token } = useAuth();
   const [users, setUsers] = useState([]);
@@ -230,19 +238,19 @@ const AdminPortal = ({ activeTab }) => {
           {/* HÀNG BỔ SUNG: ESCALATION REFEREE, OVERRIDE & BENCHMARK METRICS */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
             <div className="card-panel" style={{ padding: '16px', background: '#0a0e17', border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase' }}>Ngưỡng Tin Cậy Leo Thang</div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase' }}>Mức chuyển hồ sơ để xem xét</div>
               <h4 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f59e0b', margin: '6px 0 2px 0' }}>
                 {stats.currentEscalationThreshold || '0.75'}
               </h4>
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Ngưỡng học vụ thích ứng an toàn [0.65 - 0.90]</p>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Mức hệ thống chuyển hồ sơ sang cán bộ kiểm tra [0.65 - 0.90]</p>
             </div>
 
             <div className="card-panel" style={{ padding: '16px', background: '#0a0e17', border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase' }}>Human Overrides (HITL)</div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase' }}>Cán bộ điều chỉnh quyết định</div>
               <h4 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#8b5cf6', margin: '6px 0 2px 0' }}>
                 {stats.totalHumanOverrides || 0} lần
               </h4>
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Quyết định con người ghi đè phán quyết hệ thống</p>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Số hồ sơ cán bộ điều chỉnh so với đề xuất của hệ thống</p>
             </div>
 
             <div className="card-panel" style={{ padding: '16px', background: '#0a0e17', border: '1px solid #1e293b' }}>
@@ -256,12 +264,12 @@ const AdminPortal = ({ activeTab }) => {
             </div>
 
             <div className="card-panel" style={{ padding: '16px', background: '#0a0e17', border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase' }}>Benchmark Accuracy</div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase' }}>Độ chính xác đánh giá</div>
               <h4 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#34d399', margin: '6px 0 2px 0' }}>
-                {stats.benchmarkMetrics?.decisionAccuracy || 'Not measured yet'}
+                {stats.benchmarkMetrics?.decisionAccuracy || 'Chưa có dữ liệu'}
               </h4>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
-                Missed rate: <strong>{stats.benchmarkMetrics?.missedEscalationRate || 'N/A'}</strong>
+                Tỷ lệ cần xem xét thêm: <strong>{stats.benchmarkMetrics?.missedEscalationRate || 'Chưa có dữ liệu'}</strong>
               </p>
             </div>
           </div>
@@ -301,7 +309,7 @@ const AdminPortal = ({ activeTab }) => {
               {/* Grid 6 trạng thái chi tiết */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                 <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', borderLeft: '4px solid #38bdf8' }}>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Chờ thẩm định (SUBMITTED)</div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Chờ cán bộ tiếp nhận</div>
                   <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#38bdf8', marginTop: '2px' }}>
                     {stats.statusBreakdown?.SUBMITTED || 0}
                     <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 500 }}>
@@ -311,7 +319,7 @@ const AdminPortal = ({ activeTab }) => {
                 </div>
 
                 <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', borderLeft: '4px solid #fbbf24' }}>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Đang thẩm định (UNDER_REVIEW)</div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Đang được xem xét</div>
                   <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fbbf24', marginTop: '2px' }}>
                     {stats.statusBreakdown?.UNDER_REVIEW || 0}
                     <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 500 }}>
@@ -331,7 +339,7 @@ const AdminPortal = ({ activeTab }) => {
                 </div>
 
                 <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', borderLeft: '4px solid #a5b4fc' }}>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Đã nộp bổ sung (RESUBMITTED)</div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Đã gửi thêm thông tin</div>
                   <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#a5b4fc', marginTop: '2px' }}>
                     {stats.statusBreakdown?.RESUBMITTED || 0}
                     <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 500 }}>
@@ -341,7 +349,7 @@ const AdminPortal = ({ activeTab }) => {
                 </div>
 
                 <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', borderLeft: '4px solid #34d399' }}>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Đã phê duyệt (APPROVED)</div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Đã duyệt</div>
                   <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#34d399', marginTop: '2px' }}>
                     {stats.statusBreakdown?.APPROVED || 0}
                     <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 500 }}>
@@ -351,7 +359,7 @@ const AdminPortal = ({ activeTab }) => {
                 </div>
 
                 <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', borderLeft: '4px solid #f87171' }}>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Đã từ chối (REJECTED)</div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Đã từ chối</div>
                   <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f87171', marginTop: '2px' }}>
                     {stats.statusBreakdown?.REJECTED || 0}
                     <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 500 }}>
@@ -406,18 +414,18 @@ const AdminPortal = ({ activeTab }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
               <div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', color: '#818cf8' }}>
-                  <Cpu size={20} color="#818cf8" /> Phân Tích Hiệu Quả Rule Engine & 5 Lý Do Leo Thang
+                  <Cpu size={20} color="#818cf8" /> Phân tích các hồ sơ cần xem xét thêm
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '2px' }}>
-                  Gemini VLM trích xuất dữ kiện minh chứng • Rule Engine phán quyết tự động duyệt hoặc chuyển tiếp Hội đồng thẩm định
+                  Hệ thống kiểm tra thông tin hồ sơ và minh chứng để xác định hồ sơ có thể xử lý ngay hoặc cần cán bộ xem xét.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <span style={{ fontSize: '0.78rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                  ⚡ Tự động duyệt: {stats.autoApprovedCases || 0} hồ sơ
+                  ⚡ Có thể xử lý tự động: {stats.autoApprovedCases || 0} hồ sơ
                 </span>
                 <span style={{ fontSize: '0.78rem', background: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, border: '1px solid rgba(249, 115, 22, 0.3)' }}>
-                  🚨 Leo thang thẩm định: {stats.escalatedCases || 0} hồ sơ
+                  🚨 Cần cán bộ xem xét: {stats.escalatedCases || 0} hồ sơ
                 </span>
               </div>
             </div>
@@ -426,7 +434,7 @@ const AdminPortal = ({ activeTab }) => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
               <div style={{ background: '#090d16', borderLeft: '4px solid #ef4444', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#f87171', fontWeight: 700 }}>🔒 OWNERSHIP_UNCLEAR</span>
+                  <span style={{ fontSize: '0.76rem', color: '#f87171', fontWeight: 700 }}>🔒 Thông tin sinh viên chưa khớp</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f87171' }}>{stats.escalationReasonsBreakdown?.OWNERSHIP_UNCLEAR || 0}</span>
                 </div>
                 <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>MSSV hoặc họ tên trên minh chứng không khớp tài khoản</p>
@@ -434,34 +442,34 @@ const AdminPortal = ({ activeTab }) => {
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #f97316', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#fb923c', fontWeight: 700 }}>🚨 FACT_UNKNOWN</span>
+                  <span style={{ fontSize: '0.76rem', color: '#fb923c', fontWeight: 700 }}>🚨 Thiếu hoặc khó đọc minh chứng</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fb923c' }}>{stats.escalationReasonsBreakdown?.FACT_UNKNOWN || 0}</span>
                 </div>
-                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Thiếu file minh chứng / Ảnh mờ / OCR độ tin cậy &lt; 75%</p>
+                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Chưa có tệp minh chứng hoặc tệp quá mờ để đọc rõ thông tin</p>
               </div>
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #eab308', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#facc15', fontWeight: 700 }}>⚠️ DATA_CONFLICT</span>
+                  <span style={{ fontSize: '0.76rem', color: '#facc15', fontWeight: 700 }}>⚠️ Thông tin kê khai chưa khớp</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#facc15' }}>{stats.escalationReasonsBreakdown?.DATA_CONFLICT || 0}</span>
                 </div>
-                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Mâu thuẫn thông tin tự kê khai với thực thể AI OCR</p>
+                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Thông tin sinh viên kê khai khác với thông tin trên minh chứng</p>
               </div>
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #8b5cf6', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#c084fc', fontWeight: 700 }}>👑 AUTHORITY_REQUIRED</span>
+                  <span style={{ fontSize: '0.76rem', color: '#c084fc', fontWeight: 700 }}>👑 Cần hội đồng xem xét</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#c084fc' }}>{stats.escalationReasonsBreakdown?.AUTHORITY_REQUIRED || 0}</span>
                 </div>
-                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Hồ sơ ưu tiên cao / Phúc khảo điểm / Xét duyệt Học bổng</p>
+                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Hồ sơ cần quyết định từ cấp có thẩm quyền hoặc hội đồng</p>
               </div>
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #06b6d4', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#22d3ee', fontWeight: 700 }}>📋 POLICY_OUT_OF_SCOPE</span>
+                  <span style={{ fontSize: '0.76rem', color: '#22d3ee', fontWeight: 700 }}>📋 Yêu cầu ngoài quy định</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#22d3ee' }}>{stats.escalationReasonsBreakdown?.POLICY_OUT_OF_SCOPE || 0}</span>
                 </div>
-                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Yêu cầu ngoại lệ, cứu xét đặc biệt nằm ngoài quy chế</p>
+                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Yêu cầu cần được xem xét riêng vì chưa thuộc quy định hiện hành</p>
               </div>
             </div>
           </div>
@@ -494,7 +502,7 @@ const AdminPortal = ({ activeTab }) => {
                         <td style={{ padding: '10px 8px', fontFamily: 'var(--font-mono)', color: '#818cf8', fontWeight: 700 }}>{c.id}</td>
                         <td style={{ padding: '10px 8px', fontWeight: 600 }}>{c.studentName}</td>
                         <td style={{ padding: '10px 8px', color: 'var(--text-main)' }}>{c.title}</td>
-                        <td style={{ padding: '10px 8px', color: 'var(--text-muted)', fontSize: '0.78rem' }}>{c.category}</td>
+                        <td style={{ padding: '10px 8px', color: 'var(--text-muted)', fontSize: '0.78rem' }}>{CATEGORY_LABELS[c.category] || c.category}</td>
                         <td style={{ padding: '10px 8px' }}>
                           {c.status === 'APPROVED' && <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(5, 150, 105, 0.15)', color: '#34d399' }}>Đã duyệt</span>}
                           {c.status === 'REJECTED' && <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(225, 29, 72, 0.15)', color: '#f87171' }}>Từ chối</span>}
