@@ -1,17 +1,14 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import PageSkeleton from './PageSkeleton';
 
 export const ProtectedRoute = ({ children }) => {
   const { user, token, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-        Đang tải dữ liệu hệ thống...
-      </div>
-    );
+    return <PageSkeleton variant="portal" label="Đang khôi phục phiên đăng nhập" />;
   }
 
   if (!token || !user) {

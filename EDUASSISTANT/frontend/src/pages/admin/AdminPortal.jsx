@@ -9,13 +9,14 @@ import {
 import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import ReviewerPortal from '../reviewer/ReviewerPortal';
+import PageSkeleton from '../../components/common/PageSkeleton';
 
 const AdminPortal = ({ activeTab }) => {
   const { token } = useAuth();
   const [users, setUsers] = useState([]);
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [adminMessage, setAdminMessage] = useState(null);
 
   // States tạo tài khoản cán bộ từ Admin
@@ -105,6 +106,10 @@ const AdminPortal = ({ activeTab }) => {
       u.role?.toLowerCase().includes(q)
     );
   });
+
+  if (loading && !stats && users.length === 0) {
+    return <PageSkeleton variant="dashboard" label="Đang tải dữ liệu quản trị" />;
+  }
 
   return (
     <div className="portal-content portal-content--admin" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

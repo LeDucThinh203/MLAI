@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Award, RefreshCw, AlertTriangle, CheckCircle2, Printer } from 'lucide-react';
+import { Award, AlertTriangle, CheckCircle2, Printer } from 'lucide-react';
 import { API_BASE } from '../../api/client';
+import PageSkeleton from '../../components/common/PageSkeleton';
 
 export const PublicVerificationPage = () => {
   const location = useLocation();
@@ -66,10 +67,7 @@ export const PublicVerificationPage = () => {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#818cf8' }}>
-            <RefreshCw size={24} className="animate-spin" style={{ marginBottom: '10px' }} />
-            <p>Đang giải mã chữ ký số và xác minh chứng nhận...</p>
-          </div>
+          <PageSkeleton variant="verification" label="Đang xác minh hồ sơ" />
         ) : error ? (
           <div style={{ textAlign: 'center', padding: '30px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid #ef4444', borderRadius: '12px', color: '#f87171' }}>
             <AlertTriangle size={32} style={{ marginBottom: '8px' }} />

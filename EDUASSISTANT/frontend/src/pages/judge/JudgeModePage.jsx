@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import PageSkeleton from '../../components/common/PageSkeleton';
 
 export default function JudgeModePage({ onNavigateTab }) {
   const { token } = useAuth();
@@ -15,7 +16,7 @@ export default function JudgeModePage({ onNavigateTab }) {
   const [metrics, setMetrics] = useState(null);
   const [verifyResults, setVerifyResults] = useState(null);
   const [runningVerify, setRunningVerify] = useState(false);
-  const [loadingMetrics, setLoadingMetrics] = useState(false);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
 
   const fetchJudgeMetrics = async () => {
@@ -57,6 +58,10 @@ export default function JudgeModePage({ onNavigateTab }) {
     onNavigateTab?.(tab);
     navigate(token ? '/' : '/login');
   };
+
+  if (loadingMetrics && !metrics) {
+    return <PageSkeleton variant="dashboard" label="Đang tải chỉ số đánh giá" />;
+  }
 
   return (
     <div className="judge-page" style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '40px' }}>

@@ -5,6 +5,7 @@ import {
   ShieldAlert, RefreshCw, UserPlus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import PageSkeleton from '../../components/common/PageSkeleton';
 
 const AuthPage = () => {
   const [mode, setMode] = useState('login');
@@ -29,7 +30,7 @@ const AuthPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, login2FA, registerStudent, user } = useAuth();
+  const { login, login2FA, registerStudent, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -92,6 +93,10 @@ const AuthPage = () => {
     setSelectedDemo(roleKey);
     setError('');
   };
+
+  if (authLoading) {
+    return <PageSkeleton variant="form" label="Đang chuẩn bị trang đăng nhập" />;
+  }
 
   return (
     <div className="auth-page" style={{

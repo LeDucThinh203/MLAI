@@ -5,6 +5,7 @@ import {
   Eye, EyeOff, RefreshCw, Settings, Check, Key, ShieldAlert, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import PageSkeleton from '../../components/common/PageSkeleton';
 
 const PRESET_AVATARS = [
   { label: 'Avatar 1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' },
@@ -16,7 +17,7 @@ const PRESET_AVATARS = [
 ];
 
 const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
-  const { user, updateProfile, uploadAvatar, changePassword, deleteAccount } = useAuth();
+  const { user, updateProfile, uploadAvatar, changePassword, deleteAccount, loading: authLoading } = useAuth();
 
   // Profile Form States
   const [fullName, setFullName] = useState(user?.fullName || '');
@@ -163,6 +164,10 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
       setDeleteError(res.message);
     }
   };
+
+  if (authLoading || !user) {
+    return <PageSkeleton variant="settings" label="Đang tải cài đặt tài khoản" />;
+  }
 
   return (
     <div className="settings-page" style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', paddingBottom: '60px' }}>

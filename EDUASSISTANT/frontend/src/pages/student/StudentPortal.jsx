@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { renderSlaBadge } from '../../utils/formatters';
 import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
+import PageSkeleton from '../../components/common/PageSkeleton';
 
 const StudentPortal = ({ activeTab, setActiveTab }) => {
   const { token, user } = useAuth();
@@ -30,7 +31,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
 
   const [myCases, setMyCases] = useState([]);
   const [myAudits, setMyAudits] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -216,6 +217,10 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
         return <span>{status}</span>;
     }
   };
+
+  if (loading && myCases.length === 0 && myAudits.length === 0) {
+    return <PageSkeleton variant="portal" label="Đang tải hồ sơ sinh viên" />;
+  }
 
   return (
     <div className="portal-content portal-content--student" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { renderSlaBadge } from '../../utils/formatters';
 import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
+import PageSkeleton from '../../components/common/PageSkeleton';
 
 const ReviewerPortal = ({ activeTab }) => {
   const { token, user } = useAuth();
@@ -23,7 +24,7 @@ const ReviewerPortal = ({ activeTab }) => {
   const [escalationFilter, setEscalationFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCase, setSelectedCase] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [reEvaluating, setReEvaluating] = useState(false);
   const [reRouting, setReRouting] = useState(false);
   const [targetDepartment, setTargetDepartment] = useState('');
@@ -276,6 +277,10 @@ const ReviewerPortal = ({ activeTab }) => {
     }
     return null;
   };
+
+  if (loading && allCases.length === 0 && audits.length === 0) {
+    return <PageSkeleton variant="portal" label="Đang tải hàng đợi thẩm định" />;
+  }
 
   return (
     <div className="portal-content portal-content--reviewer" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
