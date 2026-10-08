@@ -171,7 +171,7 @@ const AuthPage = () => {
         }}
       >
         {/* Brand Header with Glowing Halo */}
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <div className="auth-brand" style={{ textAlign: 'center', marginBottom: '24px' }}>
           
           {/* Logo with pulsating halo */}
           <div style={{
@@ -229,7 +229,7 @@ const AuthPage = () => {
         </div>
 
         {/* Tab switch giữa Đăng Nhập & Đăng Ký Sinh Viên */}
-        <div style={{
+        <div className="auth-mode-tabs" style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           background: 'rgba(15, 23, 42, 0.8)',
@@ -241,6 +241,7 @@ const AuthPage = () => {
           <button
             type="button"
             onClick={() => { setMode('login'); setError(''); }}
+            className={`auth-mode-tab ${mode === 'login' ? 'is-active' : ''}`}
             style={{
               background: mode === 'login' ? 'linear-gradient(135deg, #4f46e5, #3b82f6)' : 'transparent',
               color: mode === 'login' ? '#ffffff' : 'var(--text-muted)',
@@ -260,6 +261,7 @@ const AuthPage = () => {
           <button
             type="button"
             onClick={() => { setMode('register'); setError(''); }}
+            className={`auth-mode-tab ${mode === 'register' ? 'is-active' : ''}`}
             style={{
               background: mode === 'register' ? 'linear-gradient(135deg, #4f46e5, #3b82f6)' : 'transparent',
               color: mode === 'register' ? '#ffffff' : 'var(--text-muted)',
@@ -279,7 +281,7 @@ const AuthPage = () => {
 
         {/* Error Alert */}
         {error && (
-          <div style={{
+          <div className="auth-error" style={{
             background: 'rgba(225, 29, 72, 0.15)',
             border: '1px solid rgba(225, 29, 72, 0.35)',
             borderRadius: '10px',
@@ -357,6 +359,11 @@ const AuthPage = () => {
           <div className={`auth-slider-viewport ${mode === 'register' ? 'is-register' : 'is-login'}`}>
           <div className="auth-slider-track">
           <div className="auth-slider-panel">
+          <div className="auth-form-intro">
+            <span>CHÀO MỪNG TRỞ LẠI</span>
+            <h3>Đăng nhập hệ thống</h3>
+            <p>Tiếp tục theo dõi và xử lý hồ sơ của bạn.</p>
+          </div>
           <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)' }}>
@@ -417,6 +424,11 @@ const AuthPage = () => {
 
         {/* 2. FORM ĐĂNG KÝ TÀI KHOẢN SINH VIÊN */}
           <div className="auth-slider-panel">
+          <div className="auth-form-intro">
+            <span>TÀI KHOẢN SINH VIÊN</span>
+            <h3>Tạo tài khoản mới</h3>
+            <p>Điền thông tin để bắt đầu sử dụng dịch vụ học vụ.</p>
+          </div>
           <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{
               background: 'rgba(2, 132, 199, 0.12)',
@@ -519,7 +531,7 @@ const AuthPage = () => {
         )}
 
         {/* 3. INTERACTIVE QUICK DEMO ACCOUNT SELECTOR (CHỌN NHANH VAI TRÒ DEMO) */}
-        <div style={{
+        <div className="auth-demo-accounts" style={{
           marginTop: '22px',
           paddingTop: '18px',
           borderTop: '1px solid rgba(255, 255, 255, 0.08)',
