@@ -135,8 +135,6 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
         return api_response(403, False, 'Chỉ sinh viên mới được quyền tạo hồ sơ học vụ.', None, 'FORBIDDEN')
 
     case_dict = req.dict()
-    student_user = await db_service.get_user_by_id(user['id'])
-
     ai_res = await extract_case_data(case_dict, user)
     ai_extraction = ai_res.get('data', {})
     case_dict['aiExtraction'] = ai_extraction
@@ -151,7 +149,7 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
     files = case_dict.get('evidenceFiles') or []
     factual_ocr = files[0].get('ocrData') if (files and isinstance(files[0], dict)) else None
 
-    rule_verdict = evaluate_case(case_dict, factual_ocr, student_user or {})
+    rule_verdict = evaluate_case(case_dict, factual_ocr, user)
 
     case_dict['ruleEngine'] = rule_verdict
     case_dict['status'] = rule_verdict['status']
@@ -237,11 +235,10 @@ async def evaluate_rules_endpoint(
     case_id: str,
     user: dict = Depends(require_roles('REVIEWER', 'ADMIN'))
 ):
-    target_case = await db_service.get_case_by_id(case_id)
+    target_case, student_user = await db_service.get_case_with_student(case_id)
     if not target_case:
         return api_response(404, False, f"Không tìm thấy hồ sơ #{case_id}.", None, 'NOT_FOUND')
 
-    student_user = await db_service.get_user_by_id(target_case['studentId'])
     files = target_case.get('evidenceFiles') or []
     factual_ocr = files[0].get('ocrData') if (files and isinstance(files[0], dict)) else None
     rule_verdict = evaluate_case(target_case, factual_ocr, student_user or {})
@@ -427,14 +424,13 @@ async def submit_case_feedback(
 
 @router.get("/api/cases/{case_id}/comments")
 async def get_case_comments(case_id: str, user: dict = Depends(get_current_user)):
-    target_case = await db_service.get_case_by_id(case_id)
+    target_case, comments = await db_service.get_case_with_comments(case_id)
     if not target_case:
         return api_response(404, False, f"Không tìm thấy hồ sơ #{case_id}.", None, 'NOT_FOUND')
 
     if user['role'] == 'STUDENT' and target_case['studentId'] != user['id']:
         return api_response(403, False, 'Bạn không có quyền xem bình luận trên hồ sơ của sinh viên khác.', None, 'FORBIDDEN')
 
-    comments = await db_service.get_comments(case_id)
     return api_response(200, True, 'Lấy danh sách bình luận thành công.', comments)
 
 
@@ -450,7 +446,7 @@ async def add_case_comment(case_id: str, req: AddCommentRequest, user: dict = De
     if not req.content or not req.content.strip():
         return api_response(400, False, 'Nội dung bình luận không được để trống.', None, 'EMPTY_COMMENT')
 
-    new_cmt = await db_service.add_comment(case_id, user, req.content)
+    new_cmt = await db_service.add_comment(case_id, user, req.content, target_case)
     await comment_hub.broadcast(case_id, {
         'type': 'comment_created',
         'caseId': case_id,

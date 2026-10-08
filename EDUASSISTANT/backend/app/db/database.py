@@ -30,6 +30,80 @@ def get_all(sql: str, params: tuple=()) -> List[Dict[str, Any]]:
     with get_db_connection() as c, c.cursor() as q:
         q.execute(_sql(sql), params); return [_row(x) for x in q.fetchall()]
 
+def get_dashboard_statistics(recent_cutoff: str) -> Dict[str, Any]:
+    """Fetch the administrator dashboard aggregates without loading full tables."""
+    json_case = "COALESCE(NULLIF(aiExtraction, ''), '{}')::jsonb"
+    json_audit = "COALESCE(NULLIF(inputData, ''), '{}')::jsonb"
+    escalation_reason = (
+        f"COALESCE(NULLIF({json_case} -> 'escalation' ->> 'reason', ''), "
+        f"NULLIF({json_case} -> 'ruleEngine' ->> 'escalationReason', ''))"
+    )
+
+    with get_db_connection() as c, c.cursor() as q:
+        q.execute("""
+            SELECT COUNT(id) AS total_users
+            FROM users
+        """)
+        users = _row(q.fetchone()) or {'total_users': 0}
+
+        q.execute("SELECT role, COUNT(id) AS count FROM users GROUP BY role")
+        role_rows = [_row(row) for row in q.fetchall()]
+
+        q.execute(f"""
+            SELECT
+                COUNT(id) AS total_cases,
+                COUNT(id) FILTER (WHERE createdAt >= %s) AS today_cases_count,
+                COUNT(id) FILTER (WHERE status IN ('SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED')) AS pending_cases,
+                COUNT(id) FILTER (WHERE status = 'APPROVED') AS approved_cases,
+                COUNT(id) FILTER (WHERE status = 'REJECTED') AS rejected_cases,
+                COUNT(id) FILTER (WHERE {json_case} -> 'ruleEngine' ->> 'decision' = 'AUTO_APPROVE') AS auto_approved_cases,
+                COUNT(id) FILTER (WHERE {json_case} -> 'ruleEngine' ->> 'decision' = 'ESCALATE_TO_HUMAN' OR {escalation_reason} IS NOT NULL) AS escalated_cases
+            FROM cases
+        """, (recent_cutoff,))
+        cases = _row(q.fetchone()) or {}
+
+        q.execute("SELECT status, COUNT(id) AS count FROM cases GROUP BY status")
+        status_rows = [_row(row) for row in q.fetchall()]
+        q.execute("SELECT category, COUNT(id) AS count FROM cases GROUP BY category")
+        category_rows = [_row(row) for row in q.fetchall()]
+        q.execute("SELECT COALESCE(priority, 'MEDIUM') AS priority, COUNT(id) AS count FROM cases GROUP BY COALESCE(priority, 'MEDIUM')")
+        priority_rows = [_row(row) for row in q.fetchall()]
+
+        q.execute(f"""
+            SELECT {escalation_reason} AS reason, COUNT(id) AS count
+            FROM cases
+            WHERE {escalation_reason} IS NOT NULL
+            GROUP BY {escalation_reason}
+        """)
+        escalation_rows = [_row(row) for row in q.fetchall()]
+
+        q.execute("SELECT * FROM cases ORDER BY createdAt DESC LIMIT 5")
+        recent_cases = [_row(row) for row in q.fetchall()]
+
+        q.execute(f"""
+            SELECT
+                COUNT(id) AS total_audits,
+                COUNT(id) FILTER (WHERE action = 'HUMAN_OVERRIDE') AS total_human_overrides,
+                COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED') AS total_reviewer_feedback,
+                COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED' AND {json_audit} ->> 'feedbackType' = 'MISSED_ESCALATION') AS missed_escalation_feedback_count,
+                COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED' AND {json_audit} ->> 'feedbackType' = 'UNNECESSARY_ESCALATION') AS unnecessary_escalation_feedback_count,
+                COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED' AND {json_audit} ->> 'feedbackType' = 'CORRECT') AS correct_feedback_count
+            FROM audits
+        """)
+        audits = _row(q.fetchone()) or {}
+
+    return {
+        'users': users,
+        'roles': role_rows,
+        'cases': cases,
+        'statuses': status_rows,
+        'categories': category_rows,
+        'priorities': priority_rows,
+        'escalations': escalation_rows,
+        'recentCases': recent_cases,
+        'audits': audits,
+    }
+
 def init_database():
     schema = '''
 CREATE TABLE IF NOT EXISTS users (id VARCHAR(100) PRIMARY KEY, username VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(255) NOT NULL, fullName VARCHAR(255) NOT NULL, studentCode VARCHAR(100), email VARCHAR(255), role VARCHAR(50) NOT NULL, department VARCHAR(255), avatar TEXT, bio TEXT, twoFactorEnabled BOOLEAN NOT NULL DEFAULT FALSE, twoFactorSecret VARCHAR(255), mustChangePassword BOOLEAN NOT NULL DEFAULT FALSE, createdAt VARCHAR(100), updatedAt VARCHAR(100));
@@ -60,13 +134,14 @@ CREATE TABLE IF NOT EXISTS evidence_uploads (fileName VARCHAR(255) PRIMARY KEY, 
         q.execute('CREATE INDEX IF NOT EXISTS idx_cases_department_created ON cases (assignedDepartment, createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_users_role_created ON users (role, createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_users_username_lower ON users (LOWER(username))')
         q.execute('CREATE INDEX IF NOT EXISTS idx_comments_case_created ON comments (caseId, createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications (userId, createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications (userId, isRead)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_evidence_owner_created ON evidence_uploads (ownerId, createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_expiry ON refresh_tokens (userId, expiresAt)')
-        q.execute('SELECT COUNT(*) AS count FROM users')
-        if q.fetchone()['count'] == 0:
+        q.execute('SELECT EXISTS (SELECT 1 FROM users) AS has_users')
+        if not q.fetchone()['has_users']:
             path=os.path.join(os.path.dirname(__file__),'data.json')
             if os.path.exists(path):
                 for u in json.load(open(path,encoding='utf-8')).get('users',[]):

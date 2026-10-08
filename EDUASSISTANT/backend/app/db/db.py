@@ -25,7 +25,7 @@ import hashlib
 import secrets
 import bcrypt
 from datetime import datetime
-from app.db.database import run_query, get_one, get_all
+from app.db.database import run_query, get_one, get_all, get_dashboard_statistics
 from app.realtime import case_event_hub
 
 DEFAULT_AUDIT_PAGE_SIZE = 10
@@ -420,11 +420,41 @@ class DatabaseService:
         return [format_case_row(r) for r in rows]
 
     @staticmethod
+    async def get_admin_dashboard_statistics(recent_cutoff: str):
+        data = get_dashboard_statistics(recent_cutoff)
+        data['recentCases'] = [format_case_row(case) for case in data.get('recentCases', [])]
+        return data
+
+    @staticmethod
     async def get_case_by_id(case_id: str):
         if not case_id:
             return None
         row = get_one('SELECT * FROM cases WHERE id = ?', (case_id,))
         return format_case_row(row)
+
+    @staticmethod
+    async def get_case_with_student(case_id: str):
+        """Load a case and its owner in one indexed INNER JOIN."""
+        if not case_id:
+            return None, None
+        row = get_one("""
+            SELECT c.*, u.id AS joined_student_id, u.username AS joined_student_username,
+                   u.fullName AS joined_student_full_name, u.studentCode AS joined_student_code,
+                   u.department AS joined_student_department
+            FROM cases c
+            INNER JOIN users u ON u.id = c.studentId
+            WHERE c.id = ?
+        """, (case_id,))
+        if not row:
+            return None, None
+        student = {
+            'id': row.pop('joined_student_id', None),
+            'username': row.pop('joined_student_username', None),
+            'fullName': row.pop('joined_student_full_name', None),
+            'studentCode': row.pop('joined_student_code', None),
+            'department': row.pop('joined_student_department', None),
+        }
+        return format_case_row(row), student
 
     @staticmethod
     async def create_case(case_data: dict, actor: dict):
@@ -635,8 +665,43 @@ class DatabaseService:
         return rows
 
     @staticmethod
-    async def add_comment(case_id: str, author: dict, content: str):
-        target_case = await DatabaseService.get_case_by_id(case_id)
+    async def get_case_with_comments(case_id: str):
+        """Load the case required for access control and its comments in one LEFT JOIN."""
+        if not case_id:
+            return None, []
+        rows = get_all("""
+            SELECT c.*, cm.id AS comment_id, cm.caseId AS comment_case_id,
+                   cm.authorId AS comment_author_id, cm.authorName AS comment_author_name,
+                   cm.authorRole AS comment_author_role, cm.authorAvatar AS comment_author_avatar,
+                   cm.content AS comment_content, cm.createdAt AS comment_created_at
+            FROM cases c
+            LEFT JOIN comments cm ON cm.caseId = c.id
+            WHERE c.id = ?
+            ORDER BY cm.createdAt ASC
+        """, (case_id,))
+        if not rows:
+            return None, []
+
+        comment_columns = {key for key in rows[0] if key.startswith('comment_')}
+        case_row = {key: value for key, value in rows[0].items() if key not in comment_columns}
+        comments = [
+            {
+                'id': row['comment_id'],
+                'caseId': row['comment_case_id'],
+                'authorId': row['comment_author_id'],
+                'authorName': row['comment_author_name'],
+                'authorRole': row['comment_author_role'],
+                'authorAvatar': row['comment_author_avatar'],
+                'content': row['comment_content'],
+                'createdAt': row['comment_created_at'],
+            }
+            for row in rows if row.get('comment_id')
+        ]
+        return format_case_row(case_row), comments
+
+    @staticmethod
+    async def add_comment(case_id: str, author: dict, content: str, target_case: dict = None):
+        target_case = target_case or await DatabaseService.get_case_by_id(case_id)
         if not target_case:
             return None
 
@@ -762,9 +827,8 @@ class DatabaseService:
             student_id = sv.get('studentId')
             case_ids = sv.get('caseIds', [])
             if case_ids:
-                placeholders = ', '.join(['?'] * len(case_ids))
-                sql += f" AND (caseId IN ({placeholders}) OR (caseId IS NULL AND actorId = ?))"
-                params.extend(case_ids)
+                sql += " AND (caseId = ANY(?) OR (caseId IS NULL AND actorId = ?))"
+                params.append(case_ids)
                 params.append(student_id)
             else:
                 sql += ' AND (caseId IS NULL AND actorId = ?)'
@@ -796,8 +860,8 @@ class DatabaseService:
         if filter_dict.get('studentVisibleFor'):
             visible = filter_dict['studentVisibleFor']; case_ids = visible.get('caseIds', [])
             if case_ids:
-                where += f" AND (caseId IN ({', '.join(['?'] * len(case_ids))}) OR (caseId IS NULL AND actorId = ?))"
-                params.extend(case_ids); params.append(visible.get('studentId'))
+                where += " AND (caseId = ANY(?) OR (caseId IS NULL AND actorId = ?))"
+                params.append(case_ids); params.append(visible.get('studentId'))
             else:
                 where += ' AND (caseId IS NULL AND actorId = ?)'; params.append(visible.get('studentId'))
         elif filter_dict.get('actorId'):
@@ -811,7 +875,7 @@ class DatabaseService:
             where += " AND (LOWER(action) LIKE ? OR LOWER(COALESCE(caseId, '')) LIKE ? OR LOWER(COALESCE(actorName, '')) LIKE ? OR LOWER(COALESCE(actorUsername, '')) LIKE ? OR LOWER(COALESCE(reason, '')) LIKE ?)"
             params.extend([term] * 5)
 
-        total = (get_one('SELECT COUNT(*) AS count FROM audits' + where, tuple(params)) or {}).get('count', 0)
+        total = (get_one('SELECT COUNT(id) AS count FROM audits' + where, tuple(params)) or {}).get('count', 0)
         safe_page = max(1, int(page))
         safe_size = min(MAX_AUDIT_PAGE_SIZE, max(MIN_AUDIT_PAGE_SIZE, int(page_size)))
         total_pages = max(1, (total + safe_size - 1) // safe_size)
@@ -823,8 +887,7 @@ class DatabaseService:
 
     @staticmethod
     async def log_audit(data: dict):
-        cnt_row = get_one('SELECT COUNT(*) as cnt FROM audits')
-        audit_id = f"AUDIT-{str((cnt_row.get('cnt') or 0) + 1001)}"
+        audit_id = f"AUDIT-{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}-{secrets.token_hex(3).upper()}"
         timestamp = datetime.utcnow().isoformat() + 'Z'
         safe_actor = data.get('actor') or {'id': 'ANONYMOUS', 'username': 'guest', 'role': 'GUEST', 'name': 'Khách vãng lai'}
 
