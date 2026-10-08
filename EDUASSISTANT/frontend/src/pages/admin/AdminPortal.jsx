@@ -616,13 +616,21 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
                   Khoa / Phòng ban
                 </label>
-                <input
-                  type="text"
+                <select
                   className="form-input"
-                  placeholder="Ban Giám Sát, Phòng Đào Tạo..."
                   value={newDepartment}
                   onChange={e => setNewDepartment(e.target.value)}
-                />
+                >
+                  <option value="Ban Giám Sát & Xét Duyệt">Ban Giám Sát & Xét Duyệt</option>
+                  <option value="Phòng Quản lý Đào tạo">Phòng Quản lý Đào tạo</option>
+                  <option value="Phòng Công tác Sinh viên">Phòng Công tác Sinh viên</option>
+                  <option value="Phòng Kế hoạch - Tài chính">Phòng Kế hoạch - Tài chính</option>
+                  <option value="Phòng Tổ chức - Hành chính">Phòng Tổ chức - Hành chính</option>
+                  <option value="Phòng Khảo thí & Đảm bảo chất lượng">Phòng Khảo thí & Đảm bảo chất lượng</option>
+                  <option value="Văn phòng Đoàn - Hội Sinh viên">Văn phòng Đoàn - Hội Sinh viên</option>
+                  <option value="Trung tâm Hỗ trợ Sinh viên">Trung tâm Hỗ trợ Sinh viên</option>
+                  <option value="Trung tâm Công nghệ Thông tin">Trung tâm Công nghệ Thông tin</option>
+                </select>
               </div>
 
               <button

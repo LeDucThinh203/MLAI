@@ -494,13 +494,24 @@ const AuthPage = () => {
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
                 Khoa đào tạo
               </label>
-              <input
-                type="text"
+              <select
                 className="form-input"
-                placeholder="Khoa Công Nghệ Thông Tin, Khoa Kinh Tế..."
                 value={regDepartment}
                 onChange={e => setRegDepartment(e.target.value)}
-              />
+              >
+                <option value="Khoa Công Nghệ Thông Tin">Khoa Công Nghệ Thông Tin</option>
+                <option value="Khoa Kinh Tế">Khoa Kinh Tế</option>
+                <option value="Khoa Quản Trị Kinh Doanh">Khoa Quản Trị Kinh Doanh</option>
+                <option value="Khoa Tài Chính - Ngân Hàng">Khoa Tài Chính - Ngân Hàng</option>
+                <option value="Khoa Kế Toán - Kiểm Toán">Khoa Kế Toán - Kiểm Toán</option>
+                <option value="Khoa Điện - Điện Tử">Khoa Điện - Điện Tử</option>
+                <option value="Khoa Cơ Khí">Khoa Cơ Khí</option>
+                <option value="Khoa Xây Dựng">Khoa Xây Dựng</option>
+                <option value="Khoa Ngoại Ngữ">Khoa Ngoại Ngữ</option>
+                <option value="Khoa Luật">Khoa Luật</option>
+                <option value="Khoa Khoa Học Cơ Bản">Khoa Khoa Học Cơ Bản</option>
+                <option value="Khoa Du Lịch - Khách Sạn">Khoa Du Lịch - Khách Sạn</option>
+              </select>
             </div>
 
             <button
