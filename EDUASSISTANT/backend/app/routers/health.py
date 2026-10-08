@@ -6,7 +6,7 @@ from app.db.database import ACTIVE_ENGINE
 router = APIRouter(tags=["Health"])
 
 
-@router.get("/api/health")
+@router.api_route("/api/health", methods=["GET", "HEAD"])
 async def health_check():
     db_name = "PostgreSQL (Render)"
     return {
