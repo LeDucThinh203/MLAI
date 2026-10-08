@@ -355,7 +355,8 @@ class DatabaseService:
         metadata = json.dumps(data.get('metadata', {}))
         ocr_data = json.dumps(data.get('ocrData')) if data.get('ocrData') else None
         ocr_provider = data.get('ocrProvider')
-        ocr_is_live = 1 if data.get('ocrIsLive') else 0
+        # PostgreSQL BOOLEAN must receive a Python bool, not SQLite-style 0/1.
+        ocr_is_live = bool(data.get('ocrIsLive'))
         now_iso = datetime.utcnow().isoformat() + 'Z'
 
         existing = get_one('SELECT fileName FROM evidence_uploads WHERE fileName = ?', (file_name,))
