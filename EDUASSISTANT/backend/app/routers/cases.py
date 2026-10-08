@@ -40,6 +40,9 @@ async def comment_websocket(
     """Subscribe an authenticated participant to one case's comment room."""
     try:
         identity = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        if identity.get('jti') and await db_service.is_access_token_revoked(identity['jti']):
+            await websocket.close(code=1008)
+            return
         user = await db_service.get_user_by_id(identity.get("id"))
         target_case = await db_service.get_case_by_id(case_id)
         if not user or not target_case:
@@ -66,6 +69,9 @@ async def case_events_websocket(websocket: WebSocket, token: str = Query(...)):
     """Push new and updated cases to authenticated reviewer/admin queues."""
     try:
         identity = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        if identity.get('jti') and await db_service.is_access_token_revoked(identity['jti']):
+            await websocket.close(code=1008)
+            return
         user = await db_service.get_user_by_id(identity.get("id"))
         if not user:
             await websocket.close(code=1008)

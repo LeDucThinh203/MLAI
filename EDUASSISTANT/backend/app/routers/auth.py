@@ -103,6 +103,7 @@ async def login(req: LoginRequest):
             return api_response(400, False, 'Mã xác thực 2 bước không chính xác hoặc đã hết hạn.', None, 'INVALID_2FA_CODE')
 
     token_payload = {
+        'jti': secrets.token_hex(16),
         'id': user['id'],
         'username': user['username'],
         'role': user['role'],
@@ -181,6 +182,7 @@ async def login_2fa_endpoint(req: Login2FARequest):
         return api_response(400, False, 'Mã OTP không hợp lệ hoặc đã hết hạn!', None, 'INVALID_2FA_CODE')
 
     token_payload = {
+        'jti': secrets.token_hex(16),
         'id': user['id'],
         'username': user['username'],
         'role': user['role'],
@@ -241,6 +243,7 @@ async def register(req: RegisterRequest):
     user = await db_service.create_user(req.dict())
     
     token_payload = {
+        'jti': secrets.token_hex(16),
         'id': user['id'],
         'username': user['username'],
         'role': user['role'],
@@ -305,6 +308,7 @@ async def refresh_token(req: RefreshRequest):
     await db_service.save_refresh_token(user['id'], new_refresh_token, new_expires)
 
     token_payload = {
+        'jti': secrets.token_hex(16),
         'id': user['id'],
         'username': user['username'],
         'role': user['role'],
@@ -336,9 +340,19 @@ async def refresh_token(req: RefreshRequest):
 
 
 @router.post("/api/auth/logout")
-async def logout(req: Optional[RefreshRequest] = None):
+async def logout(request: Request, req: Optional[RefreshRequest] = None):
     if req and req.refreshToken:
         await db_service.delete_refresh_token(req.refreshToken)
+    auth_header = request.headers.get('Authorization') or request.headers.get('x-access-token')
+    raw_token = auth_header[7:] if auth_header and auth_header.startswith('Bearer ') else auth_header
+    if raw_token:
+        try:
+            decoded = jwt.decode(raw_token, JWT_SECRET, algorithms=['HS256'])
+            if decoded.get('jti') and decoded.get('exp'):
+                expiry = datetime.utcfromtimestamp(decoded['exp']).isoformat() + 'Z'
+                await db_service.revoke_access_token(decoded['jti'], expiry)
+        except jwt.PyJWTError:
+            pass
     return api_response(200, True, 'Đăng xuất thành công.')
 
 

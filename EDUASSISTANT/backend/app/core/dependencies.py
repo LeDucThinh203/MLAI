@@ -26,6 +26,12 @@ async def get_current_user(request: Request) -> dict:
             detail={'success': False, 'message': 'Token không hợp lệ hoặc đã hết hạn.', 'error': 'INVALID_TOKEN'}
         )
 
+    if decoded.get('jti') and await db_service.is_access_token_revoked(decoded['jti']):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={'success': False, 'message': 'Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại.', 'error': 'TOKEN_REVOKED'}
+        )
+
     user = await db_service.get_user_by_id(decoded.get('id'))
     if not user:
         raise HTTPException(

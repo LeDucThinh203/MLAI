@@ -112,6 +112,7 @@ CREATE TABLE IF NOT EXISTS audits (id VARCHAR(100) PRIMARY KEY, action VARCHAR(1
 CREATE TABLE IF NOT EXISTS comments (id VARCHAR(100) PRIMARY KEY, caseId VARCHAR(100) NOT NULL REFERENCES cases(id), authorId VARCHAR(100) NOT NULL, authorName VARCHAR(255) NOT NULL, authorRole VARCHAR(50) NOT NULL, authorAvatar TEXT, content TEXT NOT NULL, createdAt VARCHAR(100) NOT NULL);
 CREATE TABLE IF NOT EXISTS notifications (id VARCHAR(100) PRIMARY KEY, userId VARCHAR(100) NOT NULL REFERENCES users(id), title VARCHAR(255) NOT NULL, message TEXT NOT NULL, type VARCHAR(50) DEFAULT 'INFO', caseId VARCHAR(100), isRead BOOLEAN NOT NULL DEFAULT FALSE, createdAt VARCHAR(100) NOT NULL);
 CREATE TABLE IF NOT EXISTS refresh_tokens (id VARCHAR(100) PRIMARY KEY, userId VARCHAR(100) NOT NULL REFERENCES users(id), token VARCHAR(255) UNIQUE NOT NULL, expiresAt VARCHAR(100) NOT NULL, createdAt VARCHAR(100) NOT NULL);
+CREATE TABLE IF NOT EXISTS revoked_access_tokens (jti VARCHAR(100) PRIMARY KEY, expiresAt VARCHAR(100) NOT NULL, createdAt VARCHAR(100) NOT NULL);
 CREATE TABLE IF NOT EXISTS evidence_uploads (fileName VARCHAR(255) PRIMARY KEY, ownerId VARCHAR(100) NOT NULL REFERENCES users(id), metadata TEXT NOT NULL, ocrData TEXT, ocrProvider VARCHAR(100), ocrIsLive BOOLEAN NOT NULL DEFAULT FALSE, createdAt VARCHAR(100) NOT NULL);
 '''
     with get_db_connection() as c, c.cursor() as q:
@@ -140,6 +141,7 @@ CREATE TABLE IF NOT EXISTS evidence_uploads (fileName VARCHAR(255) PRIMARY KEY, 
         q.execute('CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications (userId, isRead)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_evidence_owner_created ON evidence_uploads (ownerId, createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_expiry ON refresh_tokens (userId, expiresAt)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_revoked_access_tokens_expiry ON revoked_access_tokens (expiresAt)')
         q.execute('SELECT EXISTS (SELECT 1 FROM users) AS has_users')
         if not q.fetchone()['has_users']:
             path=os.path.join(os.path.dirname(__file__),'data.json')

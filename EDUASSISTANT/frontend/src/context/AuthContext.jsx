@@ -241,12 +241,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const clearLocalSession = () => {
     setToken(null);
     setRefreshToken(null);
     setUser(null);
     localStorage.removeItem('cf_token');
     localStorage.removeItem('cf_refresh_token');
+  };
+
+  const logout = async () => {
+    // Revoke the server-side refresh token first. Local cleanup still runs if
+    // the network is unavailable, so the current browser session always ends.
+    const activeRefreshToken = refreshToken || localStorage.getItem('cf_refresh_token');
+    try {
+      if (activeRefreshToken) {
+        await axios.post(
+          `${API_BASE}/auth/logout`,
+          { refreshToken: activeRefreshToken },
+          { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
+        );
+      }
+    } catch {
+      // A failed revocation must not keep the user signed in on this device.
+    } finally {
+      clearLocalSession();
+    }
   };
 
   return (

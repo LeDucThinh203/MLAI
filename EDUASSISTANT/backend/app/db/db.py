@@ -352,6 +352,25 @@ class DatabaseService:
     async def revoke_all_user_refresh_tokens(user_id: str):
         return run_query('DELETE FROM refresh_tokens WHERE userId = ?', (user_id,))
 
+    # ================= ACCESS TOKEN DENYLIST =================
+    @staticmethod
+    async def revoke_access_token(jti: str, expires_at: str):
+        now_iso = datetime.utcnow().isoformat() + 'Z'
+        run_query('DELETE FROM revoked_access_tokens WHERE expiresAt <= ?', (now_iso,))
+        return run_query("""
+            INSERT INTO revoked_access_tokens (jti, expiresAt, createdAt)
+            VALUES (?, ?, ?)
+            ON CONFLICT (jti) DO NOTHING
+        """, (jti, expires_at, now_iso))
+
+    @staticmethod
+    async def is_access_token_revoked(jti: str):
+        now_iso = datetime.utcnow().isoformat() + 'Z'
+        return get_one(
+            'SELECT jti FROM revoked_access_tokens WHERE jti = ? AND expiresAt > ?',
+            (jti, now_iso)
+        ) is not None
+
     # ================= EVIDENCE UPLOADS =================
     @staticmethod
     async def save_evidence_upload(data: dict):
