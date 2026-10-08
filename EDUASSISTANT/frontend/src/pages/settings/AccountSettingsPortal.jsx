@@ -339,9 +339,6 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                     onChange={handleAvatarFileChange}
                     style={{ display: 'none' }}
                   />
-                  <p style={{ fontSize: '0.74rem', color: 'var(--text-sub)', margin: '6px 0 0 0' }}>
-                    Tự động tối ưu hóa WebP chuẩn tỉ lệ 1:1, dung lượng tối đa 5MB.
-                  </p>
                 </div>
               </div>
 

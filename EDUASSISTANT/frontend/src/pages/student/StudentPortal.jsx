@@ -11,6 +11,18 @@ import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
 
+const REVIEW_RESULT_LABELS = {
+  RULE_STANDARD_VERIFIED: 'Thông tin hồ sơ đã được kiểm tra',
+  RULE_TUITION_DISCOUNT_STANDARD_APPLICATION: 'Hồ sơ có đủ thông tin cơ bản',
+  RULE_INSUFFICIENT_INFORMATION: 'Cần bổ sung thêm thông tin',
+  RULE_GENERAL_INQUIRY: 'Yêu cầu của bạn đã được ghi nhận',
+  RULE_TUITION_DISCOUNT_INSUFFICIENT_DETAILS: 'Cần bổ sung thêm thông tin',
+  RULE_TUITION_DISCOUNT_INSUFFICIENT_INFO: 'Cần bổ sung thêm thông tin',
+  RULE_INCOMPLETE_CONTENT: 'Nội dung cần được bổ sung'
+};
+
+const getReviewResultLabel = (result) => REVIEW_RESULT_LABELS[result] || 'Thông tin hồ sơ đã được kiểm tra';
+
 const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) => {
   const { token, user } = useAuth();
   const [title, setTitle] = useState('');
@@ -113,11 +125,11 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
           if (ocr.data.suggestedDescription) {
             setDescription(ocr.data.suggestedDescription);
           }
-          setToastMessage({ type: 'success', text: `✨ OCR đã trích xuất & tự động điền đơn: ${ocr.data.documentType}` });
+          setToastMessage({ type: 'success', text: `✨ Đã đọc tài liệu và điền sẵn một số thông tin: ${ocr.data.documentType}` });
         }
       }
     } catch (err) {
-      setUploadError(err.response?.data?.message || 'Lỗi quét OCR file minh chứng!');
+      setUploadError(err.response?.data?.message || 'Không thể đọc thông tin từ tài liệu. Bạn vẫn có thể tải tệp lên theo cách thông thường.');
     } finally {
       setOcrScanning(false);
       setUploadingFile(false);
@@ -310,7 +322,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
 
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                Minh chứng đính kèm & Tự động trích xuất thông tin bằng AI OCR
+                Tài liệu minh chứng
               </label>
               <div style={{
                 border: '1px dashed var(--border-color)',
@@ -332,7 +344,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                     />
                     <label htmlFor="student-ocr-upload" className="btn-primary shimmer-button" style={{ cursor: 'pointer', fontSize: '0.82rem', padding: '6px 14px', background: 'linear-gradient(135deg, #4f46e5, #0284c7)' }}>
                       <Sparkles size={15} />
-                      <span>{ocrScanning ? 'Đang trích xuất OCR...' : '✨ Quét OCR & Tự Động Điền'}</span>
+                      <span>{ocrScanning ? 'Đang đọc thông tin từ tài liệu...' : '✨ Đọc tài liệu & điền thông tin'}</span>
                     </label>
 
                     <input
@@ -363,10 +375,10 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Sparkles size={14} color="#38bdf8" /> AI OCR: {ocrData.documentType}
+                        <Sparkles size={14} color="#38bdf8" /> Thông tin đọc từ tài liệu: {ocrData.documentType}
                       </span>
                       <span style={{ fontSize: '0.72rem', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                        Độ tin cậy: {Math.round((ocrData.confidenceScore || 0.96) * 100)}% • Tamper: {ocrData.tamperRisk || 'LOW'} (An toàn)
+                        Mức độ rõ ràng: {Math.round((ocrData.confidenceScore || 0.96) * 100)}% • Kiểm tra chỉnh sửa: {(ocrData.tamperRisk || 'LOW') === 'LOW' ? 'Không phát hiện bất thường' : 'Cần kiểm tra thêm'}
                       </span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.76rem', color: 'var(--text-sub)', marginTop: '4px' }}>
@@ -374,7 +386,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                       <div>• Đơn vị cấp: <strong style={{ color: '#fff' }}>{ocrData.issuingAuthority}</strong></div>
                     </div>
                     <p style={{ fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic', marginTop: '2px' }}>
-                      ℹ️ Đã tự động điền Tiêu đề, Phân loại và Nội dung giải trình từ minh chứng. Bạn có thể chỉnh sửa nếu cần.
+                      ℹ️ Hệ thống đã điền sẵn tiêu đề, loại hồ sơ và nội dung dựa trên tài liệu. Bạn hãy kiểm tra và chỉnh sửa nếu cần.
                     </p>
                   </div>
                 )}
@@ -389,7 +401,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                     </div>
                     {file.metadata?.isOptimized && (
                       <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: 600, background: 'rgba(5, 150, 105, 0.2)', padding: '2px 6px', borderRadius: '4px' }}>
-                        Đã tối ưu VLM (-{file.metadata.savings})
+                        Đã giảm dung lượng tệp (-{file.metadata.savings})
                       </span>
                     )}
                   </div>
@@ -603,9 +615,9 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                   {c.aiExtraction && (
                     <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '8px 12px', fontSize: '0.78rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <span style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Sparkles size={13} /> AI Kiểm tra: <strong>{c.aiExtraction.policyRuleMatch || 'Hợp lệ'}</strong>
+                        <Sparkles size={13} /> Kiểm tra ban đầu: <strong>{getReviewResultLabel(c.aiExtraction.policyRuleMatch)}</strong>
                       </span>
-                      <span style={{ color: '#34d399' }}>Độ tin cậy: {Math.round((c.aiExtraction.confidence || 0.95) * 100)}%</span>
+                      <span style={{ color: '#34d399' }}>Mức độ khớp thông tin: {Math.round((c.aiExtraction.confidence || 0.95) * 100)}%</span>
                     </div>
                   )}
 
