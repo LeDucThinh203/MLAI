@@ -57,7 +57,7 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
   const handleDisable = async (e) => {
     if (e) e.preventDefault();
     if (!twoFactorInputCode || twoFactorInputCode.trim().length < 6) {
-      setModal2FAMsg({ type: 'error', text: 'Vui lòng nhập mã OTP hiện tại (hoặc 123456) để xác nhận tắt 2FA!' });
+      setModal2FAMsg({ type: 'error', text: 'Vui lòng nhập mã OTP hiện tại từ ứng dụng Authenticator để xác nhận tắt 2FA!' });
       return;
     }
     setTwoFactorLoading(true);
@@ -207,17 +207,10 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
             </div>
 
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ marginBottom: '8px' }}>
                 <label style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-main)' }}>
                   Nhập mã OTP để xác nhận TẮT 2FA:
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setTwoFactorInputCode('123456')}
-                  style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.76rem', cursor: 'pointer', textDecoration: 'underline' }}
-                >
-                  ⚡ Mã Test (123456)
-                </button>
               </div>
 
               <input
@@ -334,17 +327,10 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
             </div>
 
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ marginBottom: '8px' }}>
                 <label style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-main)' }}>
                   2. Nhập mã OTP gồm 6 chữ số:
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setTwoFactorInputCode('123456')}
-                  style={{ background: 'transparent', border: 'none', color: '#818cf8', fontSize: '0.76rem', cursor: 'pointer', textDecoration: 'underline' }}
-                >
-                  ⚡ Nhập nhanh Test (123456)
-                </button>
               </div>
 
               <input

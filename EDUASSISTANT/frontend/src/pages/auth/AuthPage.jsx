@@ -99,7 +99,7 @@ const AuthPage = () => {
   }
 
   return (
-    <div className="auth-page" style={{
+    <div className={`auth-page auth-page--${mode}`} style={{
       position: 'relative',
       minHeight: 'calc(100vh - 40px)',
       display: 'flex',
@@ -155,12 +155,12 @@ const AuthPage = () => {
 
       {/* 2. AUTHENTICATION CONTAINER CARD */}
       <div 
-        className="auth-card-animated auth-card"
+        className="auth-card-animated auth-card auth-card--split"
         style={{
           position: 'relative',
           zIndex: 1,
           width: '100%',
-          maxWidth: '520px',
+          maxWidth: '1080px',
           background: 'rgba(11, 17, 34, 0.85)',
           backdropFilter: 'blur(28px)',
           WebkitBackdropFilter: 'blur(28px)',
@@ -170,6 +170,7 @@ const AuthPage = () => {
           boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(79, 70, 229, 0.12)'
         }}
       >
+        <section className="auth-form-area">
         
         {/* Brand Header with Glowing Halo */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
@@ -332,16 +333,6 @@ const AuthPage = () => {
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => setTwoFactorOtp('123456')}
-                  style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}
-                >
-                  ⚡ Nhập nhanh mã Bypass Demo (123456)
-                </button>
-              </div>
-
               <button
                 type="submit"
                 disabled={verifying2FA || !twoFactorOtp}
@@ -365,6 +356,7 @@ const AuthPage = () => {
 
         {/* 1. FORM ĐĂNG NHẬP */}
         {!twoFactorChallenge && mode === 'login' && (
+          <div key="login" className="auth-slide-form">
           <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)' }}>
@@ -421,10 +413,12 @@ const AuthPage = () => {
               )}
             </button>
           </form>
+          </div>
         )}
 
         {/* 2. FORM ĐĂNG KÝ TÀI KHOẢN SINH VIÊN */}
         {mode === 'register' && (
+          <div key="register" className="auth-slide-form">
           <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{
               background: 'rgba(2, 132, 199, 0.12)',
@@ -521,6 +515,7 @@ const AuthPage = () => {
               <span>{loading ? 'Đang tạo tài khoản sinh viên...' : 'Tạo Tài Khoản & Vào Hệ Thống'}</span>
             </button>
           </form>
+          </div>
         )}
 
         {/* 3. INTERACTIVE QUICK DEMO ACCOUNT SELECTOR (CHỌN NHANH VAI TRÒ DEMO) */}
@@ -602,7 +597,24 @@ const AuthPage = () => {
 
           </div>
         </div>
+        </section>
 
+        <aside className="auth-showcase" aria-label="Giới thiệu hệ thống EDUASSISTANT">
+          <div className="auth-showcase__glow" />
+          <div className="auth-showcase__content">
+            <span className="auth-showcase__eyebrow"><Sparkles size={15} /> EDUASSISTANT</span>
+            <h1>Học vụ rõ ràng,<br />xử lý chủ động.</h1>
+            <p>Nộp hồ sơ, theo dõi tiến độ và nhận phản hồi trong một không gian thống nhất.</p>
+            <div className="auth-showcase__features">
+              <span><Shield size={16} /> Bảo mật xác thực 2 bước</span>
+              <span><RefreshCw size={16} /> Cập nhật trạng thái tức thời</span>
+              <span><UserPlus size={16} /> Đăng ký dành cho sinh viên</span>
+            </div>
+            <button type="button" className="auth-showcase__switch" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}>
+              {mode === 'login' ? 'Chưa có tài khoản? Đăng ký ngay' : 'Đã có tài khoản? Đăng nhập'}
+            </button>
+          </div>
+        </aside>
       </div>
     </div>
   );
