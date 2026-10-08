@@ -396,3 +396,82 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .app-main .btn-danger, .app-main .btn-danger *, .settings-page .btn-danger, .settings-page .btn-danger * { color: #8b2432 !important; }
 .app-main .form-input, .app-main .form-input *, .auth-page .form-input, .settings-page .form-input { color: #102a43 !important; }
 .app-main [style*="color: rgb(148, 163, 184)"], .app-main [style*="color: rgb(100, 116, 139)"], .auth-page [style*="color: rgb(148, 163, 184)"], .settings-page [style*="color: rgb(148, 163, 184)"] { color: #52677f !important; }
+
+/* Readability pass: application data should never be rendered at the tiny
+   sizes that work in a dashboard mock-up but not in everyday use. */
+.app-main, .auth-page, .verification-page, .judge-page, .settings-page {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.app-main [style*="font-size: 0.66rem"],
+.app-main [style*="font-size: 0.68rem"],
+.auth-page [style*="font-size: 0.66rem"],
+.auth-page [style*="font-size: 0.68rem"],
+.verification-page [style*="font-size: 0.66rem"],
+.verification-page [style*="font-size: 0.68rem"],
+.judge-page [style*="font-size: 0.66rem"],
+.judge-page [style*="font-size: 0.68rem"],
+.settings-page [style*="font-size: 0.66rem"],
+.settings-page [style*="font-size: 0.68rem"] {
+  font-size: 0.78rem !important;
+  line-height: 1.45 !important;
+}
+
+.app-main [style*="font-size: 0.72rem"],
+.app-main [style*="font-size: 0.74rem"],
+.auth-page [style*="font-size: 0.72rem"],
+.auth-page [style*="font-size: 0.74rem"],
+.verification-page [style*="font-size: 0.72rem"],
+.verification-page [style*="font-size: 0.74rem"],
+.judge-page [style*="font-size: 0.72rem"],
+.judge-page [style*="font-size: 0.74rem"],
+.settings-page [style*="font-size: 0.72rem"],
+.settings-page [style*="font-size: 0.74rem"] {
+  font-size: 0.82rem !important;
+  line-height: 1.5 !important;
+}
+
+.app-main label, .auth-page label, .verification-page label, .judge-page label, .settings-page label {
+  color: #294866 !important;
+  font-weight: 700;
+}
+
+.app-main input:not([type="checkbox"]):not([type="radio"]),
+.app-main select,
+.app-main textarea,
+.auth-page input:not([type="checkbox"]):not([type="radio"]),
+.auth-page select,
+.auth-page textarea,
+.settings-page input:not([type="checkbox"]):not([type="radio"]),
+.settings-page select,
+.settings-page textarea {
+  min-height: 40px;
+  color: #102a43 !important;
+  background: #ffffff !important;
+  border-color: #aebfd1 !important;
+  font-size: 0.9rem !important;
+}
+
+.app-main textarea, .auth-page textarea, .settings-page textarea { min-height: 104px; }
+
+/* Dark legacy chips retain light text; this fixes dark-on-dark status labels. */
+.app-main [style*="background: rgb(51, 65, 85)"],
+.app-main [style*="background-color: rgb(51, 65, 85)"],
+.auth-page [style*="background: rgb(51, 65, 85)"],
+.settings-page [style*="background: rgb(51, 65, 85)"] {
+  color: #ffffff !important;
+}
+
+.app-main [style*="background: rgb(51, 65, 85)"] *,
+.app-main [style*="background-color: rgb(51, 65, 85)"] * {
+  color: #ffffff !important;
+}
+
+.app-main table, .settings-page table { font-size: 0.88rem; line-height: 1.45; }
+.app-main th, .settings-page th { font-weight: 800; letter-spacing: 0.01em; }
+.app-main td, .app-main th, .settings-page td, .settings-page th { padding: 11px 12px !important; vertical-align: top; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
