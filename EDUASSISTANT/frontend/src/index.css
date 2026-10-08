@@ -536,4 +536,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .audit-pagination .btn-secondary { min-width: 54px; justify-content: center; padding: 6px 10px; }
 .list-pagination { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 12px; color: #52677f; font-size: .78rem; }
 .list-pagination > div { display: flex; gap: 6px; }.list-pagination .btn-secondary { min-width: 50px; justify-content: center; padding: 5px 8px; }
+.audit-list-skeleton { display: flex; flex-direction: column; gap: 10px; padding: 16px; min-height: 260px; border: 1px solid #d8e1ec; border-radius: 10px; background: #f8fafc; }
+.audit-list-skeleton .skeleton-line { height: 42px; width: 100%; }.audit-list-skeleton .skeleton-line:nth-child(2n) { width: 88%; }.audit-list-skeleton .skeleton-line:nth-child(3n) { width: 74%; }
 @media (max-width: 640px) { .audit-pagination { align-items: flex-start; flex-direction: column; }.audit-pagination > div { width: 100%; }.audit-pagination .btn-secondary { flex: 1; } }

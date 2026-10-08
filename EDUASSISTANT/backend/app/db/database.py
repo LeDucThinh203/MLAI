@@ -51,6 +51,20 @@ CREATE TABLE IF NOT EXISTS evidence_uploads (fileName VARCHAR(255) PRIMARY KEY, 
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_role_timestamp ON audits (actorRole, timestamp DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_case_timestamp ON audits (caseId, timestamp DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_actor_timestamp ON audits (actorId, timestamp DESC)')
+        # Portal lists are ordered newest-first and filtered by these fields.
+        # Covering indexes keep case and account lists responsive as data grows.
+        q.execute('CREATE INDEX IF NOT EXISTS idx_cases_created_at ON cases (createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_cases_student_created ON cases (studentId, createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_cases_status_created ON cases (status, createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_cases_category_created ON cases (category, createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_cases_department_created ON cases (assignedDepartment, createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_users_role_created ON users (role, createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_comments_case_created ON comments (caseId, createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications (userId, createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications (userId, isRead)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_evidence_owner_created ON evidence_uploads (ownerId, createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_expiry ON refresh_tokens (userId, expiresAt)')
         q.execute('SELECT COUNT(*) AS count FROM users')
         if q.fetchone()['count'] == 0:
             path=os.path.join(os.path.dirname(__file__),'data.json')

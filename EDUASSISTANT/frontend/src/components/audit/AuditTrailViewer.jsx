@@ -25,7 +25,7 @@ const AuditTrailViewer = ({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [pagination, setPagination] = useState({ total: audits.length, totalPages: 1 });
-  const [pageLoading, setPageLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(Boolean(token));
 
   useEffect(() => {
     if (!token) return;
@@ -371,7 +371,11 @@ const AuditTrailViewer = ({
       </div>
 
       {/* AUDIT LOG LISTING (GROUPED OR FLAT) */}
-      {filteredAudits.length === 0 ? (
+      {pageLoading && displayedAudits.length === 0 ? (
+        <div className="audit-list-skeleton" aria-busy="true" aria-label="Đang tải nhật ký hoạt động">
+          {Array.from({ length: 5 }, (_, index) => <span className="skeleton-line" key={index} />)}
+        </div>
+      ) : filteredAudits.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 20px', background: '#090d16', borderRadius: '12px', border: '1px dashed #334155', color: 'var(--text-sub)' }}>
           <CalendarDays size={32} style={{ opacity: 0.4, marginBottom: '8px' }} />
           <p style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: 600, margin: '0 0 4px 0' }}>
