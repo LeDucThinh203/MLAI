@@ -5,14 +5,14 @@ export const renderSlaBadge = (c) => {
   if (c.status === 'APPROVED') {
     return (
       <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-        <CheckCircle2 size={11} /> Äáº¡t SLA (HoĂ n thĂ nh)
+        <CheckCircle2 size={11} /> Đạt SLA (Hoàn thành)
       </span>
     );
   }
   if (c.status === 'REJECTED') {
     return (
       <span style={{ fontSize: '0.68rem', fontWeight: 600, padding: '2px 7px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-        <X size={11} /> ÄĂ£ Ä‘Ă³ng
+        <X size={11} /> Đã đóng
       </span>
     );
   }
@@ -25,7 +25,7 @@ export const renderSlaBadge = (c) => {
     const overdueH = Math.abs(Math.round(diffHours));
     return (
       <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '2px 7px', borderRadius: '4px', background: 'rgba(225, 29, 72, 0.25)', color: '#f43f5e', border: '1px solid #ef4444', display: 'inline-flex', alignItems: 'center', gap: '4px', animation: 'pulse 2s infinite' }}>
-        <Timer size={11} /> đŸ¨ QuĂ¡ háº¡n SLA ({overdueH}h)
+        <Timer size={11} /> 🚨 Quá hạn SLA ({overdueH}h)
       </span>
     );
   }
@@ -34,7 +34,7 @@ export const renderSlaBadge = (c) => {
     const remainH = Math.max(1, Math.round(diffHours));
     return (
       <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.4)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-        <Timer size={11} /> â ï¸ Sáº¯p háº¿t háº¡n (cĂ²n {remainH}h)
+        <Timer size={11} /> ⚠️ Sắp hết hạn (còn {remainH}h)
       </span>
     );
   }
@@ -42,7 +42,7 @@ export const renderSlaBadge = (c) => {
   const remainH = Math.round(diffHours);
   return (
     <span style={{ fontSize: '0.68rem', fontWeight: 600, padding: '2px 7px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.25)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-      <Timer size={11} /> â³ CĂ²n {remainH}h (SLA 48h)
+      <Timer size={11} /> ⏳ Còn {remainH}h (SLA 48h)
     </span>
   );
 };

@@ -89,9 +89,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('cf_token', newToken);
         return { success: true, user: userData };
       }
-      return { success: false, message: res.data?.message || 'ÄÄƒng nháº­p tháº¥t báº¡i' };
+      return { success: false, message: res.data?.message || 'Đăng nhập thất bại' };
     } catch (err) {
-      const msg = err.response?.data?.message || 'KhĂ´ng thá»ƒ káº¿t ná»‘i Ä‘áº¿n mĂ¡y chá»§!';
+      const msg = err.response?.data?.message || 'Không thể kết nối đến máy chủ!';
       return { success: false, message: msg };
     }
   };
@@ -110,9 +110,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('cf_token', newToken);
         return { success: true, user: userData };
       }
-      return { success: false, message: res.data?.message || 'XĂ¡c thá»±c OTP tháº¥t báº¡i' };
+      return { success: false, message: res.data?.message || 'Xác thực OTP thất bại' };
     } catch (err) {
-      const msg = err.response?.data?.message || 'MĂ£ OTP khĂ´ng há»£p lá»‡ hoáº·c Ä‘Ă£ háº¿t háº¡n!';
+      const msg = err.response?.data?.message || 'Mã OTP không hợp lệ hoặc đã hết hạn!';
       return { success: false, message: msg };
     }
   };
@@ -131,9 +131,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('cf_token', newToken);
         return { success: true, user: userProfile, message: res.data.message };
       }
-      return { success: false, message: res.data?.message || 'ÄÄƒng kĂ½ tháº¥t báº¡i' };
+      return { success: false, message: res.data?.message || 'Đăng ký thất bại' };
     } catch (err) {
-      const msg = err.response?.data?.message || 'Lá»—i Ä‘Äƒng kĂ½ tĂ i khoáº£n!';
+      const msg = err.response?.data?.message || 'Lỗi đăng ký tài khoản!';
       return { success: false, message: msg };
     }
   };
@@ -145,11 +145,11 @@ export const AuthProvider = ({ children }) => {
       });
       if (res.data?.success && res.data?.data?.user) {
         setUser(prev => ({ ...prev, ...res.data.data.user }));
-        return { success: true, user: res.data.data.user, message: res.data.message || 'Cáº­p nháº­t thĂ´ng tin thĂ nh cĂ´ng!' };
+        return { success: true, user: res.data.data.user, message: res.data.message || 'Cập nhật thông tin thành công!' };
       }
-      return { success: false, message: res.data?.message || 'Cáº­p nháº­t tháº¥t báº¡i' };
+      return { success: false, message: res.data?.message || 'Cập nhật thất bại' };
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || 'Lá»—i cáº­p nháº­t há»“ sÆ¡' };
+      return { success: false, message: err.response?.data?.message || 'Lỗi cập nhật hồ sơ' };
     }
   };
 
@@ -165,9 +165,9 @@ export const AuthProvider = ({ children }) => {
         setUser(prev => ({ ...prev, ...res.data.data.user }));
         return { success: true, avatar: res.data.data.avatar, message: res.data.message };
       }
-      return { success: false, message: res.data?.message || 'Táº£i áº£nh Ä‘áº¡i diá»‡n tháº¥t báº¡i' };
+      return { success: false, message: res.data?.message || 'Tải ảnh đại diện thất bại' };
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || 'Lá»—i táº£i áº£nh Ä‘áº¡i diá»‡n' };
+      return { success: false, message: err.response?.data?.message || 'Lỗi tải ảnh đại diện' };
     }
   };
 
@@ -180,9 +180,9 @@ export const AuthProvider = ({ children }) => {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      return { success: res.data?.success, message: res.data?.message || 'Äá»•i máº­t kháº©u thĂ nh cĂ´ng' };
+      return { success: res.data?.success, message: res.data?.message || 'Đổi mật khẩu thành công' };
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || 'Lá»—i Ä‘á»•i máº­t kháº©u' };
+      return { success: false, message: err.response?.data?.message || 'Lỗi đổi mật khẩu' };
     }
   };
 
@@ -196,9 +196,9 @@ export const AuthProvider = ({ children }) => {
         logout();
         return { success: true, message: res.data.message };
       }
-      return { success: false, message: res.data?.message || 'XĂ³a tĂ i khoáº£n tháº¥t báº¡i' };
+      return { success: false, message: res.data?.message || 'Xóa tài khoản thất bại' };
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || 'Lá»—i xĂ³a tĂ i khoáº£n' };
+      return { success: false, message: err.response?.data?.message || 'Lỗi xóa tài khoản' };
     }
   };
 
@@ -209,7 +209,7 @@ export const AuthProvider = ({ children }) => {
       });
       return res.data;
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || 'Lá»—i táº¡o mĂ£ 2FA' };
+      return { success: false, message: err.response?.data?.message || 'Lỗi tạo mã 2FA' };
     }
   };
 
@@ -223,7 +223,7 @@ export const AuthProvider = ({ children }) => {
       }
       return res.data;
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || 'MĂ£ OTP khĂ´ng Ä‘Ăºng' };
+      return { success: false, message: err.response?.data?.message || 'Mã OTP không đúng' };
     }
   };
 
@@ -237,7 +237,7 @@ export const AuthProvider = ({ children }) => {
       }
       return res.data;
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || 'MĂ£ OTP khĂ´ng Ä‘Ăºng' };
+      return { success: false, message: err.response?.data?.message || 'Mã OTP không đúng' };
     }
   };
 

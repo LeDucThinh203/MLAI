@@ -1,31 +1,35 @@
 # 🎓 EDUASSISTANT - HỆ THỐNG THẨM ĐỊNH & QUẢN LÝ HỒ SƠ HỌC VỤ THÔNG MINH
-
-> Nền tảng thẩm định hồ sơ học vụ thông minh kết hợp **AI Multimodal OCR (Google Gemini)**, **Bộ máy Quy tắc Nghiệp vụ (Rule Engine 5 Cấp Độ)**, **Cơ sở dữ liệu Doanh nghiệp Microsoft SQL Server 2025**, **Bảo mật Đa lớp (JWT, Bcrypt, 2FA TOTP, Chống IDOR)** và **Ký số Điện tử Xác thực QR (HMAC-SHA256)**.
+> **Đội Thi:** Team 1 | **Cuộc Thi:** MLAI Hackathon 2026 | **Track VNG – Option A:** Escalation Referee  
+> Nền tảng thẩm định hồ sơ học vụ thông minh kết hợp **AI Multimodal OCR (Google Gemini)**, **Bộ máy Quy tắc Nghiệp vụ (Rule Engine 5 Lý do Leo thang)**, **Cơ sở dữ liệu Doanh nghiệp Microsoft SQL Server 2025 (Hỗ trợ SQLite WAL dự phòng)**, **Bảo mật Đa lớp (JWT, Bcrypt, 2FA TOTP, Chống IDOR)**, **Xác thực Số QR (HMAC-SHA256)**, **Adaptive Escalation Threshold** và **Hệ Thống Kiểm Chuẩn Xác Định (Verify Harness & Benchmark)**.
 
 ---
 
 ## 📑 MỤC LỤC
 1. [Tổng Quan Kiến Trúc Hệ Thống](#1-tổng-quan-kiến-trúc-hệ-thống)
 2. [Cấu Trúc Thư Mục Dự Án (Project Structure)](#2-cấu-trúc-thư-mục-dự-án-project-structure)
-3. [Cấu Hình Cơ Sở Dữ Liệu & Chuỗi Kết Nối (Database Configuration)](#3-cấu-hình-cơ-sở-dữ-liệu--chuỗi-kết-nối-database-configuration)
+3. [Cơ Chế Escalation Referee & Fail-Safe An Toàn](#3-cơ-chế-escalation-referee--fail-safe-an-toàn)
 4. [Hướng Dẫn Cài Đặt & Khởi Chạy (How to Run)](#4-hướng-dẫn-cài-đặt--khởi-chạy-how-to-run)
 5. [Tài Khoản Thử Nghiệm Mặc Định (Demo Accounts)](#5-tài-khoản-thử-nghiệm-mặc-định-demo-accounts)
-6. [Tài Liệu API & Swagger Documentation](#6-tài-liệu-api--swagger-documentation)
-7. [Kiểm Thử Bảo Mật & Toàn Vẹn (Automated Test Suite)](#7-kiểm-thử-bảo-mật--toàn-vẹn-automated-test-suite)
+6. [Cổng Giám Khảo & Verify Harness (/judge)](#6-cổng-giám-khảo--verify-harness-judge)
+7. [Tài Liệu API & Swagger Documentation](#7-tài-liệu-api--swagger-documentation)
+8. [Bộ Kiểm Chuẩn Benchmark Đo Lường Độc Lập](#8-bộ-kiểm-chuẩn-benchmark-đo-lường-độc-lập)
+9. [Kiểm Thử Toàn Diện (Security & Competition Suites)](#9-kiểm-thử-toàn-diện-security--competition-suites)
+10. [Bằng Chứng Thử Nghiệm Người Dùng (User Validation)](#10-bằng-chứng-thử-nghiệm-người-dùng-user-validation)
 
 ---
 
 ## 1. TỔNG QUAN KIẾN TRÚC HỆ THỐNG
 
-EduAssistant được xây dựng theo kiến trúc hiện đại, tách biệt hoàn toàn giữa Frontend và Backend:
+EDUASSISTANT được xây dựng theo kiến trúc hiện đại, tách biệt hoàn toàn giữa Frontend và Backend:
 
 ```
 ┌────────────────────────────────────────────────────────┐
 │             FRONTEND CLIENT (React 19 + Vite)          │
 │                http://localhost:5173                   │
 │   • Sinh viên: Nộp đơn, tải minh chứng, tra cứu QR     │
-│   • Thẩm định viên: Đối chiếu hồ sơ, duyệt ký số       │
-│   • Quản trị viên: Phân quyền, giám sát Audit Trail    │
+│   • Thẩm định viên: Đối chiếu hồ sơ, duyệt ký số, HITL  │
+│   • Quản trị viên: Phân quyền, Audit Trail, Metrics    │
+│   • Giám khảo: /judge (One-click Verify Harness)       │
 └───────────────────────────┬────────────────────────────┘
                             │ REST API (JSON / Multipart)
                             ▼
@@ -33,11 +37,13 @@ EduAssistant được xây dựng theo kiến trúc hiện đại, tách biệt 
 │           BACKEND ENGINE (Python 3.10+ FastAPI)        │
 │                http://localhost:3001/api               │
 │   • Authentication: JWT + Refresh Rotation + 2FA TOTP   │
-│   • Rule Engine: Tự động phát hiện 5 lý do leo thang   │
-│   • AI Engine: Gemini 2.5 VLM OCR + Trích xuất dữ liệu │
+│   • Escalation Referee: 5 lý do leo thang nghiệp vụ    │
+│   • AI Engine: Gemini VLM OCR (Single source of truth) │
+│   • Adaptive Threshold: [0.65, 0.90] từ Human Feedback │
+│   • Verify Harness: /api/verify/run (Deterministic)    │
 │   • Bảo vệ: Quét Magic-bytes, chống IDOR, ký HMAC      │
 └───────────────────────────┬────────────────────────────┘
-                            │ ODBC Driver 18 (pyodbc)
+                            │ SQLAlchemy 2.0 ORM / pyodbc
                             ▼
 ┌────────────────────────────────────────────────────────┐
 │           DATABASE: MICROSOFT SQL SERVER 2025          │
@@ -63,212 +69,169 @@ MLAI/
 │   │   │   │   ├── responses.py         # Chuẩn hoá định dạng phản hồi API JSON
 │   │   │   │   └── security.py          # Hàm băm mật khẩu Bcrypt & mã hóa
 │   │   │   ├── db/
-│   │   │   │   ├── database.py          # Quản lý kết nối SQL Server 2025 (pyodbc) & SQLite WAL mode
+│   │   │   │   ├── database.py          # Quản lý kết nối SQL Server 2025 & SQLite fallback
 │   │   │   │   ├── db.py                # DatabaseService tầng nghiệp vụ CRUD dữ liệu
-│   │   │   │   ├── data.json            # Dữ liệu hạt giống (Seed data) ban đầu
 │   │   │   │   └── caseflow.sqlite      # CSDL SQLite dự phòng
+│   │   │   ├── models/                  # SQLAlchemy ORM Models (User, Case, Audit...)
 │   │   │   ├── routers/                 # Các API Router theo nghiệp vụ:
-│   │   │   │   ├── auth.py              # Đăng nhập, đăng ký, 2FA TOTP, Refresh Token, Profile
-│   │   │   │   ├── cases.py             # Nộp đơn, xem đơn, duyệt đơn, xuất PDF, ký số, QR
-│   │   │   │   ├── evidence.py          # Upload minh chứng, kiểm tra Magic Bytes, phục vụ ảnh
-│   │   │   │   ├── audits.py            # Xem nhật ký kiểm toán phân quyền & xuất CSV
-│   │   │   │   ├── admin.py             # Quản lý tài khoản người dùng, đổi quyền, KPI
-│   │   │   │   ├── ai.py                # Trạng thái AI Engine & chế độ hoạt động (live/mock)
-│   │   │   │   ├── notifications.py     # Quản lý thông báo sinh viên & cán bộ
-│   │   │   │   └── health.py            # Kiểm tra trạng thái hệ thống và kết nối DB
-│   │   │   ├── schemas/                 # Pydantic Schemas xác thực dữ liệu đầu vào
-│   │   │   │   ├── auth.py
-│   │   │   │   ├── cases.py
-│   │   │   │   └── admin.py
-│   │   │   └── services/                # Các dịch vụ xử lý logic chuyên sâu:
-│   │   │       ├── ai_service.py        # Tích hợp Google Gemini VLM OCR (Fail-safe)
-│   │   │       ├── ocr_service.py       # Trích xuất văn bản từ hình ảnh minh chứng
-│   │   │       ├── rule_engine.py       # Ma trận 5 lý do leo thang thẩm định tự động
-│   │   │       ├── report_service.py    # Sinh mẫu quyết định công văn & báo cáo HTML
-│   │   │       └── upload_service.py    # Kiểm định Magic-bytes chống tệp giả mạo & mã độc
-│   │   └── server.py                    # File khởi động chính máy chủ Backend Python
-│   │
-│   ├── frontend/                        # Ứng dụng Giao diện Web (React 19 + Vite - Port 5173)
+│   │   │   │   ├── auth.py              # Xác thực, Đăng nhập, Đăng ký, Đổi mật khẩu
+│   │   │   │   ├── two_factor.py        # 2FA TOTP (Google Authenticator)
+│   │   │   │   ├── cases.py             # Quản lý hồ sơ, Thẩm định HITL, Reviewer Feedback
+│   │   │   │   ├── evidence.py          # Tải lên minh chứng & quét OCR
+│   │   │   │   ├── audits.py            # Nhật ký kiểm toán thời gian thực (lưu input & result)
+│   │   │   │   ├── verify.py            # Verify Harness endpoint (/api/verify/run)
+│   │   │   │   └── admin.py             # Quản trị hệ thống & chỉ số đo lường
+│   │   │   └── services/                # Các dịch vụ lõi:
+│   │   │       ├── ai_service.py        # Gemini VLM AI (Single source of truth get_ai_mode)
+│   │   │       ├── ocr_service.py       # OCR trích xuất dữ kiện minh chứng
+│   │   │       ├── rule_engine.py       # Bộ máy quy tắc & Fail-Safe Non-Live AI
+│   │   │       ├── escalation_policy_service.py # Ngưỡng tin cậy thích ứng (Adaptive Threshold)
+│   │   │       ├── workflow_guard.py    # Bảo vệ trạng thái chuyển luồng công việc
+│   │   │       └── verify_harness_service.py # 6 ca kiểm chuẩn xác định cho Giám khảo
+│   ├── frontend/                        # Ứng dụng Web React 19 + Vite (Port 5173)
 │   │   ├── src/
-│   │   │   ├── App.jsx                  # Toàn bộ giao diện người dùng hợp nhất (Sinh viên, Thẩm định, Admin)
-│   │   │   ├── App.css                  # Thiết kế giao diện hiện đại, Dark/Light Mode, Glassmorphism
-│   │   │   ├── index.css                # Typography & Base styles
-│   │   │   └── main.jsx                 # Điểm gắn kết React DOM
-│   │   ├── index.html                   # Trang chủ HTML
-│   │   ├── vite.config.js               # Cấu hình Vite dev server
-│   │   └── package.json                 # Thư viện Frontend
-│   │
-│   ├── test/                            # Bộ kiểm thử tự động toàn diện
-│   │   ├── run_security_suite.py        # Runner khởi chạy test cô lập tự động
-│   │   └── security_and_system_test.py  # 40 bài kiểm thử bảo mật IDOR, JWT, 2FA, VLM
-│   │
-│   ├── scripts/                         # Kịch bản hỗ trợ
-│   │   ├── create_evidence.py           # Sinh ảnh minh chứng mẫu để test
-│   │   └── seed_full_demo.py            # Nạp dữ liệu mô phỏng
-│   │
-│   ├── uploads/                         # Nơi lưu trữ tệp minh chứng an toàn
-│   ├── .env                             # File biến môi trường (chứa cấu hình SQL Server)
-│   ├── .env.example                     # Mẫu biến môi trường mẫu
-│   ├── Dockerfile                       # Container hóa ứng dụng
-│   ├── docker-compose.yml               # Triển khai đồng thời Backend & Frontend
-│   ├── requirements.txt                 # Danh sách thư viện Python
-│   ├── package.json                     # Thông tin gói dự án
-│   ├── start_all.bat                    # Script khởi chạy Backend + Frontend tự động
-│   └── Run.bat                          # Script 1-Click mở cả app và tự động bật trình duyệt
-│
-├── Run.bat                              # Shortcut 1-Click chạy toàn bộ dự án từ thư mục gốc
-├── start_all.bat                        # Shortcut khởi động Backend và Frontend từ thư mục gốc
-├── pyrightconfig.json                   # Cấu hình phân tích kiểu dữ liệu Python IDE (0 lỗi)
-└── README.md                            # Tài liệu hướng dẫn dự án (File này)
+│   │   │   ├── pages/
+│   │   │   │   ├── student/             # Cổng Sinh Viên (Nộp đơn, Tra cứu QR)
+│   │   │   │   ├── reviewer/            # Cổng Thẩm Định Viên (Hàng đợi, Override, Stop, Feedback)
+│   │   │   │   ├── admin/               # Cổng Quản Trị Viên (KPI, Benchmark Metrics, User Mgmt)
+│   │   │   │   ├── judge/               # Cổng Giám Khảo (/judge - Verify Harness)
+│   │   │   │   └── public/              # Trang xác thực công khai QR
+│   ├── benchmark/                       # Bộ kiểm chuẩn đo lường độc lập
+│   │   ├── held_out_cases.json          # 10 ca kiểm thử độc lập (không bias)
+│   │   ├── run_benchmark.py             # Script tính toán các chỉ số toán học chuẩn
+│   │   └── results/                     # Kết quả xuất ra latest.json và latest.csv
+│   └── test/                            # Bộ kiểm thử tự động
+│       ├── run_security_suite.py        # 40 bài kiểm thử bảo mật & phân quyền
+│       └── test_competition_features.py # 21 bài kiểm thử tiêu chuẩn cuộc thi
+└── docs/
+    └── user-validation/                 # Khung thu thập bằng chứng kiểm thử người dùng thật
 ```
 
 ---
 
-## 3. CẤU HÌNH CƠ SỞ DỮ LIỆU & CHUỖI KẾT NỐI (DATABASE CONFIGURATION)
+## 3. CƠ CHẾ ESCALATION REFEREE & FAIL-SAFE AN TOÀN
 
-Hệ thống được thiết lập cơ chế **Dual Engine** linh hoạt: mặc định sử dụng **Microsoft SQL Server 2025**, đồng thời tự động hỗ trợ **SQLite** làm môi trường dự phòng an toàn.
+EDUASSISTANT triển khai bộ máy **Escalation Referee** tuân thủ nguyên tắc: **AI không quyết định chính sách**, dữ kiện trích xuất từ minh chứng thật (`factual_ocr`) được ưu tiên tuyệt đối so với văn bản AI tự sinh:
 
-File cấu hình đặt tại: **`EDUASSISTANT/.env`** (được tự động đọc khi khởi động).
-
-### 3.1. Cấu hình Microsoft SQL Server (Mặc định doanh nghiệp):
-```ini
-# Loại CSDL: mssql | sqlite
-DB_TYPE=mssql
-
-# Tên SQL Server Instance (Theo ảnh màn hình SSMS của bạn)
-DB_SERVER=THINH\SQL2025
-
-# Tên Cơ sở dữ liệu trong SQL Server
-DB_NAME=CaseFlowAI
-
-# Cổng mặc định
-DB_PORT=1433
-
-# Sử dụng Windows Authentication (khuyến nghị trên máy tính cá nhân):
-DB_TRUSTED_CONNECTION=yes
-
-# Driver ODBC (Hệ thống hỗ trợ Driver 18, 17 và SQL Server Native Client)
-DB_DRIVER=ODBC Driver 18 for SQL Server
-
-# Tin cậy chứng chỉ máy chủ & Mã hóa dữ liệu
-DB_TRUST_SERVER_CERTIFICATE=yes
-DB_ENCRYPT=yes
-
-# (Tùy chọn) Nếu dùng tài khoản sa hoặc SQL Server Authentication:
-# DB_TRUSTED_CONNECTION=no
-# DB_USER=sa
-# DB_PASSWORD=YourPassword123
-```
-
-### 3.2. Cấu hình SQLite (Dự phòng / Chạy kiểm thử độc lập):
-Nếu bạn muốn chạy hệ thống hoàn toàn độc lập mà không cần bật dịch vụ SQL Server:
-```ini
-DB_TYPE=sqlite
-```
-Dữ liệu sẽ tự động lưu trữ tại file SQLite: `EDUASSISTANT/backend/app/db/caseflow.sqlite`.
+1. **5 Lý do Leo thang Nghiệp vụ:**
+   - `FACT_UNKNOWN`: Dữ kiện chưa rõ, ảnh mờ, độ tin cậy < threshold, hoặc thiếu minh chứng.
+   - `DATA_CONFLICT`: Mâu thuẫn giữa loại đơn khai báo và nội dung minh chứng thực tế.
+   - `AUTHORITY_REQUIRED`: Hồ sơ vượt thẩm quyền tự động (Ưu tiên Cao, Phúc khảo điểm, Học bổng).
+   - `POLICY_OUT_OF_SCOPE`: Hồ sơ xin cứu xét ngoại lệ hoặc thuộc danh mục chung (GENERAL).
+   - `OWNERSHIP_UNCLEAR`: Tên hoặc MSSV trên tài liệu không trùng khớp với tài khoản sinh viên.
+2. **Fail-Safe Non-Live AI:**
+   Khi hệ thống chạy ở chế độ `mock`, `cache`, hoặc xảy ra `fallback`: Hệ thống **tuyệt đối không cho phép AUTO_APPROVE**, mà bắt buộc chuyển sang `ESCALATE_TO_HUMAN` với lý do `FACT_UNKNOWN` và trạng thái `UNDER_REVIEW`.
+3. **Adaptive Escalation Threshold:**
+   Ngưỡng tin cậy mặc định là `0.75` (giới hạn an toàn `[0.65, 0.90]`). Khi Thẩm định viên gửi phản hồi:
+   - `MISSED_ESCALATION`: Ngưỡng tăng +0.02 (thắt chặt an toàn).
+   - `UNNECESSARY_ESCALATION`: Ngưỡng giảm -0.02 (giảm tải cán bộ).
+   - `CORRECT`: Giữ nguyên.
+4. **Human-in-the-Loop Actions:**
+   Hỗ trợ 5 hành động rõ ràng: `APPROVE`, `REJECT`, `REQUEST_INFO`, `OVERRIDE` (bắt buộc nhập lý do đặc cách và lưu khuyến nghị cũ), và `STOP` (dừng tiến trình tự động).
 
 ---
 
 ## 4. HƯỚNG DẪN CÀI ĐẶT & KHỞI CHẠY (HOW TO RUN)
 
-### Yêu cầu môi trường tối thiểu:
-1. **Python 3.10+**: Đã cài đặt và có trong PATH (`python --version`).
-2. **Node.js 18+ & npm**: Để chạy Frontend (`node -v`).
-3. **Microsoft SQL Server 2022/2025**: Đang ở trạng thái `Running` (Service `MSSQL$SQL2025`).
-
----
-
-### Cách 1: Khởi Chạy Nhanh 1-Click (Khuyến nghị cho Windows)
-Tại thư mục gốc dự án, bạn chỉ cần nhấp đúp chuột vào:
-* **`Run.bat`**: Tự động cài đặt dependencies nếu thiếu, khởi động Backend (port 3001), khởi động Frontend (port 5173), đợi 3 giây và tự động mở trình duyệt tại `http://localhost:5173`.
-* Hoặc chạy: **`start_all.bat`**.
-
----
-
-### Cách 2: Khởi Chạy Thủ Công Từng Phần (Manual Run)
-
-#### Bước 1: Khởi động Backend (Python FastAPI)
-Mở một cửa sổ Terminal (PowerShell hoặc CMD):
+### Bước 1: Khởi động Backend (Python FastAPI)
 ```powershell
-# Di chuyển vào thư mục backend
-cd EDUASSISTANT/backend
-
-# Khởi chạy server
-python server.py
+cd EDUASSISTANT
+python -m uvicorn backend.server:app --port 3001 --host 0.0.0.0 --reload
 ```
-* **Kết quả:** Server khởi động tại `http://localhost:3001`
-* **Log thành công:**
-  ```text
-  [Database] Microsoft SQL Server kết nối thành công: THINH\SQL2025 -> CSDL [CaseFlowAI]
-  Uvicorn running on http://0.0.0.0:3001
-  ```
+* Backend API: `http://localhost:3001/api`
+* Swagger UI: `http://localhost:3001/docs`
 
-#### Bước 2: Khởi động Frontend (React 19 Vite)
-Mở một cửa sổ Terminal thứ hai:
+### Bước 2: Khởi động Frontend (React 19 Vite)
 ```powershell
-# Di chuyển vào thư mục frontend
 cd EDUASSISTANT/frontend
-
-# Cài đặt dependencies (chỉ cần chạy lần đầu)
 npm install
-
-# Khởi chạy dev server
 npm run dev
 ```
-* **Kết quả:** Giao diện sẵn sàng tại `http://localhost:5173`.
+* Giao diện người dùng: `http://localhost:5173`
 
 ---
 
 ## 5. TÀI KHOẢN THỬ NGHIỆM MẶC ĐỊNH (DEMO ACCOUNTS)
 
-Hệ thống đã nạp sẵn các tài khoản mẫu đầy đủ dữ liệu trong cơ sở dữ liệu:
-
-| Vai Trò | Tên Đăng Nhập | Mật Khẩu | Họ Và Tên | Quyền Hạn & Tính Năng |
-| :--- | :--- | :--- | :--- | :--- |
-| 🎓 **Sinh Viên** | `student1` | `password123` | Nguyễn Văn An (`SV2026-9921`) | Nộp hồ sơ học vụ, tải minh chứng, thảo luận với cán bộ, tra cứu mã QR quyết định. |
-| 🎓 **Sinh Viên 2** | `student2` | `password123` | Phạm Minh Tuấn | Dùng để kiểm thử bảo mật IDOR (cô lập dữ liệu giữa các sinh viên). |
-| 🔍 **Thẩm Định Viên** | `reviewer1` | `password123` | Trần Thị Mai Phương (*CTSV*) | Hàng đợi thẩm định 3 cột, đối chiếu Rule Engine, chuyển tuyến phòng ban, duyệt đơn và sinh chữ ký số. |
-| 🛡️ **Quản Trị Viên** | `admin` *(hoặc `admin1`)* | `password123` | Quản Trị Viên Hệ Thống | Bảng điều khiển KPI toàn trường, quản lý người dùng, thay đổi vai trò, xuất báo cáo Audit Trail. |
+| Vai Trò | Tên Đăng Nhập | Mật Khẩu | Quyền Hạn & Tính Năng |
+| :--- | :--- | :--- | :--- |
+| 🎓 **Sinh Viên** | `student1` | `password123` | Nộp hồ sơ học vụ, tải minh chứng, theo dõi tiến trình, tra cứu QR. |
+| 🔍 **Thẩm Định Viên** | `reviewer1` | `password123` | Hàng đợi 3 cột, đối chiếu Rule Engine, Override, Dừng, Gửi Feedback. |
+| 🛡️ **Quản Trị Viên** | `admin1` | `password123` | Bảng điều khiển KPI, đổi AI Mode, giám sát Audit Trail, chỉ số Benchmark. |
 
 ---
 
-## 6. TÀI LIỆU API & SWAGGER DOCUMENTATION
+## 6. CỔNG GIÁM KHẢO & VERIFY HARNESS (/judge)
 
-Khi Backend đang chạy, bạn có thể truy cập tài liệu API trực quan với giao diện Swagger UI:
-* 🌐 **Swagger Interactive Docs:** **`http://localhost:3001/docs`**
-* 🌐 **Redoc Alternative:** **`http://localhost:3001/redoc`**
-
-### Các nhóm API chính:
-* **`/api/login` & `/api/register`**: Xác thực JWT & Cấp Refresh Token.
-* **`/api/auth/2fa/*`**: Tạo mã bí mật TOTP, kích hoạt và đăng nhập qua Google Authenticator.
-* **`/api/cases`**: CRUD hồ sơ học vụ, lọc phân quyền IDOR tự động.
-* **`/api/cases/{id}/review`**: Cán bộ phê duyệt hồ sơ và ký số HMAC-SHA256.
-* **`/api/cases/verify/{id}`**: Tra cứu công khai tính hợp lệ của chữ ký số qua mã QR.
-* **`/api/upload/evidence-ocr`**: Upload tệp kiểm tra Magic-bytes nhị phân và trích xuất OCR.
-* **`/api/audits`**: Nhật ký kiểm toán thời gian thực chống giả mạo.
+Hệ thống trang bị riêng tuyến đường **`/judge`** (`http://localhost:5173/judge`) để Hội đồng Giám khảo có thể:
+1. Xem tóm tắt thông tin dự án Team 1 & Track VNG - Escalation Referee.
+2. Nhấn nút **"Chạy Verify Harness"** (`POST /api/verify/run`) để thực thi 6 ca kiểm thử xác định in-memory:
+   - Ca 1: Routine Valid Case -> Kỳ vọng: `AUTO_APPROVE` (PASS)
+   - Ca 2: FACT_UNKNOWN Case -> Kỳ vọng: `ESCALATE_TO_HUMAN` (PASS)
+   - Ca 3: DATA_CONFLICT Case -> Kỳ vọng: `ESCALATE_TO_HUMAN` (PASS)
+   - Ca 4: AUTHORITY_REQUIRED Case -> Kỳ vọng: `ESCALATE_TO_HUMAN` (PASS)
+   - Ca 5: POLICY_OUT_OF_SCOPE Case -> Kỳ vọng: `ESCALATE_TO_HUMAN` (PASS)
+   - Ca 6: OWNERSHIP_UNCLEAR Case -> Kỳ vọng: `ESCALATE_TO_HUMAN` (PASS)
+3. Chuyển hướng một chạm sang Cổng Thẩm Định, Cổng Quản Trị và Nhật Ký Kiểm Toán.
 
 ---
 
-## 7. KIỂM THỬ BẢO MẬT & TOÀN VẸN (AUTOMATED TEST SUITE)
+## 7. TÀI LIỆU API & SWAGGER DOCUMENTATION
 
-Hệ thống tích hợp bộ kịch bản kiểm thử bảo mật tự động **40 Assertions** kiểm tra toàn diện:
-1. Băm mật khẩu Bcrypt & cấp JWT hợp lệ.
-2. Kiểm tra phân quyền IDOR (Broken Access Control) - sinh viên không thể xem/sửa hồ sơ của nhau.
-3. Cơ chế xác thực 2 bước (2FA) - xóa bỏ hoàn toàn backdoor.
-4. Xoay vòng Refresh Token Rotation & chống tái sử dụng token đã hủy.
-5. Kiểm định an toàn Rule Engine & chữ ký số xác thực QR.
-6. Chống tệp tin giả mạo phần mở rộng và quét mã độc PDF nhị phân.
+Tài liệu API tương tác trực quan: **`http://localhost:3001/docs`**
 
-### Lệnh chạy kiểm thử:
+### Các endpoint quan trọng:
+* **`POST /api/verify/run`**: Thực thi Verify Harness kiểm chuẩn xác định 6 ca nghiệp vụ.
+* **`POST /api/cases/{case_id}/feedback`**: Tiếp nhận phản hồi từ Reviewer (`CORRECT`, `MISSED_ESCALATION`, `UNNECESSARY_ESCALATION`) và tự động thích ứng ngưỡng.
+* **`POST /api/cases/{case_id}/review`**: Xử lý thẩm định con người (`APPROVE`, `REJECT`, `REQUEST_INFO`, `OVERRIDE`, `STOP`).
+* **`GET /api/cases/verify/{case_id}`**: Tra cứu công khai tính hợp lệ của chữ ký số qua mã QR.
+* **`GET /api/audits`**: Lấy nhật ký kiểm toán (lưu trữ đầy đủ cả `input` lẫn `result`).
+* **`GET /api/admin/metrics`**: Báo cáo chỉ số vận hành, ngưỡng hiện tại, và kết quả benchmark.
+
+---
+
+## 8. BỘ KIỂM CHUẨN BENCHMARK ĐO LƯỜNG ĐỘC LẬP
+
+EDUASSISTANT cung cấp công cụ Benchmark thực thi độc lập:
 ```powershell
-python EDUASSISTANT/test/run_security_suite.py
+cd EDUASSISTANT
+python benchmark/run_benchmark.py
 ```
-* **Kết quả kiểm thử:**
-  ```text
-  ═══════════════════════════════════════════════════════════════
-  🎉 KẾT QUẢ KIỂM THỬ: 40 PASSED | 0 FAILED (100% ĐẠT CHUẨN)
-  ═══════════════════════════════════════════════════════════════
-  ```
+* **Chỉ số đo lường toán học:**
+  - `Decision Accuracy` = Đúng / Tổng số ca
+  - `Automation Rate` = Tự động duyệt / Tổng số ca
+  - `Escalation Rate` = Leo thang / Tổng số ca
+  - `Missed Escalation Rate` = Bỏ sót leo thang / Tổng số ca cần leo thang *(Mục tiêu: 0.00%)*
+  - `Unnecessary Escalation Rate` = Leo thang thừa / Tổng số ca cần tự động duyệt *(Mục tiêu: 0.00%)*
+* Kết quả tự động ghi vào `benchmark/results/latest.json` và `latest.csv`.
 
 ---
-**EduAssistant Platform v3.0** — Hệ thống Sẵn sàng cho Môi trường Đào tạo & Vận hành Doanh nghiệp.
+
+## 9. KIỂM THỬ TOÀN DIỆN (SECURITY & COMPETITION SUITES)
+
+### 9.1. Kiểm thử 40 Tiêu chí Bảo mật (Security Suite)
+```powershell
+cd EDUASSISTANT
+python test/run_security_suite.py
+```
+* **Kết quả:** `40 PASSED | 0 FAILED (100% ĐẠT CHUẨN)`
+
+### 9.2. Kiểm thử 15 Tiêu chuẩn Cuộc thi (Competition Features Suite)
+```powershell
+cd EDUASSISTANT
+python test/test_competition_features.py
+```
+* **Kết quả:** `21 PASSED | 0 FAILED (100% ĐẠT CHUẨN)`  
+Bao gồm: Chặn auto-approve khi mock/cache/fallback, từ chối review action lạ, bắt buộc lý do override, audit HUMAN_OVERRIDE, chặn status transition trái phép, persist audit input & result, Verify Harness 100% pass, Adaptive Threshold tăng/giảm/kẹp bounds, phân quyền RBAC feedback, và công thức benchmark chuẩn xác.
+
+---
+
+## 10. BẰNG CHỨNG THỬ NGHIỆM NGƯỜI DÙNG (USER VALIDATION)
+
+Để đảm bảo tính khách quan và minh bạch (tuyệt đối không bịa đặt số liệu hoặc người dùng giả), nhóm cung cấp khung tài liệu hướng dẫn và biểu mẫu tại:
+* **`docs/user-validation/README.md`**: Hướng dẫn quy trình phỏng vấn thử nghiệm thực tế với >=3 người dùng thật.
+* **`docs/user-validation/feedback-template.md`**: Biểu mẫu ghi chép phản hồi nguyên văn (verbatim), điểm nghẽn (pain points), và yêu cầu cải tiến sản phẩm.
+* **`docs/user-validation/summary-template.md`**: Báo cáo tổng hợp bằng chứng kiểm thử người dùng cho Sprint 2.
+
+---
+**EDUASSISTANT Platform v3.0** — Hệ thống Sẵn sàng Thi đấu & Vận hành Doanh nghiệp (MLAI Hackathon 2026).

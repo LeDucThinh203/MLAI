@@ -5,7 +5,7 @@ import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 
 export const NotificationBell = () => {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -28,11 +28,11 @@ export const NotificationBell = () => {
 
   useEffect(() => {
     fetchNotifs();
-    const interval = setInterval(fetchNotifs, 10000); // Polling real-time má»—i 10s
+    const interval = setInterval(fetchNotifs, 10000); // Polling real-time mỗi 10s
     return () => clearInterval(interval);
   }, [token]);
 
-  // Tá»± Ä‘á»™ng tĂ­nh toĂ¡n vá»‹ trĂ­ Ä‘á»ƒ popup khĂ´ng bao giá» bá»‹ khuáº¥t/trĂ n khá»i mĂ©p mĂ n hĂ¬nh
+  // Tự động tính toán vị trí để popup không bao giờ bị khuất/tràn khỏi mép màn hình
   useEffect(() => {
     if (open && bellContainerRef.current) {
       const rect = bellContainerRef.current.getBoundingClientRect();
@@ -48,7 +48,7 @@ export const NotificationBell = () => {
     }
   }, [open]);
 
-  // ÄĂ³ng dropdown khi click ra ngoĂ i
+  // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (bellContainerRef.current && !bellContainerRef.current.contains(e.target)) {
@@ -88,7 +88,7 @@ export const NotificationBell = () => {
     <div ref={bellContainerRef} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(!open)}
-        title="ThĂ´ng bĂ¡o há»‡ thá»‘ng"
+        title="Thông báo hệ thống"
         style={{
           position: 'relative',
           background: open ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255, 255, 255, 0.05)',
@@ -158,7 +158,7 @@ export const NotificationBell = () => {
             background: 'rgba(255, 255, 255, 0.02)'
           }}>
             <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Bell size={15} color="#818cf8" /> ThĂ´ng BĂ¡o {unreadCount > 0 && <span style={{ color: '#f43f5e' }}>({unreadCount})</span>}
+              <Bell size={15} color="#818cf8" /> Thông Báo {unreadCount > 0 && <span style={{ color: '#f43f5e' }}>({unreadCount})</span>}
             </span>
             {unreadCount > 0 && (
               <button
@@ -166,7 +166,7 @@ export const NotificationBell = () => {
                 disabled={loading}
                 style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.72rem', cursor: 'pointer', fontWeight: 600 }}
               >
-                Äá»c táº¥t cáº£
+                Đọc tất cả
               </button>
             )}
           </div>
@@ -213,7 +213,7 @@ export const NotificationBell = () => {
             ) : (
               <div style={{ padding: '30px 16px', textAlign: 'center', color: 'var(--text-sub)', fontSize: '0.82rem' }}>
                 <CheckCheck size={24} style={{ opacity: 0.3, marginBottom: '6px' }} />
-                <p>Báº¡n Ä‘Ă£ xem háº¿t má»i thĂ´ng bĂ¡o!</p>
+                <p>Bạn đã xem hết mọi thông báo!</p>
               </div>
             )}
           </div>

@@ -1,14 +1,14 @@
 {
   "include": [
-    "EDUASSISTANT/backend",
-    "EDUASSISTANT/scripts",
-    "EDUASSISTANT/test",
-    "EDUASSISTANT/benchmark"
+    "backend",
+    "scripts",
+    "test",
+    "benchmark"
   ],
   "extraPaths": [
-    "EDUASSISTANT/backend",
-    "EDUASSISTANT/backend/app",
-    "EDUASSISTANT"
+    "backend",
+    "backend/app",
+    "."
   ],
   "typeCheckingMode": "standard",
   "reportOptionalSubscript": false,

@@ -10,6 +10,7 @@ Module tạo báo cáo xuất khẩu:
 """
 
 import io
+import json
 import base64
 import qrcode
 from datetime import datetime
@@ -142,7 +143,7 @@ def generate_users_csv(users: list) -> str:
 
 def generate_audits_csv(audits: list) -> str:
     """Tạo chuỗi CSV nhật ký kiểm toán kèm UTF-8 BOM."""
-    headers = ['Mã Audit', 'Thời Gian', 'Hành Động Nghiệp Vụ', 'Mã Hồ Sơ', 'Người Thực Hiện', 'Vai Trò', 'Kết Quả', 'Chi Tiết / Lý Do']
+    headers = ['Mã Audit', 'Thời Gian', 'Hành Động Nghiệp Vụ', 'Mã Hồ Sơ', 'Người Thực Hiện', 'Vai Trò', 'Dữ Liệu Đầu Vào (Input)', 'Kết Quả (Result)', 'Chi Tiết / Lý Do']
     rows = []
     for a in audits:
         time_str = ''
@@ -154,6 +155,9 @@ def generate_audits_csv(audits: list) -> str:
                 time_str = a['timestamp']
 
         actor = a.get('actor') or {}
+        inp = a.get('input') or {}
+        inp_str = json.dumps(inp, ensure_ascii=False) if isinstance(inp, (dict, list)) else str(inp)
+
         rows.append(','.join([
             escape_csv_value(a.get('id')),
             escape_csv_value(time_str),
@@ -161,6 +165,7 @@ def generate_audits_csv(audits: list) -> str:
             escape_csv_value(a.get('caseId') or '—'),
             escape_csv_value(actor.get('name') or actor.get('username') or 'Hệ thống'),
             escape_csv_value(actor.get('role') or 'SYSTEM'),
+            escape_csv_value(inp_str),
             escape_csv_value(a.get('result') or 'SUCCESS'),
             escape_csv_value(a.get('reason') or '')
         ]))
@@ -242,7 +247,7 @@ def generate_cases_table_html(cases: list, filter_info: dict = None) -> str:
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Báo Cáo Tổng Hợp Danh Sách Hồ Sơ Học Vụ - CaseFlow AI</title>
+  <title>Báo Cáo Tổng Hợp Danh Sách Hồ Sơ Học Vụ - EDUASSISTANT</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
     * {{ box-sizing: border-box; margin: 0; padding: 0; }}
@@ -264,7 +269,7 @@ def generate_cases_table_html(cases: list, filter_info: dict = None) -> str:
 <body>
   <div class="action-bar">
     <div style="font-size: 14px; color: #475569;">
-      <strong>CaseFlow AI:</strong> Báo Cáo Tổng Hợp Dữ Liệu Dạng Bảng (Export Table to PDF)
+      <strong>EDUASSISTANT:</strong> Báo Cáo Tổng Hợp Dữ Liệu Dạng Bảng (Export Table to PDF)
     </div>
     <button class="btn-print" onclick="window.print()">
       🖨️ In Bảng / Lưu File PDF Bảng
@@ -357,7 +362,7 @@ def generate_decision_html(case_data: dict, base_url: str = 'http://localhost:30
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Quyết Định Phê Duyệt Hồ Sơ #{case_id} - CaseFlow AI</title>
+  <title>Quyết Định Phê Duyệt Hồ Sơ #{case_id} - EDUASSISTANT</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
     * {{ box-sizing: border-box; margin: 0; padding: 0; }}
@@ -404,7 +409,7 @@ def generate_decision_html(case_data: dict, base_url: str = 'http://localhost:30
 
   <div class="action-bar">
     <div style="font-size: 14px; color: #475569;">
-      <strong>CaseFlow AI:</strong> Chứng nhận Quyết định Học vụ Điện tử chính thức
+      <strong>EDUASSISTANT:</strong> Chứng nhận Quyết định Học vụ Điện tử chính thức
     </div>
     <button class="btn-print" onclick="window.print()">
       🖨️ In Quyết Định / Lưu File PDF
@@ -457,7 +462,7 @@ def generate_decision_html(case_data: dict, base_url: str = 'http://localhost:30
     </div>
 
     <div class="article">
-      <span class="article-title">Điều 3.</span> Quyết định này có hiệu lực kể từ ngày ký và được chứng thực số hóa trên Cổng thông tin <strong>CaseFlow AI</strong> với tính toàn vẹn được mã hóa.
+      <span class="article-title">Điều 3.</span> Quyết định này có hiệu lực kể từ ngày ký và được chứng thực số hóa trên Cổng thông tin <strong>EDUASSISTANT</strong> với tính toàn vẹn được mã hóa.
     </div>
 
     <table class="signature-section">
@@ -466,14 +471,14 @@ def generate_decision_html(case_data: dict, base_url: str = 'http://localhost:30
           <strong><em>Nơi nhận:</em></strong><br>
           - Như Điều 2;<br>
           - Sinh viên (để thực hiện);<br>
-          - Lưu: CSDL CaseFlow AI.
+          - Lưu: CSDL EDUASSISTANT.
         </td>
         <td class="signer-col">
           <div class="signer-title">TM. HỘI ĐỒNG XÉT DUYỆT</div>
           <div class="signer-subtitle">TRƯỞNG BAN THẨM ĐỊNH HỌC VỤ</div>
           <div>
             <div class="electronic-seal">
-              ✓ ĐÃ KÝ ĐIỆN TỬ BỞI CASEFLOW AI<br>
+              ✓ ĐÃ KÝ ĐIỆN TỬ BỞI EDUASSISTANT<br>
               {review.get('reviewerName', 'Thẩm Định Viên Trưởng')}<br>
               {now.strftime('%d/%m/%Y')}
             </div>
@@ -488,7 +493,7 @@ def generate_decision_html(case_data: dict, base_url: str = 'http://localhost:30
       <div class="qr-desc">
         <strong style="color: #1e3a8a; font-size: 13px;">TRA CỨU XÁC THỰC VĂN BẢN ĐIỆN TỬ (DIGITAL AUDIT VERIFIED)</strong><br>
         • Mã định danh hồ sơ: <strong>#{case_id}</strong><br>
-        • Mã chứng thực QR: Quét mã để xác minh quyết định gốc lưu trữ trên cơ sở dữ liệu SQLite CaseFlow AI.<br>
+        • Mã chứng thực QR: Quét mã để xác minh quyết định gốc lưu trữ trên cơ sở dữ liệu EDUASSISTANT.<br>
         • Tiêu chuẩn chữ ký: SHA-256 Authenticated Token • Trạng thái: <strong>{case_data.get('status')}</strong>
       </div>
     </div>

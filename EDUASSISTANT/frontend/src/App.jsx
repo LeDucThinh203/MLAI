@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AppHeader from './components/common/AppHeader';
 import TwoFactorModal from './components/modals/TwoFactorModal';
@@ -10,6 +11,7 @@ import ReviewerPortal from './pages/reviewer/ReviewerPortal';
 import AdminPortal from './pages/admin/AdminPortal';
 import AccountSettingsPortal from './pages/settings/AccountSettingsPortal';
 import PublicVerificationPage from './pages/public/PublicVerificationPage';
+import JudgeModePage from './pages/judge/JudgeModePage';
 
 function MainApp() {
   const { user } = useAuth();
@@ -37,6 +39,7 @@ function MainApp() {
         <Routes>
           <Route path="/login" element={<AuthPage />} />
           <Route path="/verify" element={<PublicVerificationPage />} />
+          <Route path="/judge" element={<JudgeModePage onNavigateTab={setActiveTab} />} />
           <Route
             path="/"
             element={
@@ -54,7 +57,7 @@ function MainApp() {
                     {user?.role === 'REVIEWER' && (
                       <ReviewerPortal activeTab={activeTab} setActiveTab={setActiveTab} />
                     )}
-                    {user?.role === 'STUDENT' && (
+                    {(user?.role === 'STUDENT' || (!['ADMIN', 'REVIEWER'].includes(user?.role))) && (
                       <StudentPortal activeTab={activeTab} setActiveTab={setActiveTab} />
                     )}
                   </>
@@ -78,10 +81,12 @@ function MainApp() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <MainApp />
-      </Router>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <MainApp />
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

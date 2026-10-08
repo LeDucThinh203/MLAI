@@ -1,11 +1,11 @@
 """
 ============================================================================
-CASEFLOW AI - RULE ENGINE & POLICY CHECKER (PYTHON MODULE)
+EDUASSISTANT - RULE ENGINE & ESCALATION REFEREE (PYTHON MODULE)
 ============================================================================
 Module phán quyết nghiệp vụ học vụ độc lập, áp dụng chính sách xét duyệt
 theo 5 nguyên nhân leo thang chuẩn:
   1. OWNERSHIP_UNCLEAR (Quyền sở hữu / MSSV không khớp)
-  2. FACT_UNKNOWN (Thiếu dữ kiện / Ảnh mờ / Không rõ nguồn gốc)
+  2. FACT_UNKNOWN (Thiếu dữ kiện / Ảnh mờ / Không rõ nguồn gốc / Non-live Fail-safe)
   3. DATA_CONFLICT (Mâu thuẫn dữ liệu kê khai và minh chứng)
   4. AUTHORITY_REQUIRED (Vượt thẩm quyền tự động / Cần Hội đồng)
   5. POLICY_OUT_OF_SCOPE (Ngoài phạm vi chính sách tự động)
@@ -15,6 +15,8 @@ theo 5 nguyên nhân leo thang chuẩn:
 import re
 import unicodedata
 from datetime import datetime
+from app.services.ai_service import get_ai_mode
+from app.services.escalation_policy_service import get_confidence_threshold
 
 ESCALATION_CONFIG = {
     'OWNERSHIP_UNCLEAR': {
@@ -87,8 +89,9 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
     description = case_data.get('description', '')
     title = case_data.get('title', '')
 
-    # Lấy dữ liệu OCR
-    ocr = ocr_data or (files[0].get('ocrData') if files and isinstance(files[0], dict) else None) or case_data.get('aiExtraction') or None
+    # Lấy dữ liệu OCR thực tế từ tệp minh chứng (Ưu tiên Facts từ OCR thật hơn text AI)
+    file_ocr = files[0].get('ocrData') if (files and isinstance(files[0], dict)) else None
+    ocr = file_ocr or ocr_data or None
     
     extracted_entities = (ocr.get('extractedEntities') if isinstance(ocr, dict) else {}) or {}
     ocr_student_name = (ocr.get('studentName') if isinstance(ocr, dict) else None) or extracted_entities.get('Họ và tên')
@@ -105,6 +108,7 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
             confidence_score = float(ocr['confidence'] or 0.0)
             
     tamper_risk = (ocr.get('tamperRisk') if isinstance(ocr, dict) else None) or ('LOW' if ocr else 'UNKNOWN')
+    current_threshold = get_confidence_threshold()
 
     # =========================================================================
     # RULE 1: OWNERSHIP_UNCLEAR (Quyền sở hữu / Mạo danh / MSSV không khớp)
@@ -136,6 +140,7 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
                 'explanation': f'Phát hiện nghi vấn quyền sở hữu: Tài liệu minh chứng ghi tên "{ocr_student_name or "N/A"}" (MSSV: "{ocr_student_code or "N/A"}"), không khớp với sinh viên nộp "{student_user.get("fullName")}" (MSSV: "{student_user.get("studentCode") or student_user.get("username")}").',
                 'discrepancies': discrepancies,
                 'confidence': confidence_score,
+                'thresholdUsed': current_threshold,
                 'tamperRisk': tamper_risk,
                 'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
                 'suggestedAction': 'Cán bộ kiểm tra lại thẻ sinh viên và hồ sơ gốc của sinh viên'
@@ -162,18 +167,19 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
             'explanation': 'Hồ sơ chưa đính kèm tệp minh chứng hoặc tệp tải lên bị lỗi không thể đọc được dữ liệu.',
             'discrepancies': discrepancies,
             'confidence': 0.0,
+            'thresholdUsed': current_threshold,
             'tamperRisk': 'UNKNOWN',
             'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
             'suggestedAction': 'Yêu cầu sinh viên tải lên ảnh chụp minh chứng rõ ràng'
         }
 
-    if confidence_score < 0.75 or tamper_risk == 'HIGH' or (not ocr_issuing and not ocr_cert_num):
+    if confidence_score < current_threshold or tamper_risk == 'HIGH' or (not ocr_issuing and not ocr_cert_num):
         discrepancies.append({
             'field': 'Chất lượng tài liệu & Cơ quan cấp',
             'studentClaim': 'Minh chứng hợp lệ',
             'aiFact': f"Độ tin cậy OCR: {round(confidence_score * 100)}% | Cơ quan: {ocr_issuing or 'Không nhận diện được'}",
             'match': False,
-            'note': 'Ảnh mờ hoặc chữ viết khó đọc' if confidence_score < 0.75 else 'Thiếu thông tin cơ quan ban hành hoặc có dấu hiệu can thiệp'
+            'note': f"Ảnh mờ hoặc chữ viết khó đọc (Độ tin cậy < {round(current_threshold * 100)}%)" if confidence_score < current_threshold else 'Thiếu thông tin cơ quan ban hành hoặc có dấu hiệu can thiệp'
         })
 
         return {
@@ -182,9 +188,10 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
             'escalationReason': 'FACT_UNKNOWN',
             'escalationConfig': ESCALATION_CONFIG['FACT_UNKNOWN'],
             'ruleMatched': 'RULE_FACT_02_LOW_CONFIDENCE_OR_MISSING_DATA',
-            'explanation': f'Dữ kiện văn bản chưa đủ căn cứ xác thực (Độ tin cậy OCR: {round(confidence_score * 100)}% < 75%, hoặc thiếu số hiệu/cơ quan ban hành). Cần chuyên viên kiểm tra bản gốc.',
+            'explanation': f'Dữ kiện văn bản chưa đủ căn cứ xác thực (Độ tin cậy OCR: {round(confidence_score * 100)}% < {round(current_threshold * 100)}%, hoặc thiếu số hiệu/cơ quan ban hành). Cần chuyên viên kiểm tra bản gốc.',
             'discrepancies': discrepancies,
             'confidence': confidence_score,
+            'thresholdUsed': current_threshold,
             'tamperRisk': tamper_risk,
             'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
             'suggestedAction': 'Chuyên viên kiểm tra trực tiếp ảnh gốc hoặc liên hệ đơn vị cấp giấy xác nhận'
@@ -293,7 +300,58 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
         }
 
     # =========================================================================
-    # ALL PASSED -> AUTO_APPROVE (TỰ ĐỘNG DUYỆT)
+    # FAIL-SAFE: MOCK / CACHE / FALLBACK KHÔNG ĐƯỢC PHÉP AUTO_APPROVE
+    # =========================================================================
+    current_ai_mode = get_ai_mode()
+    is_live = bool(ocr.get('isLive')) if isinstance(ocr, dict) else False
+    is_fallback = (bool(ocr.get('isFallback')) or bool(ocr.get('fallbackOccurred'))) if isinstance(ocr, dict) else False
+    is_synthetic = bool(ocr.get('isSynthetic')) if isinstance(ocr, dict) else False
+    mode_used = ocr.get('modeUsed') if (isinstance(ocr, dict) and ocr.get('modeUsed')) else current_ai_mode
+    ai_meta = case_data.get('aiMetadata') or {}
+    ai_fallback = bool(ai_meta.get('fallbackOccurred'))
+
+    is_safe_live = (
+        current_ai_mode == 'live'
+        and is_live is True
+        and not is_fallback
+        and not is_synthetic
+        and not ai_fallback
+        and mode_used == 'live'
+    )
+
+    if not is_safe_live:
+        discrepancies.append({
+            'field': 'Xác thực nguồn gốc AI (Provenance Fail-Safe)',
+            'studentClaim': 'Đủ điều kiện quy chế',
+            'aiFact': f"AI Mode: {current_ai_mode} | Live OCR: {is_live} | Fallback: {is_fallback or ai_fallback} | Synthetic: {is_synthetic}",
+            'match': False,
+            'note': 'Dữ liệu AI hiện tại là mock/cache/fallback nên hệ thống không được phép tự động phê duyệt'
+        })
+
+        return {
+            'decision': 'ESCALATE_TO_HUMAN',
+            'status': 'UNDER_REVIEW',
+            'escalationReason': 'FACT_UNKNOWN',
+            'escalationConfig': ESCALATION_CONFIG['FACT_UNKNOWN'],
+            'ruleMatched': 'RULE_FAILSAFE_NON_LIVE_AI',
+            'explanation': 'Dữ liệu AI hiện tại là mock/cache/fallback nên hệ thống không được phép tự động phê duyệt.',
+            'discrepancies': discrepancies,
+            'confidence': confidence_score,
+            'thresholdUsed': current_threshold,
+            'provenance': {
+                'modeUsed': mode_used,
+                'isLive': is_live,
+                'isFallback': is_fallback or ai_fallback,
+                'isSynthetic': is_synthetic,
+                'confidence': confidence_score
+            },
+            'tamperRisk': tamper_risk,
+            'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
+            'suggestedAction': 'Chuyển cán bộ thẩm định thủ công do hệ thống đang chạy ở chế độ giả lập hoặc dự phòng (mock/cache/fallback).'
+        }
+
+    # =========================================================================
+    # ALL PASSED & SAFE LIVE -> AUTO_APPROVE (TỰ ĐỘNG DUYỆT)
     # =========================================================================
     discrepancies.append({
         'field': 'Toàn bộ tiêu chí & chính sách',
@@ -312,6 +370,14 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
         'explanation': 'Hồ sơ đầy đủ minh chứng hợp lệ, OCR trích xuất khớp 100% danh tính và dữ liệu kê khai, rủi ro làm giả thấp. Hệ thống tự động phê chuẩn theo Quy chế Đào tạo.',
         'discrepancies': discrepancies,
         'confidence': confidence_score,
+        'thresholdUsed': current_threshold,
+        'provenance': {
+            'modeUsed': mode_used,
+            'isLive': is_live,
+            'isFallback': False,
+            'isSynthetic': False,
+            'confidence': confidence_score
+        },
         'tamperRisk': 'LOW',
         'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
         'suggestedAction': 'Hệ thống đã tự động xuất Quyết định phê duyệt học vụ có chữ ký số.'

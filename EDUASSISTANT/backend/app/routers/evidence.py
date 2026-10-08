@@ -29,18 +29,22 @@ async def upload_evidence_ocr_endpoint(
     user_db = await db_service.get_user_by_id(user['id'])
     ocr_res = await extract_document_entities(file_bytes, evidence.filename or 'evidence_file', user_db or {})
 
-    ocr_is_live = 'Gemini' in ocr_res.get('provider', '')
+    ocr_is_live = bool(ocr_res.get('isLive'))
     await db_service.save_evidence_upload({
         'fileName': saved_file['fileName'],
         'ownerId': user['id'],
         'metadata': saved_file['metadata'],
         'ocrData': ocr_res.get('data'),
         'ocrProvider': ocr_res.get('provider'),
-        'ocrIsLive': ocr_is_live
+        'ocrIsLive': 1 if ocr_is_live else 0
     })
 
     saved_file['ocrData'] = ocr_res.get('data')
     saved_file['ocrProvider'] = ocr_res.get('provider')
+    saved_file['ocrIsLive'] = ocr_is_live
+    saved_file['modeUsed'] = ocr_res.get('modeUsed', 'mock')
+    saved_file['isFallback'] = ocr_res.get('isFallback', True)
+    saved_file['isSynthetic'] = ocr_res.get('isSynthetic', True)
 
     return api_response(201, True, 'Tải lên và phân tích OCR minh chứng thành công.', {
         'file': saved_file,
@@ -63,18 +67,22 @@ async def upload_evidence_endpoint(
     user_db = await db_service.get_user_by_id(user['id'])
     ocr_res = await extract_document_entities(file_bytes, evidence.filename or 'evidence_file', user_db or {})
 
-    ocr_is_live = 'Gemini' in ocr_res.get('provider', '')
+    ocr_is_live = bool(ocr_res.get('isLive'))
     await db_service.save_evidence_upload({
         'fileName': saved_file['fileName'],
         'ownerId': user['id'],
         'metadata': saved_file['metadata'],
         'ocrData': ocr_res.get('data'),
         'ocrProvider': ocr_res.get('provider'),
-        'ocrIsLive': ocr_is_live
+        'ocrIsLive': 1 if ocr_is_live else 0
     })
 
     saved_file['ocrData'] = ocr_res.get('data')
     saved_file['ocrProvider'] = ocr_res.get('provider')
+    saved_file['ocrIsLive'] = ocr_is_live
+    saved_file['modeUsed'] = ocr_res.get('modeUsed', 'mock')
+    saved_file['isFallback'] = ocr_res.get('isFallback', True)
+    saved_file['isSynthetic'] = ocr_res.get('isSynthetic', True)
 
     return api_response(201, True, 'Tải lên và phân tích OCR minh chứng thành công.', {
         'file': saved_file,

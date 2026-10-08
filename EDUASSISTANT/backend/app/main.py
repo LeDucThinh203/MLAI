@@ -22,7 +22,8 @@ from app.routers import (
     admin,
     ai,
     notifications,
-    health
+    health,
+    verify
 )
 
 app = FastAPI(
@@ -63,6 +64,7 @@ app.include_router(admin.router)
 app.include_router(ai.router)
 app.include_router(notifications.router)
 app.include_router(health.router)
+app.include_router(verify.router)
 
 # Serve frontend build artifacts if present
 frontend_dist_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'dist')

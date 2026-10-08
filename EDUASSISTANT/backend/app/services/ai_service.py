@@ -76,6 +76,7 @@ def set_ai_mode(mode: str) -> bool:
     global current_ai_mode
     if mode in ('live', 'mock', 'cache'):
         current_ai_mode = mode
+        os.environ['AI_MODE'] = mode
         return True
     return False
 
@@ -99,7 +100,7 @@ async def extract_case_data(case_data: dict, actor: dict = None) -> dict:
             if not api_key or len(api_key.strip()) < 10:
                 raise ValueError('Thiếu GEMINI_API_KEY hợp lệ trong file .env để kích hoạt AI Live mode.')
 
-            prompt_text = f"""Bạn là hệ thống AI thẩm định hồ sơ học vụ sinh viên (CaseFlow AI Engine). Hãy phân tích hồ sơ dưới đây và đánh giá tính hợp lệ theo quy chế học vụ:
+            prompt_text = f"""Bạn là hệ thống AI thẩm định hồ sơ học vụ sinh viên (EDUASSISTANT Engine). Hãy phân tích hồ sơ dưới đây và đánh giá tính hợp lệ theo quy chế học vụ:
 - Tiêu đề hồ sơ: "{case_data.get('title')}"
 - Danh mục yêu cầu: "{case_data.get('category')}"
 - Nội dung giải trình: "{case_data.get('description')}"

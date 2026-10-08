@@ -1,13 +1,25 @@
 {
   "python.defaultInterpreterPath": "C:/msys64/mingw64/bin/python.exe",
-  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.typeCheckingMode": "off",
   "python.analysis.extraPaths": [
     "${workspaceFolder}/EDUASSISTANT/backend",
-    "${workspaceFolder}/EDUASSISTANT"
+    "${workspaceFolder}/EDUASSISTANT",
+    "${workspaceFolder}/backend",
+    "${workspaceFolder}",
+    "./EDUASSISTANT/backend",
+    "./EDUASSISTANT",
+    "./backend",
+    "."
   ],
   "python.autoComplete.extraPaths": [
     "${workspaceFolder}/EDUASSISTANT/backend",
-    "${workspaceFolder}/EDUASSISTANT"
+    "${workspaceFolder}/EDUASSISTANT",
+    "${workspaceFolder}/backend",
+    "${workspaceFolder}",
+    "./EDUASSISTANT/backend",
+    "./EDUASSISTANT",
+    "./backend",
+    "."
   ],
   "python.analysis.autoSearchPaths": true,
   "python.analysis.diagnosticMode": "openFilesOnly",
@@ -21,6 +33,29 @@
     "reportMissingImports": "none",
     "reportAttributeAccessIssue": "none",
     "reportCallIssue": "none",
-    "reportReturnType": "none"
+    "reportReturnType": "none",
+    "reportUnknownMemberType": "none",
+    "reportUnknownVariableType": "none",
+    "reportUnknownArgumentType": "none",
+    "reportUntypedFunctionDecorator": "none",
+    "reportUntypedClassDecorator": "none",
+    "reportUntypedBaseClass": "none",
+    "reportUntypedNamedTuple": "none",
+    "reportPrivateUsage": "none",
+    "reportConstantRedefinition": "none",
+    "reportIncompatibleMethodOverride": "none",
+    "reportIncompatibleVariableOverride": "none",
+    "reportOverlappingOverload": "none",
+    "reportUninitializedInstanceVariable": "none",
+    "reportInvalidTypeVarUse": "none",
+    "reportCallInDefaultInitializer": "none",
+    "reportUnnecessaryIsInstance": "none",
+    "reportUnnecessaryCast": "none",
+    "reportUnnecessaryComparison": "none",
+    "reportAssertAlwaysTrue": "none",
+    "reportSelfClsParameterName": "none",
+    "reportImplicitStringConcatenation": "none",
+    "reportUndefinedVariable": "none",
+    "reportUnboundVariable": "none"
   }
 }

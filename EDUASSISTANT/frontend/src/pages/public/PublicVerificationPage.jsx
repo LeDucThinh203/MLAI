@@ -15,7 +15,7 @@ export const PublicVerificationPage = () => {
 
   useEffect(() => {
     if (!caseId) {
-      setError('Thiáº¿u mĂ£ há»“ sÆ¡ cáº§n xĂ¡c thá»±c.');
+      setError('Thiếu mã hồ sơ cần xác thực.');
       setLoading(false);
       return;
     }
@@ -23,10 +23,10 @@ export const PublicVerificationPage = () => {
     axios.get(`${API_BASE}/cases/verify/${caseId}`)
       .then(res => {
         if (res.data?.success) setData(res.data.data);
-        else setError(res.data?.message || 'KhĂ´ng tĂ¬m tháº¥y thĂ´ng tin.');
+        else setError(res.data?.message || 'Không tìm thấy thông tin.');
       })
       .catch(err => {
-        setError(err.response?.data?.message || 'Há»“ sÆ¡ khĂ´ng tá»“n táº¡i hoáº·c Ä‘Ă£ bá»‹ thu há»“i.');
+        setError(err.response?.data?.message || 'Hồ sơ không tồn tại hoặc đã bị thu hồi.');
       })
       .finally(() => setLoading(false));
   }, [caseId]);
@@ -52,28 +52,28 @@ export const PublicVerificationPage = () => {
         padding: '32px',
         boxShadow: '0 25px 60px rgba(0,0,0,0.9), 0 0 40px rgba(56, 189, 248, 0.15)'
       }}>
-        {/* Header Quá»‘c Gia */}
+        {/* Header Quốc Gia */}
         <div style={{ textAlign: 'center', borderBottom: '1px solid #1e293b', paddingBottom: '18px', marginBottom: '20px' }}>
           <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto' }}>
             <Award size={28} color="#34d399" />
           </div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38bdf8', margin: '0 0 4px 0' }}>
-            Cá»”NG TRA Cá»¨U & XĂC THá»°C VÄ‚N Báº¢N ÄIá»†N Tá»¬
+            CỔNG TRA CỨU & XÁC THỰC VĂN BẢN ĐIỆN TỬ
           </h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-sub)', margin: 0 }}>
-            Há»‡ thá»‘ng CaseFlow AI â€¢ TrÆ°á»ng Äáº¡i Há»c CĂ´ng Nghá»‡ Quá»‘c Gia
+            Hệ thống EDUASSISTANT • Trường Đại Học Công Nghệ Quốc Gia
           </p>
         </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#818cf8' }}>
             <RefreshCw size={24} className="animate-spin" style={{ marginBottom: '10px' }} />
-            <p>Äang giáº£i mĂ£ chá»¯ kĂ½ sá»‘ vĂ  xĂ¡c minh chá»©ng nháº­n...</p>
+            <p>Đang giải mã chữ ký số và xác minh chứng nhận...</p>
           </div>
         ) : error ? (
           <div style={{ textAlign: 'center', padding: '30px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid #ef4444', borderRadius: '12px', color: '#f87171' }}>
             <AlertTriangle size={32} style={{ marginBottom: '8px' }} />
-            <h4 style={{ margin: '0 0 6px 0' }}>KhĂ´ng Thá»ƒ XĂ¡c Thá»±c</h4>
+            <h4 style={{ margin: '0 0 6px 0' }}>Không Thể Xác Thực</h4>
             <p style={{ fontSize: '0.85rem', margin: 0 }}>{error}</p>
           </div>
         ) : (
@@ -91,10 +91,10 @@ export const PublicVerificationPage = () => {
               <CheckCircle2 size={28} color={data.status === 'APPROVED' ? '#34d399' : '#fbbf24'} />
               <div>
                 <strong style={{ color: data.status === 'APPROVED' ? '#34d399' : '#fbbf24', fontSize: '0.95rem' }}>
-                  âœ“ Chá»©ng Nháº­n Há»£p Lá»‡ & ToĂ n Váº¹n
+                  ✓ Chứng Nhận Hợp Lệ & Toàn Vẹn
                 </strong>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                  VÄƒn báº£n Ä‘Ă£ Ä‘Æ°á»£c sá»‘ hĂ³a vĂ  kĂ½ sá»‘ Ä‘iá»‡n tá»­ trĂªn há»‡ thá»‘ng SQLite trÆ°á»ng.
+                  Văn bản đã được số hóa và ký số điện tử trên hệ thống SQLite trường.
                 </p>
               </div>
             </div>
@@ -102,35 +102,35 @@ export const PublicVerificationPage = () => {
             {/* Grid Information */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#050811', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b', fontSize: '0.82rem' }}>
               <div>
-                <span style={{ color: 'var(--text-sub)' }}>MĂ£ há»“ sÆ¡:</span>
+                <span style={{ color: 'var(--text-sub)' }}>Mã hồ sơ:</span>
                 <div style={{ fontWeight: 700, color: '#38bdf8', fontFamily: 'monospace' }}>#{data.caseId}</div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-sub)' }}>Tráº¡ng thĂ¡i:</span>
+                <span style={{ color: 'var(--text-sub)' }}>Trạng thái:</span>
                 <div style={{ fontWeight: 700, color: '#34d399' }}>{data.status}</div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-sub)' }}>Há» vĂ  tĂªn sinh viĂªn:</span>
+                <span style={{ color: 'var(--text-sub)' }}>Họ và tên sinh viên:</span>
                 <div style={{ fontWeight: 700, color: '#ffffff' }}>{data.studentName}</div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-sub)' }}>MĂ£ sá»‘ sinh viĂªn (MSSV):</span>
+                <span style={{ color: 'var(--text-sub)' }}>Mã số sinh viên (MSSV):</span>
                 <div style={{ fontWeight: 700, color: '#fbbf24', fontFamily: 'monospace' }}>{data.studentCode || 'N/A'}</div>
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
-                <span style={{ color: 'var(--text-sub)' }}>TiĂªu Ä‘á» há»“ sÆ¡:</span>
+                <span style={{ color: 'var(--text-sub)' }}>Tiêu đề hồ sơ:</span>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{data.title}</div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-sub)' }}>ÄÆ¡n vá»‹ phĂª chuáº©n:</span>
+                <span style={{ color: 'var(--text-sub)' }}>Đơn vị phê chuẩn:</span>
                 <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{data.assignedDepartment}</div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-sub)' }}>CĂ¡n bá»™ phĂª duyá»‡t:</span>
+                <span style={{ color: 'var(--text-sub)' }}>Cán bộ phê duyệt:</span>
                 <div style={{ fontWeight: 600, color: '#60a5fa' }}>{data.reviewerName}</div>
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
-                <span style={{ color: 'var(--text-sub)' }}>Chá»¯ kĂ½ sá»‘ (HMAC-SHA256 Token):</span>
+                <span style={{ color: 'var(--text-sub)' }}>Chữ ký số (HMAC-SHA256 Token):</span>
                 <div style={{ wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.72rem', color: '#94a3b8', background: 'rgba(0,0,0,0.4)', padding: '6px 8px', borderRadius: '6px', marginTop: '4px' }}>
                   {data.digitalSignature}
                 </div>
@@ -139,11 +139,11 @@ export const PublicVerificationPage = () => {
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '8px' }}>
               <button
-                onClick={() => window.open(`${API_BASE}/cases/${data.caseId}/export-decision`, '_blank')}
+                onClick={() => window.print()}
                 className="btn-primary"
                 style={{ padding: '8px 18px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                <Printer size={15} /> In / LÆ°u Báº£n PDF Quyáº¿t Äá»‹nh
+                <Printer size={15} /> In / Lưu Chứng Nhận Xác Thực
               </button>
             </div>
           </div>

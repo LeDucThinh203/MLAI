@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import {
-  KeyRound, X, AlertTriangle, CheckCircle2, Copy, Check, RefreshCw, ShieldCheck
+  X, AlertTriangle, CheckCircle2, Copy, RefreshCw, ShieldAlert
 } from 'lucide-react';
-import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 
 const TwoFactorModal = ({ isOpen, onClose, user }) => {
@@ -26,11 +24,11 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
           if (res?.success) {
             setQrCodeData(res.data);
           } else {
-            setModal2FAMsg({ type: 'error', text: res?.message || 'KhĂ´ng thá»ƒ táº¡o mĂ£ 2FA QR.' });
+            setModal2FAMsg({ type: 'error', text: res?.message || 'Không thể tạo mã 2FA QR.' });
           }
         }).catch(() => {
           setTwoFactorLoading(false);
-          setModal2FAMsg({ type: 'error', text: 'Lá»—i káº¿t ná»‘i khi táº¡o mĂ£ 2FA.' });
+          setModal2FAMsg({ type: 'error', text: 'Lỗi kết nối khi tạo mã 2FA.' });
         });
       }
     }
@@ -41,7 +39,7 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
   const handleEnable = async (e) => {
     if (e) e.preventDefault();
     if (!twoFactorInputCode || twoFactorInputCode.trim().length < 6) {
-      setModal2FAMsg({ type: 'error', text: 'Vui lĂ²ng nháº­p Ä‘á»§ 6 chá»¯ sá»‘ OTP tá»« á»©ng dá»¥ng Authenticator!' });
+      setModal2FAMsg({ type: 'error', text: 'Vui lòng nhập đủ 6 chữ số OTP từ ứng dụng Authenticator!' });
       return;
     }
     setTwoFactorLoading(true);
@@ -49,17 +47,17 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
     const res = await enable2FA(qrCodeData?.secret, twoFactorInputCode.trim());
     setTwoFactorLoading(false);
     if (res?.success) {
-      setModal2FAMsg({ type: 'success', text: 'âœ… ÄĂ£ kĂ­ch hoáº¡t XĂ¡c thá»±c 2 bÆ°á»›c (2FA) thĂ nh cĂ´ng!' });
+      setModal2FAMsg({ type: 'success', text: '✅ Đã kích hoạt Xác thực 2 bước (2FA) thành công!' });
       setTimeout(() => onClose(), 1200);
     } else {
-      setModal2FAMsg({ type: 'error', text: res?.message || 'MĂ£ OTP khĂ´ng chĂ­nh xĂ¡c!' });
+      setModal2FAMsg({ type: 'error', text: res?.message || 'Mã OTP không chính xác!' });
     }
   };
 
   const handleDisable = async (e) => {
     if (e) e.preventDefault();
     if (!twoFactorInputCode || twoFactorInputCode.trim().length < 6) {
-      setModal2FAMsg({ type: 'error', text: 'Vui lĂ²ng nháº­p mĂ£ OTP hiá»‡n táº¡i (hoáº·c 123456) Ä‘á»ƒ xĂ¡c nháº­n táº¯t 2FA!' });
+      setModal2FAMsg({ type: 'error', text: 'Vui lòng nhập mã OTP hiện tại (hoặc 123456) để xác nhận tắt 2FA!' });
       return;
     }
     setTwoFactorLoading(true);
@@ -67,10 +65,10 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
     const res = await disable2FA(twoFactorInputCode.trim());
     setTwoFactorLoading(false);
     if (res?.success) {
-      setModal2FAMsg({ type: 'success', text: 'âœ… ÄĂ£ táº¯t XĂ¡c thá»±c 2 bÆ°á»›c (2FA) thĂ nh cĂ´ng!' });
+      setModal2FAMsg({ type: 'success', text: '✅ Đã tắt Xác thực 2 bước (2FA) thành công!' });
       setTimeout(() => onClose(), 1200);
     } else {
-      setModal2FAMsg({ type: 'error', text: res?.message || 'MĂ£ OTP khĂ´ng chĂ­nh xĂ¡c!' });
+      setModal2FAMsg({ type: 'error', text: res?.message || 'Mã OTP không chính xác!' });
     }
   };
 
@@ -158,12 +156,12 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
             <ShieldAlert size={28} color={user?.twoFactorEnabled ? '#34d399' : '#818cf8'} />
           </div>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
-            {user?.twoFactorEnabled ? 'XĂ¡c Thá»±c 2 BÆ°á»›c Äang Báº­t' : 'CĂ i Äáº·t XĂ¡c Thá»±c 2 BÆ°á»›c (2FA)'}
+            {user?.twoFactorEnabled ? 'Xác Thực 2 Bước Đang Bật' : 'Cài Đặt Xác Thực 2 Bước (2FA)'}
           </h3>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-sub)', marginTop: '4px' }}>
             {user?.twoFactorEnabled 
-              ? 'TĂ i khoáº£n cá»§a báº¡n Ä‘Æ°á»£c báº£o máº­t an toĂ n vá»›i mĂ£ OTP 6 sá»‘.' 
-              : 'Báº£o vá»‡ tĂ i khoáº£n báº±ng Google Authenticator / Microsoft Authenticator.'}
+              ? 'Tài khoản của bạn được bảo mật an toàn với mã OTP 6 số.' 
+              : 'Bảo vệ tài khoản bằng Google Authenticator / Microsoft Authenticator.'}
           </p>
         </div>
 
@@ -201,9 +199,9 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
             }}>
               <CheckCircle2 size={24} color="#34d399" style={{ flexShrink: 0 }} />
               <div>
-                <strong style={{ color: '#34d399', fontSize: '0.9rem', display: 'block' }}>2FA Äang Hoáº¡t Äá»™ng</strong>
+                <strong style={{ color: '#34d399', fontSize: '0.9rem', display: 'block' }}>2FA Đang Hoạt Động</strong>
                 <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-                  Má»—i láº§n Ä‘Äƒng nháº­p, báº¡n cáº§n cung cáº¥p mĂ£ 6 chá»¯ sá»‘ tá»« á»©ng dá»¥ng Authenticator.
+                  Mỗi lần đăng nhập, bạn cần cung cấp mã 6 chữ số từ ứng dụng Authenticator.
                 </span>
               </div>
             </div>
@@ -211,14 +209,14 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <label style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                  Nháº­p mĂ£ OTP Ä‘á»ƒ xĂ¡c nháº­n Táº®T 2FA:
+                  Nhập mã OTP để xác nhận TẮT 2FA:
                 </label>
                 <button
                   type="button"
                   onClick={() => setTwoFactorInputCode('123456')}
                   style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.76rem', cursor: 'pointer', textDecoration: 'underline' }}
                 >
-                  â¡ MĂ£ Test (123456)
+                  ⚡ Mã Test (123456)
                 </button>
               </div>
 
@@ -250,7 +248,7 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
               className="btn-danger"
               style={{ width: '100%', height: '46px', fontSize: '0.92rem', fontWeight: 700, borderRadius: '10px' }}
             >
-              {twoFactorLoading ? 'Äang xá»­ lĂ½...' : 'VĂ´ Hiá»‡u HĂ³a 2FA'}
+              {twoFactorLoading ? 'Đang xử lý...' : 'Vô Hiệu Hóa 2FA'}
             </button>
           </form>
         ) : (
@@ -264,12 +262,12 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
               textAlign: 'center'
             }}>
               <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '12px' }}>
-                1. Má»Ÿ á»©ng dá»¥ng <strong>Authenticator</strong> & quĂ©t mĂ£ QR bĂªn dÆ°á»›i:
+                1. Mở ứng dụng <strong>Authenticator</strong> & quét mã QR bên dưới:
               </p>
 
               {twoFactorLoading && !qrCodeData ? (
                 <div style={{ padding: '30px', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <RefreshCw size={18} className="animate-spin" /> Äang táº¡o mĂ£ QR...
+                  <RefreshCw size={18} className="animate-spin" /> Đang tạo mã QR...
                 </div>
               ) : qrCodeData?.qrCodeDataUrl ? (
                 <div style={{
@@ -296,7 +294,7 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
                   textAlign: 'left'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#94a3b8', fontSize: '0.72rem', fontWeight: 600 }}>KhĂ³a bĂ­ máº­t thá»§ cĂ´ng (Secret Key):</span>
+                    <span style={{ color: '#94a3b8', fontSize: '0.72rem', fontWeight: 600 }}>Khóa bí mật thủ công (Secret Key):</span>
                     <button
                       type="button"
                       onClick={handleCopy}
@@ -312,7 +310,7 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
                       }}
                     >
                       <Copy size={12} />
-                      {copiedSecret ? 'ÄĂ£ sao chĂ©p âœ“' : 'Sao chĂ©p'}
+                      {copiedSecret ? 'Đã sao chép ✓' : 'Sao chép'}
                     </button>
                   </div>
                   <div style={{
@@ -338,14 +336,14 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <label style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                  2. Nháº­p mĂ£ OTP gá»“m 6 chá»¯ sá»‘:
+                  2. Nhập mã OTP gồm 6 chữ số:
                 </label>
                 <button
                   type="button"
                   onClick={() => setTwoFactorInputCode('123456')}
                   style={{ background: 'transparent', border: 'none', color: '#818cf8', fontSize: '0.76rem', cursor: 'pointer', textDecoration: 'underline' }}
                 >
-                  â¡ Nháº­p nhanh Test (123456)
+                  ⚡ Nhập nhanh Test (123456)
                 </button>
               </div>
 
@@ -376,7 +374,7 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
               className="btn-primary shimmer-button"
               style={{ width: '100%', height: '46px', fontSize: '0.92rem', fontWeight: 700, borderRadius: '10px', background: 'linear-gradient(135deg, #4f46e5, #0284c7)' }}
             >
-              {twoFactorLoading ? 'Äang xĂ¡c thá»±c...' : 'XĂ¡c Nháº­n & KĂ­ch Hoáº¡t 2FA'}
+              {twoFactorLoading ? 'Đang xác thực...' : 'Xác Nhận & Kích Hoạt 2FA'}
             </button>
           </form>
         )}

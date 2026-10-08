@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Shield, User, Lock, Mail, Building, GraduationCap, Eye, EyeOff,
-  KeyRound, Send, ArrowUpRight, CheckCircle2, AlertTriangle, Sparkles, Check
+  Shield, User, Lock, KeyRound, AlertTriangle, Sparkles,
+  ShieldAlert, RefreshCw, UserPlus
 } from 'lucide-react';
-import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 
 const AuthPage = () => {
@@ -21,12 +19,12 @@ const AuthPage = () => {
   const [twoFactorOtp, setTwoFactorOtp] = useState('');
   const [verifying2FA, setVerifying2FA] = useState(false);
 
-  // Register fields (Chá»‰ dĂ nh cho Sinh ViĂªn)
+  // Register fields (Chỉ dành cho Sinh Viên)
   const [regFullName, setRegFullName] = useState('');
   const [regStudentCode, setRegStudentCode] = useState('');
   const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
-  const [regDepartment, setRegDepartment] = useState('Khoa CĂ´ng Nghá»‡ ThĂ´ng Tin');
+  const [regDepartment, setRegDepartment] = useState('Khoa Công Nghệ Thông Tin');
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -59,7 +57,7 @@ const AuthPage = () => {
   const handleVerify2FASubmit = async (e) => {
     if (e) e.preventDefault();
     if (!twoFactorOtp || twoFactorOtp.length < 6) {
-      setError('Vui lĂ²ng nháº­p Ä‘á»§ 6 chá»¯ sá»‘ OTP tá»« á»©ng dá»¥ng Authenticator!');
+      setError('Vui lòng nhập đủ 6 chữ số OTP từ ứng dụng Authenticator!');
       return;
     }
     setVerifying2FA(true);
@@ -67,7 +65,7 @@ const AuthPage = () => {
     const res = await login2FA(twoFactorChallenge.tempToken, twoFactorOtp);
     setVerifying2FA(false);
     if (!res.success) {
-      setError(res.message || 'MĂ£ OTP khĂ´ng chĂ­nh xĂ¡c hoáº·c Ä‘Ă£ háº¿t háº¡n.');
+      setError(res.message || 'Mã OTP không chính xác hoặc đã hết hạn.');
     }
   };
 
@@ -106,7 +104,7 @@ const AuthPage = () => {
       overflow: 'hidden'
     }}>
       
-      {/* 1. FLOATING AMBIENT GLOW ORBS (CĂC Äá»M SĂNG HUYá»€N áº¢O DI CHUYá»‚N) */}
+      {/* 1. FLOATING AMBIENT GLOW ORBS (CÁC ĐỐM SÁNG HUYỀN ẢO DI CHUYỂN) */}
       <div style={{
         position: 'absolute',
         top: '15%',
@@ -206,10 +204,10 @@ const AuthPage = () => {
           </div>
 
           <h2 className="text-gradient-animated" style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '4px' }}>
-            CaseFlow AI
+            EDUASSISTANT
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.86rem', fontWeight: 500 }}>
-            Há»‡ thá»‘ng quáº£n lĂ½, xĂ©t duyá»‡t & tháº©m Ä‘á»‹nh há»“ sÆ¡ sinh viĂªn
+            Hệ thống quản lý, xét duyệt & thẩm định hồ sơ sinh viên
           </p>
 
           {/* Feature Highlight Pills */}
@@ -218,15 +216,15 @@ const AuthPage = () => {
               <Sparkles size={11} /> AI Gemini Triage
             </span>
             <span style={{ fontSize: '0.7rem', padding: '3px 9px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              â¡ Sharp WebP -95%
+              ⚡ Sharp WebP -95%
             </span>
             <span style={{ fontSize: '0.7rem', padding: '3px 9px', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              đŸ”’ JWT RBAC
+              🔒 JWT RBAC
             </span>
           </div>
         </div>
 
-        {/* Tab switch giá»¯a ÄÄƒng Nháº­p & ÄÄƒng KĂ½ Sinh ViĂªn */}
+        {/* Tab switch giữa Đăng Nhập & Đăng Ký Sinh Viên */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -252,7 +250,7 @@ const AuthPage = () => {
               transition: 'all 0.25s ease'
             }}
           >
-            ÄÄƒng Nháº­p
+            Đăng Nhập
           </button>
 
           <button
@@ -271,7 +269,7 @@ const AuthPage = () => {
               transition: 'all 0.25s ease'
             }}
           >
-            ÄÄƒng KĂ½ Sinh ViĂªn
+            Đăng Ký Sinh Viên
           </button>
         </div>
 
@@ -309,9 +307,9 @@ const AuthPage = () => {
               <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(99, 102, 241, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', border: '1px solid #818cf8' }}>
                 <ShieldAlert size={26} color="#818cf8" />
               </div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>XĂ¡c Thá»±c 2 BÆ°á»›c (2FA OTP)</h3>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>Xác Thực 2 Bước (2FA OTP)</h3>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                TĂ i khoáº£n <strong>{twoFactorChallenge.username}</strong> yĂªu cáº§u mĂ£ OTP tá»« á»©ng dá»¥ng Authenticator.
+                Tài khoản <strong>{twoFactorChallenge.username}</strong> yêu cầu mã OTP từ ứng dụng Authenticator.
               </p>
             </div>
 
@@ -335,7 +333,7 @@ const AuthPage = () => {
                   onClick={() => setTwoFactorOtp('123456')}
                   style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}
                 >
-                  â¡ Nháº­p nhanh mĂ£ Bypass Demo (123456)
+                  ⚡ Nhập nhanh mã Bypass Demo (123456)
                 </button>
               </div>
 
@@ -345,7 +343,7 @@ const AuthPage = () => {
                 className="btn-primary shimmer-button"
                 style={{ height: '44px', fontWeight: 700 }}
               >
-                {verifying2FA ? 'Äang xĂ¡c thá»±c OTP...' : 'XĂ¡c Thá»±c & ÄÄƒng Nháº­p'}
+                {verifying2FA ? 'Đang xác thực OTP...' : 'Xác Thực & Đăng Nhập'}
               </button>
 
               <button
@@ -354,18 +352,18 @@ const AuthPage = () => {
                 className="btn-secondary"
                 style={{ height: '36px', fontSize: '0.8rem' }}
               >
-                Quay láº¡i Ä‘Äƒng nháº­p
+                Quay lại đăng nhập
               </button>
             </form>
           </div>
         )}
 
-        {/* 1. FORM ÄÄ‚NG NHáº¬P */}
+        {/* 1. FORM ĐĂNG NHẬP */}
         {!twoFactorChallenge && mode === 'login' && (
           <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)' }}>
-                TĂªn Ä‘Äƒng nháº­p
+                Tên đăng nhập
               </label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <User size={16} color="#818cf8" style={{ position: 'absolute', left: '12px' }} />
@@ -383,14 +381,14 @@ const AuthPage = () => {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)' }}>
-                Máº­t kháº©u
+                Mật khẩu
               </label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <Lock size={16} color="#818cf8" style={{ position: 'absolute', left: '12px' }} />
                 <input
                   type="password"
                   className="form-input"
-                  placeholder="Nháº­p máº­t kháº©u (vĂ­ dá»¥: password123)..."
+                  placeholder="Nhập mật khẩu (ví dụ: password123)..."
                   value={password}
                   onChange={e => { setPassword(e.target.value); setSelectedDemo(null); }}
                   style={{ paddingLeft: '38px', height: '42px' }}
@@ -408,19 +406,19 @@ const AuthPage = () => {
               {loading ? (
                 <>
                   <RefreshCw size={16} className="animate-spin" />
-                  <span>Äang xĂ¡c thá»±c thĂ´ng tin...</span>
+                  <span>Đang xác thực thông tin...</span>
                 </>
               ) : (
                 <>
                   <KeyRound size={16} />
-                  <span>ÄÄƒng Nháº­p VĂ o Há»‡ Thá»‘ng</span>
+                  <span>Đăng Nhập Vào Hệ Thống</span>
                 </>
               )}
             </button>
           </form>
         )}
 
-        {/* 2. FORM ÄÄ‚NG KĂ TĂ€I KHOáº¢N SINH VIĂN */}
+        {/* 2. FORM ĐĂNG KÝ TÀI KHOẢN SINH VIÊN */}
         {mode === 'register' && (
           <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{
@@ -432,18 +430,18 @@ const AuthPage = () => {
               color: '#38bdf8',
               lineHeight: 1.4
             }}>
-              â„¹ï¸ ÄÄƒng kĂ½ cĂ´ng khai chá»‰ Ă¡p dá»¥ng cho <strong>Sinh viĂªn</strong>. TĂ i khoáº£n Tháº©m Ä‘á»‹nh vĂ  Quáº£n trá»‹ viĂªn chá»‰ Ä‘Æ°á»£c cáº¥p bá»Ÿi Admin trÆ°á»ng.
+              ℹ️ Đăng ký công khai chỉ áp dụng cho <strong>Sinh viên</strong>. Tài khoản Thẩm định và Quản trị viên chỉ được cấp bởi Admin trường.
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
-                  Há» vĂ  tĂªn sinh viĂªn *
+                  Họ và tên sinh viên *
                 </label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="VĂ­ dá»¥: Nguyá»…n VÄƒn An"
+                  placeholder="Ví dụ: Nguyễn Văn An"
                   value={regFullName}
                   onChange={e => setRegFullName(e.target.value)}
                   required
@@ -452,7 +450,7 @@ const AuthPage = () => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
-                  MĂ£ SV (MSSV) *
+                  Mã SV (MSSV) *
                 </label>
                 <input
                   type="text"
@@ -468,7 +466,7 @@ const AuthPage = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
-                  TĂªn Ä‘Äƒng nháº­p *
+                  Tên đăng nhập *
                 </label>
                 <input
                   type="text"
@@ -482,12 +480,12 @@ const AuthPage = () => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
-                  Máº­t kháº©u *
+                  Mật khẩu *
                 </label>
                 <input
                   type="password"
                   className="form-input"
-                  placeholder="Tá»‘i thiá»ƒu 6 kĂ½ tá»±"
+                  placeholder="Tối thiểu 6 ký tự"
                   value={regPassword}
                   onChange={e => setRegPassword(e.target.value)}
                   required
@@ -497,12 +495,12 @@ const AuthPage = () => {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
-                Khoa Ä‘Ă o táº¡o
+                Khoa đào tạo
               </label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="Khoa CĂ´ng Nghá»‡ ThĂ´ng Tin, Khoa Kinh Táº¿..."
+                placeholder="Khoa Công Nghệ Thông Tin, Khoa Kinh Tế..."
                 value={regDepartment}
                 onChange={e => setRegDepartment(e.target.value)}
               />
@@ -515,12 +513,12 @@ const AuthPage = () => {
               style={{ width: '100%', marginTop: '8px', height: '44px', fontWeight: 700 }}
             >
               <UserPlus size={16} />
-              <span>{loading ? 'Äang táº¡o tĂ i khoáº£n sinh viĂªn...' : 'Táº¡o TĂ i Khoáº£n & VĂ o Há»‡ Thá»‘ng'}</span>
+              <span>{loading ? 'Đang tạo tài khoản sinh viên...' : 'Tạo Tài Khoản & Vào Hệ Thống'}</span>
             </button>
           </form>
         )}
 
-        {/* 3. INTERACTIVE QUICK DEMO ACCOUNT SELECTOR (CHá»ŒN NHANH VAI TRĂ’ DEMO) */}
+        {/* 3. INTERACTIVE QUICK DEMO ACCOUNT SELECTOR (CHỌN NHANH VAI TRÒ DEMO) */}
         <div style={{
           marginTop: '22px',
           paddingTop: '18px',
@@ -530,9 +528,9 @@ const AuthPage = () => {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <span style={{ fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Sparkles size={14} color="#f59e0b" /> Chá»n nhanh tĂ i khoáº£n Demo:
+              <Sparkles size={14} color="#f59e0b" /> Chọn nhanh tài khoản Demo:
             </span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Máº­t kháº©u: <code>password123</code></span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Mật khẩu: <code>password123</code></span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
@@ -552,8 +550,8 @@ const AuthPage = () => {
                 boxShadow: selectedDemo === 'student' ? '0 0 16px rgba(56, 189, 248, 0.35)' : 'none'
               }}
             >
-              <div style={{ fontSize: '1.2rem', marginBottom: '2px' }}>đŸ“</div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#38bdf8' }}>Sinh ViĂªn</div>
+              <div style={{ fontSize: '1.2rem', marginBottom: '2px' }}>🎓</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#38bdf8' }}>Sinh Viên</div>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-sub)', marginTop: '2px' }}>student1</div>
             </div>
 
@@ -572,8 +570,8 @@ const AuthPage = () => {
                 boxShadow: selectedDemo === 'reviewer' ? '0 0 16px rgba(245, 158, 11, 0.35)' : 'none'
               }}
             >
-              <div style={{ fontSize: '1.2rem', marginBottom: '2px' }}>đŸ”</div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fbbf24' }}>Tháº©m Äá»‹nh</div>
+              <div style={{ fontSize: '1.2rem', marginBottom: '2px' }}>🔍</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fbbf24' }}>Thẩm Định</div>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-sub)', marginTop: '2px' }}>reviewer1</div>
             </div>
 
@@ -592,8 +590,8 @@ const AuthPage = () => {
                 boxShadow: selectedDemo === 'admin' ? '0 0 16px rgba(244, 63, 94, 0.35)' : 'none'
               }}
             >
-              <div style={{ fontSize: '1.2rem', marginBottom: '2px' }}>đŸ›¡ï¸</div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f43f5e' }}>Quáº£n Trá»‹</div>
+              <div style={{ fontSize: '1.2rem', marginBottom: '2px' }}>🛡️</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f43f5e' }}>Quản Trị</div>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-sub)', marginTop: '2px' }}>admin1</div>
             </div>
 

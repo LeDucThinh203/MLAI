@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import {
-  Activity, Search, Filter, RefreshCw, Calendar, Download, ShieldCheck,
-  CheckCircle2, AlertTriangle, Eye, ArrowUpRight, Copy, Check, Clock, User, Building
+  Search, RefreshCw, Calendar, Download,
+  Clock, User, History, CalendarDays
 } from 'lucide-react';
 import { API_BASE } from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
 
 const AuditTrailViewer = ({
   audits = [],
   token,
   onRefresh,
   loading = false,
-  title = 'Nháº­t KĂ½ Hoáº¡t Äá»™ng ToĂ n TrÆ°á»ng (Audit Trail)',
-  subtitle = 'Theo dĂµi minh báº¡ch toĂ n bá»™ cĂ¡c hĂ nh Ä‘á»™ng trĂªn há»‡ thá»‘ng theo ngĂ y',
+  title = 'Nhật Ký Hoạt Động Toàn Trường (Audit Trail)',
+  subtitle = 'Theo dõi minh bạch toàn bộ các hành động trên hệ thống theo ngày',
   showRoleFilter = true,
   isStudentView = false
 }) => {
@@ -67,7 +65,7 @@ const AuditTrailViewer = ({
 
   // Group by date
   const groupedByDate = filteredAudits.reduce((acc, a) => {
-    const dateKey = a.timestamp?.slice(0, 10) || 'KHĂC';
+    const dateKey = a.timestamp?.slice(0, 10) || 'KHÁC';
     if (!acc[dateKey]) acc[dateKey] = [];
     acc[dateKey].push(a);
     return acc;
@@ -96,16 +94,16 @@ const AuditTrailViewer = ({
 
   const formatDateHeader = (dateStr) => {
     if (dateStr === todayStr) {
-      return `đŸ“… HĂ´m nay â€” ${new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+      return `📅 Hôm nay — ${new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
     }
     if (dateStr === yesterdayStr) {
-      return `đŸ“… HĂ´m qua â€” ${yesterdayDate.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+      return `📅 Hôm qua — ${yesterdayDate.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
     }
     try {
       const d = new Date(dateStr);
-      return `đŸ“… ${d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+      return `📅 ${d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
     } catch {
-      return `đŸ“… NgĂ y: ${dateStr}`;
+      return `📅 Ngày: ${dateStr}`;
     }
   };
 
@@ -127,7 +125,7 @@ const AuditTrailViewer = ({
             {title}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem', margin: 0 }}>
-            {subtitle} â€¢ Hiá»ƒn thá»‹ <strong>{filteredAudits.length}</strong> / <strong>{audits.length}</strong> báº£n ghi
+            {subtitle} • Hiển thị <strong>{filteredAudits.length}</strong> / <strong>{audits.length}</strong> bản ghi
           </p>
         </div>
 
@@ -147,17 +145,17 @@ const AuditTrailViewer = ({
                 gap: '6px',
                 borderRadius: '8px'
               }}
-              title="Xuáº¥t danh sĂ¡ch hoáº¡t Ä‘á»™ng ra file CSV cho Excel"
+              title="Xuất danh sách hoạt động ra file CSV cho Excel"
             >
               <Download size={14} />
-              <span>Xuáº¥t Báº£ng Audit {dateFilterMode !== 'ALL' ? '(Theo NgĂ y)' : 'CSV'}</span>
+              <span>Xuất Bảng Audit {dateFilterMode !== 'ALL' ? '(Theo Ngày)' : 'CSV'}</span>
             </button>
           )}
 
           {onRefresh && (
             <button onClick={onRefresh} className="btn-secondary" style={{ padding: '7px 12px', fontSize: '0.8rem', borderRadius: '8px' }}>
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              <span>LĂ m má»›i</span>
+              <span>Làm mới</span>
             </button>
           )}
         </div>
@@ -179,7 +177,7 @@ const AuditTrailViewer = ({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-sub)', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Calendar size={14} color="#38bdf8" /> Xem theo ngĂ y:
+              <Calendar size={14} color="#38bdf8" /> Xem theo ngày:
             </span>
 
             <button
@@ -195,7 +193,7 @@ const AuditTrailViewer = ({
                 cursor: 'pointer'
               }}
             >
-              Táº¥t cáº£ ngĂ y ({audits.length})
+              Tất cả ngày ({audits.length})
             </button>
 
             <button
@@ -211,7 +209,7 @@ const AuditTrailViewer = ({
                 cursor: 'pointer'
               }}
             >
-              â¡ HĂ´m nay ({countToday})
+              ⚡ Hôm nay ({countToday})
             </button>
 
             <button
@@ -227,7 +225,7 @@ const AuditTrailViewer = ({
                 cursor: 'pointer'
               }}
             >
-              đŸ“… HĂ´m qua ({countYesterday})
+              📅 Hôm qua ({countYesterday})
             </button>
 
             <button
@@ -243,7 +241,7 @@ const AuditTrailViewer = ({
                 cursor: 'pointer'
               }}
             >
-              7 ngĂ y qua ({count7Days})
+              7 ngày qua ({count7Days})
             </button>
           </div>
 
@@ -256,7 +254,7 @@ const AuditTrailViewer = ({
                 onChange={e => setGroupByDay(e.target.checked)}
                 style={{ cursor: 'pointer' }}
               />
-              <span>Gom nhĂ³m theo ngĂ y</span>
+              <span>Gom nhóm theo ngày</span>
             </label>
           </div>
         </div>
@@ -271,7 +269,7 @@ const AuditTrailViewer = ({
               type="text"
               className="form-input"
               style={{ paddingLeft: '32px', height: '36px', fontSize: '0.8rem' }}
-              placeholder="TĂ¬m theo hĂ nh Ä‘á»™ng, ngÆ°á»i dĂ¹ng, mĂ£ há»“ sÆ¡ (#CASE)..."
+              placeholder="Tìm theo hành động, người dùng, mã hồ sơ (#CASE)..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -300,11 +298,11 @@ const AuditTrailViewer = ({
               value={roleFilter}
               onChange={e => setRoleFilter(e.target.value)}
             >
-              <option value="ALL">đŸ‘¤ Táº¥t cáº£ vai trĂ²</option>
-              <option value="STUDENT">đŸ“ Sinh ViĂªn</option>
-              <option value="REVIEWER">đŸ” CĂ¡n Bá»™ Tháº©m Äá»‹nh</option>
-              <option value="ADMIN">đŸ›¡ï¸ Quáº£n Trá»‹ ViĂªn</option>
-              <option value="GUEST">đŸŒ KhĂ¡ch / VĂ£ng lai</option>
+              <option value="ALL">👤 Tất cả vai trò</option>
+              <option value="STUDENT">🎓 Sinh Viên</option>
+              <option value="REVIEWER">🔍 Cán Bộ Thẩm Định</option>
+              <option value="ADMIN">🛡️ Quản Trị Viên</option>
+              <option value="GUEST">🌐 Khách / Vãng lai</option>
             </select>
           )}
 
@@ -315,19 +313,19 @@ const AuditTrailViewer = ({
             value={actionFilter}
             onChange={e => setActionFilter(e.target.value)}
           >
-            <option value="ALL">â¡ Táº¥t cáº£ hĂ nh Ä‘á»™ng</option>
-            <option value="CASE_SUBMITTED">đŸ“ Khá»Ÿi táº¡o há»“ sÆ¡</option>
-            <option value="CASE_STATUS_APPROVED">âœ… Duyá»‡t cháº¥p thuáº­n</option>
-            <option value="CASE_STATUS_REJECTED">âŒ Tá»« chá»‘i há»“ sÆ¡</option>
-            <option value="CASE_STATUS_REQUIRES_SUPPLEMENT">đŸ”„ YĂªu cáº§u bá»• sung</option>
-            <option value="CASE_AUTO_APPROVED">â¡ Tá»± Ä‘á»™ng duyá»‡t (Rule Engine)</option>
-            <option value="CASE_ESCALATED">đŸ¨ Leo thang nghiá»‡p vá»¥</option>
-            <option value="AUTH_LOGIN">đŸ”‘ ÄÄƒng nháº­p há»‡ thá»‘ng</option>
-            <option value="USER_PROFILE_UPDATED">đŸ‘¤ Cáº­p nháº­t há»“ sÆ¡</option>
-            <option value="USER_PASSWORD_CHANGED">đŸ”’ Äá»•i máº­t kháº©u</option>
-            <option value="EVIDENCE_UPLOADED">đŸ“ Táº£i lĂªn minh chá»©ng</option>
-            <option value="OCR_EXTRACTION_PERFORMED">âœ¨ QuĂ©t OCR Gemini</option>
-            <option value="REPORT_CSV_EXPORTED">đŸ“ Xuáº¥t bĂ¡o cĂ¡o CSV</option>
+            <option value="ALL">⚡ Tất cả hành động</option>
+            <option value="CASE_SUBMITTED">📝 Khởi tạo hồ sơ</option>
+            <option value="CASE_STATUS_APPROVED">✅ Duyệt chấp thuận</option>
+            <option value="CASE_STATUS_REJECTED">❌ Từ chối hồ sơ</option>
+            <option value="CASE_STATUS_REQUIRES_SUPPLEMENT">🔄 Yêu cầu bổ sung</option>
+            <option value="CASE_AUTO_APPROVED">⚡ Tự động duyệt (Rule Engine)</option>
+            <option value="CASE_ESCALATED">🚨 Leo thang nghiệp vụ</option>
+            <option value="AUTH_LOGIN">🔑 Đăng nhập hệ thống</option>
+            <option value="USER_PROFILE_UPDATED">👤 Cập nhật hồ sơ</option>
+            <option value="USER_PASSWORD_CHANGED">🔒 Đổi mật khẩu</option>
+            <option value="EVIDENCE_UPLOADED">📎 Tải lên minh chứng</option>
+            <option value="OCR_EXTRACTION_PERFORMED">✨ Quét OCR Gemini</option>
+            <option value="REPORT_CSV_EXPORTED">📊 Xuất báo cáo CSV</option>
           </select>
 
         </div>
@@ -339,10 +337,10 @@ const AuditTrailViewer = ({
         <div style={{ textAlign: 'center', padding: '40px 20px', background: '#090d16', borderRadius: '12px', border: '1px dashed #334155', color: 'var(--text-sub)' }}>
           <CalendarDays size={32} style={{ opacity: 0.4, marginBottom: '8px' }} />
           <p style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: 600, margin: '0 0 4px 0' }}>
-            KhĂ´ng tĂ¬m tháº¥y báº£n ghi nháº­t kĂ½ nĂ o
+            Không tìm thấy bản ghi nhật ký nào
           </p>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-            {customDate ? `KhĂ´ng cĂ³ hoáº¡t Ä‘á»™ng nĂ o trong ngĂ y ${customDate}.` : 'HĂ£y thá»­ thay Ä‘á»•i bá»™ lá»c ngĂ y hoáº·c tá»« khĂ³a tĂ¬m kiáº¿m.'}
+            {customDate ? `Không có hoạt động nào trong ngày ${customDate}.` : 'Hãy thử thay đổi bộ lọc ngày hoặc từ khóa tìm kiếm.'}
           </p>
         </div>
       ) : groupByDay ? (
@@ -369,7 +367,7 @@ const AuditTrailViewer = ({
                     </span>
                   </div>
                   <span style={{ fontSize: '0.74rem', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
-                    {dayAudits.length} hoáº¡t Ä‘á»™ng
+                    {dayAudits.length} hoạt động
                   </span>
                 </div>
 
@@ -377,7 +375,7 @@ const AuditTrailViewer = ({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingLeft: '8px' }}>
                   {dayAudits.map((a, idx) => {
                     const badge = getActionStyle(a.action);
-                    const timeStr = a.timestamp ? new Date(a.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'â€”';
+                    const timeStr = a.timestamp ? new Date(a.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
                     return (
                       <div
                         key={a.id || idx}
@@ -445,7 +443,7 @@ const AuditTrailViewer = ({
                               fontSize: '0.74rem'
                             }}>
                               <User size={12} color="#94a3b8" />
-                              <strong style={{ color: '#ffffff' }}>{a.actor?.name || a.actor?.username || 'Há»‡ thá»‘ng'}</strong>
+                              <strong style={{ color: '#ffffff' }}>{a.actor?.name || a.actor?.username || 'Hệ thống'}</strong>
                               <span style={{
                                 fontSize: '0.68rem',
                                 color: a.actor?.role === 'ADMIN' ? '#f43f5e' : (a.actor?.role === 'REVIEWER' ? '#fbbf24' : '#38bdf8'),

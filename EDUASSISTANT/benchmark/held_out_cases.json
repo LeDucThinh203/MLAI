@@ -1,0 +1,373 @@
+[
+  {
+    "id": "BENCH-01-ROUTINE",
+    "name": "Miễn giảm học phí Cận nghèo chuẩn",
+    "category": "TUITION_DISCOUNT",
+    "priority": "MEDIUM",
+    "title": "Đơn đề nghị miễn giảm học phí HK2 - Nguyễn Văn An",
+    "description": "Kính gửi Hội đồng, em xin nộp Giấy chứng nhận Cận nghèo do UBND cấp để xét miễn giảm.",
+    "student": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1"
+    },
+    "evidenceFiles": [
+      {
+        "fileName": "giay_xac_nhan_can_ngheo.pdf",
+        "ocrData": {
+          "documentType": "Giấy chứng nhận Cận nghèo",
+          "studentName": "Nguyễn Văn An",
+          "studentCode": "SV2026-1001",
+          "issuingAuthority": "UBND Phường Linh Trung, TP. Thủ Đức",
+          "certificateNumber": "HN-2026-7891",
+          "suggestedCategory": "TUITION_DISCOUNT",
+          "tamperRisk": "LOW",
+          "confidenceScore": 0.98,
+          "confidence": 0.98,
+          "modeUsed": "live",
+          "isLive": true,
+          "isFallback": false,
+          "isSynthetic": false
+        }
+      }
+    ],
+    "aiMetadata": {
+      "modeUsed": "live",
+      "fallbackOccurred": false
+    },
+    "expectedDecision": "AUTO_APPROVE",
+    "expectedEscalationReason": null
+  },
+  {
+    "id": "BENCH-02-ROUTINE",
+    "name": "Cộng điểm rèn luyện Chiến dịch tình nguyện Mùa hè xanh",
+    "category": "COMMUNITY_SERVICE",
+    "priority": "MEDIUM",
+    "title": "Đề nghị ghi nhận điểm rèn luyện Mùa hè xanh 2026",
+    "description": "Em xin gửi minh chứng Giấy chứng nhận hoàn thành chiến dịch tình nguyện để cộng điểm.",
+    "student": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1"
+    },
+    "evidenceFiles": [
+      {
+        "fileName": "chung_nhan_mua_he_xanh.png",
+        "ocrData": {
+          "documentType": "Giấy chứng nhận Mùa hè xanh",
+          "studentName": "Nguyễn Văn An",
+          "studentCode": "SV2026-1001",
+          "issuingAuthority": "Ban Thường Vụ Đoàn Trường - Hội Sinh Viên",
+          "certificateNumber": "MHX-2026-4432",
+          "suggestedCategory": "COMMUNITY_SERVICE",
+          "tamperRisk": "LOW",
+          "confidenceScore": 0.97,
+          "confidence": 0.97,
+          "modeUsed": "live",
+          "isLive": true,
+          "isFallback": false,
+          "isSynthetic": false
+        }
+      }
+    ],
+    "aiMetadata": {
+      "modeUsed": "live",
+      "fallbackOccurred": false
+    },
+    "expectedDecision": "AUTO_APPROVE",
+    "expectedEscalationReason": null
+  },
+  {
+    "id": "BENCH-03-FACT-UNKNOWN",
+    "name": "Minh chứng ảnh mờ và độ tin cậy thấp",
+    "category": "TUITION_DISCOUNT",
+    "priority": "MEDIUM",
+    "title": "Đơn xin miễn giảm học phí có ảnh mờ",
+    "description": "Ảnh chụp giấy chứng nhận mờ, thiếu con dấu và số quyết định rõ ràng.",
+    "student": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1"
+    },
+    "evidenceFiles": [
+      {
+        "fileName": "anh_chup_mo.jpg",
+        "ocrData": {
+          "documentType": "Giấy xác nhận",
+          "studentName": "Nguyễn Văn An",
+          "studentCode": "SV2026-1001",
+          "issuingAuthority": null,
+          "certificateNumber": null,
+          "suggestedCategory": "TUITION_DISCOUNT",
+          "tamperRisk": "LOW",
+          "confidenceScore": 0.58,
+          "confidence": 0.58,
+          "modeUsed": "live",
+          "isLive": true,
+          "isFallback": false,
+          "isSynthetic": false
+        }
+      }
+    ],
+    "aiMetadata": {
+      "modeUsed": "live",
+      "fallbackOccurred": false
+    },
+    "expectedDecision": "ESCALATE_TO_HUMAN",
+    "expectedEscalationReason": "FACT_UNKNOWN"
+  },
+  {
+    "id": "BENCH-04-FACT-UNKNOWN",
+    "name": "Hồ sơ không có tệp minh chứng đính kèm",
+    "category": "TUITION_DISCOUNT",
+    "priority": "MEDIUM",
+    "title": "Đơn thiếu minh chứng hoàn toàn",
+    "description": "Sinh viên nộp đơn nhưng quên tải lên tệp minh chứng.",
+    "student": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1"
+    },
+    "evidenceFiles": [],
+    "aiMetadata": {
+      "modeUsed": "live",
+      "fallbackOccurred": false
+    },
+    "expectedDecision": "ESCALATE_TO_HUMAN",
+    "expectedEscalationReason": "FACT_UNKNOWN"
+  },
+  {
+    "id": "BENCH-05-DATA-CONFLICT",
+    "name": "Mâu thuẫn danh mục kê khai và nội dung minh chứng",
+    "category": "TUITION_DISCOUNT",
+    "priority": "MEDIUM",
+    "title": "Đơn khai miễn giảm học phí nhưng nộp giấy chứng nhận tình nguyện",
+    "description": "Mâu thuẫn danh mục nghiêm trọng giữa hồ sơ nộp và văn bản đính kèm.",
+    "student": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1"
+    },
+    "evidenceFiles": [
+      {
+        "fileName": "chung_nhan_tinh_nguyen.pdf",
+        "ocrData": {
+          "documentType": "Giấy chứng nhận Hoạt động Tình nguyện",
+          "studentName": "Nguyễn Văn An",
+          "studentCode": "SV2026-1001",
+          "issuingAuthority": "Đoàn Thanh Niên",
+          "certificateNumber": "TN-2026-9021",
+          "suggestedCategory": "COMMUNITY_SERVICE",
+          "tamperRisk": "LOW",
+          "confidenceScore": 0.95,
+          "confidence": 0.95,
+          "modeUsed": "live",
+          "isLive": true,
+          "isFallback": false,
+          "isSynthetic": false
+        }
+      }
+    ],
+    "aiMetadata": {
+      "modeUsed": "live",
+      "fallbackOccurred": false
+    },
+    "expectedDecision": "ESCALATE_TO_HUMAN",
+    "expectedEscalationReason": "DATA_CONFLICT"
+  },
+  {
+    "id": "BENCH-06-AUTHORITY-REQUIRED",
+    "name": "Hồ sơ Phúc khảo điểm thi kết thúc học phần",
+    "category": "GRADE_APPEAL",
+    "priority": "MEDIUM",
+    "title": "Đơn xin phúc khảo điểm thi môn Cấu trúc dữ liệu",
+    "description": "Kính gửi Phòng Khảo thí, em xin đề nghị chấm lại bài thi tự luận học kỳ vừa qua.",
+    "student": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1"
+    },
+    "evidenceFiles": [
+      {
+        "fileName": "bien_ban_phuc_khao.pdf",
+        "ocrData": {
+          "documentType": "Biên bản phúc khảo bài thi",
+          "studentName": "Nguyễn Văn An",
+          "studentCode": "SV2026-1001",
+          "issuingAuthority": "Phòng Khảo thí & Đảm bảo Chất lượng",
+          "certificateNumber": "PK-2026-5561",
+          "suggestedCategory": "GRADE_APPEAL",
+          "tamperRisk": "LOW",
+          "confidenceScore": 0.96,
+          "confidence": 0.96,
+          "modeUsed": "live",
+          "isLive": true,
+          "isFallback": false,
+          "isSynthetic": false
+        }
+      }
+    ],
+    "aiMetadata": {
+      "modeUsed": "live",
+      "fallbackOccurred": false
+    },
+    "expectedDecision": "ESCALATE_TO_HUMAN",
+    "expectedEscalationReason": "AUTHORITY_REQUIRED"
+  },
+  {
+    "id": "BENCH-07-AUTHORITY-REQUIRED",
+    "name": "Hồ sơ mức độ Ưu tiên Cao (HIGH Priority)",
+    "category": "TUITION_DISCOUNT",
+    "priority": "HIGH",
+    "title": "Đơn xin miễn giảm học phí khẩn cấp (Ưu tiên Cao)",
+    "description": "Gia đình gặp biến cố đột xuất, đề nghị Hội đồng cứu xét giảm học phí khẩn.",
+    "student": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1"
+    },
+    "evidenceFiles": [
+      {
+        "fileName": "chung_nhan_ho_ngheo.pdf",
+        "ocrData": {
+          "documentType": "Giấy chứng nhận Hộ nghèo",
+          "studentName": "Nguyễn Văn An",
+          "studentCode": "SV2026-1001",
+          "issuingAuthority": "UBND Phường Linh Trung",
+          "certificateNumber": "HN-2026-1122",
+          "suggestedCategory": "TUITION_DISCOUNT",
+          "tamperRisk": "LOW",
+          "confidenceScore": 0.97,
+          "confidence": 0.97,
+          "modeUsed": "live",
+          "isLive": true,
+          "isFallback": false,
+          "isSynthetic": false
+        }
+      }
+    ],
+    "aiMetadata": {
+      "modeUsed": "live",
+      "fallbackOccurred": false
+    },
+    "expectedDecision": "ESCALATE_TO_HUMAN",
+    "expectedEscalationReason": "AUTHORITY_REQUIRED"
+  },
+  {
+    "id": "BENCH-08-POLICY-OUT-OF-SCOPE",
+    "name": "Hồ sơ Danh mục Chung / Yêu cầu ngoài chính sách",
+    "category": "GENERAL",
+    "priority": "MEDIUM",
+    "title": "Đơn xin xem xét hoàn cảnh cá biệt để hoãn thi quá hạn",
+    "description": "Em xin cứu xét đặc cách do hoàn cảnh đặc biệt chưa có trong quy định chuẩn.",
+    "student": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1"
+    },
+    "evidenceFiles": [
+      {
+        "fileName": "don_trinh_bay.pdf",
+        "ocrData": {
+          "documentType": "Đơn trình bày nguyện vọng",
+          "studentName": "Nguyễn Văn An",
+          "studentCode": "SV2026-1001",
+          "issuingAuthority": "Bệnh viện Đa khoa",
+          "certificateNumber": "BV-2026-9811",
+          "suggestedCategory": "GENERAL",
+          "tamperRisk": "LOW",
+          "confidenceScore": 0.92,
+          "confidence": 0.92,
+          "modeUsed": "live",
+          "isLive": true,
+          "isFallback": false,
+          "isSynthetic": false
+        }
+      }
+    ],
+    "aiMetadata": {
+      "modeUsed": "live",
+      "fallbackOccurred": false
+    },
+    "expectedDecision": "ESCALATE_TO_HUMAN",
+    "expectedEscalationReason": "POLICY_OUT_OF_SCOPE"
+  },
+  {
+    "id": "BENCH-09-OWNERSHIP-UNCLEAR",
+    "name": "Giấy tờ đứng tên sinh viên khác (Nghi vấn mạo danh)",
+    "category": "TUITION_DISCOUNT",
+    "priority": "MEDIUM",
+    "title": "Đơn xin miễn giảm học phí có minh chứng sai lệch danh tính",
+    "description": "Tài khoản nộp đơn là Nguyễn Văn An nhưng giấy chứng nhận lại ghi tên Lê Hoàng Long.",
+    "student": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1"
+    },
+    "evidenceFiles": [
+      {
+        "fileName": "giay_xac_nhan_ho_ngheo.pdf",
+        "ocrData": {
+          "documentType": "Giấy chứng nhận Cận nghèo",
+          "studentName": "Lê Hoàng Long",
+          "studentCode": "SV2026-9999",
+          "issuingAuthority": "UBND Phường Linh Tây",
+          "certificateNumber": "HN-2026-6677",
+          "suggestedCategory": "TUITION_DISCOUNT",
+          "tamperRisk": "LOW",
+          "confidenceScore": 0.96,
+          "confidence": 0.96,
+          "modeUsed": "live",
+          "isLive": true,
+          "isFallback": false,
+          "isSynthetic": false
+        }
+      }
+    ],
+    "aiMetadata": {
+      "modeUsed": "live",
+      "fallbackOccurred": false
+    },
+    "expectedDecision": "ESCALATE_TO_HUMAN",
+    "expectedEscalationReason": "OWNERSHIP_UNCLEAR"
+  },
+  {
+    "id": "BENCH-10-FAILSAFE-NON-LIVE",
+    "name": "Minh chứng đầy đủ nhưng AI chạy chế độ Mock/Fallback",
+    "category": "TUITION_DISCOUNT",
+    "priority": "MEDIUM",
+    "title": "Đơn đủ tiêu chí nhưng nguồn OCR là Synthetic Mock",
+    "description": "Kiểm tra Fail-safe: hệ thống mock không được phép tự động phê duyệt.",
+    "student": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1"
+    },
+    "evidenceFiles": [
+      {
+        "fileName": "minh_chung_mock.pdf",
+        "ocrData": {
+          "documentType": "Giấy chứng nhận Cận nghèo",
+          "studentName": "Nguyễn Văn An",
+          "studentCode": "SV2026-1001",
+          "issuingAuthority": "UBND Phường Linh Trung",
+          "certificateNumber": "HN-2026-7891",
+          "suggestedCategory": "TUITION_DISCOUNT",
+          "tamperRisk": "LOW",
+          "confidenceScore": 0.96,
+          "confidence": 0.96,
+          "modeUsed": "mock",
+          "isLive": false,
+          "isFallback": true,
+          "isSynthetic": true
+        }
+      }
+    ],
+    "aiMetadata": {
+      "modeUsed": "mock",
+      "fallbackOccurred": true
+    },
+    "expectedDecision": "ESCALATE_TO_HUMAN",
+    "expectedEscalationReason": "FACT_UNKNOWN"
+  }
+]

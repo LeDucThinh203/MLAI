@@ -47,7 +47,7 @@ async def get_audits(
 async def export_audits_csv(user: dict = Depends(require_roles('REVIEWER', 'ADMIN'))):
     audits = await db_service.get_audits({})
     csv_str = generate_audits_csv(audits)
-    filename = f"CaseFlow_Audit_Trail_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    filename = f"EDUASSISTANT_Audit_Trail_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     return Response(
         content=csv_str.encode('utf-8'),
         media_type='text/csv; charset=utf-8',

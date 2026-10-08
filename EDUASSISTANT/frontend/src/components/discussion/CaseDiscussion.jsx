@@ -3,7 +3,7 @@ import axios from 'axios';
 import { MessageCircle, RefreshCw, Send } from 'lucide-react';
 import { API_BASE } from '../../api/client';
 
-export const CaseDiscussion = ({ caseId, token, currentUser }) => {
+export const CaseDiscussion = ({ caseId, token }) => {
   const [comments, setComments] = useState([]);
   const [inputContent, setInputContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,7 @@ export const CaseDiscussion = ({ caseId, token, currentUser }) => {
         setInputContent('');
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Lá»—i gá»­i bĂ¬nh luáº­n!');
+      alert(err.response?.data?.message || 'Lỗi gửi bình luận!');
     } finally {
       setSending(false);
     }
@@ -63,14 +63,14 @@ export const CaseDiscussion = ({ caseId, token, currentUser }) => {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: '#93c5fd', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-          <MessageCircle size={15} color="#38bdf8" /> KĂªnh Trao Äá»•i & BĂ¬nh Luáº­n ({comments.length})
+          <MessageCircle size={15} color="#38bdf8" /> Kênh Trao Đổi & Bình Luận ({comments.length})
         </h4>
         <button
           type="button"
           onClick={fetchComments}
           className="btn-secondary"
           style={{ padding: '2px 8px', fontSize: '0.7rem' }}
-          title="Táº£i láº¡i bĂ¬nh luáº­n"
+          title="Tải lại bình luận"
         >
           <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
         </button>
@@ -87,7 +87,6 @@ export const CaseDiscussion = ({ caseId, token, currentUser }) => {
       }}>
         {comments.length > 0 ? (
           comments.map((cmt) => {
-            const isMe = cmt.authorId === currentUser?.id;
             const isStaff = cmt.authorRole === 'REVIEWER' || cmt.authorRole === 'ADMIN';
 
             return (
@@ -116,7 +115,7 @@ export const CaseDiscussion = ({ caseId, token, currentUser }) => {
                       color: isStaff ? '#93c5fd' : '#6ee7b7',
                       fontWeight: 600
                     }}>
-                      {cmt.authorRole === 'ADMIN' ? 'đŸ›¡ï¸ Admin' : (cmt.authorRole === 'REVIEWER' ? 'đŸ” CĂ¡n Bá»™' : 'đŸ“ Sinh ViĂªn')}
+                      {cmt.authorRole === 'ADMIN' ? '🛡️ Admin' : (cmt.authorRole === 'REVIEWER' ? '🔍 Cán Bộ' : '🎓 Sinh Viên')}
                     </span>
                   </div>
                   <span style={{ fontSize: '0.68rem', color: 'var(--text-sub)' }}>
@@ -131,7 +130,7 @@ export const CaseDiscussion = ({ caseId, token, currentUser }) => {
           })
         ) : (
           <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-sub)', fontSize: '0.76rem' }}>
-            ChÆ°a cĂ³ trao Ä‘á»•i nĂ o. Báº¡n cĂ³ thá»ƒ Ä‘á»ƒ láº¡i cĂ¢u há»i hoáº·c ghi chĂº táº¡i Ä‘Ă¢y.
+            Chưa có trao đổi nào. Bạn có thể để lại câu hỏi hoặc ghi chú tại đây.
           </div>
         )}
       </div>
@@ -142,7 +141,7 @@ export const CaseDiscussion = ({ caseId, token, currentUser }) => {
           type="text"
           value={inputContent}
           onChange={e => setInputContent(e.target.value)}
-          placeholder="Nháº­p cĂ¢u há»i hoáº·c giáº£i trĂ¬nh thĂªm..."
+          placeholder="Nhập câu hỏi hoặc giải trình thêm..."
           className="form-input"
           style={{ flex: 1, padding: '7px 10px', fontSize: '0.78rem' }}
         />
@@ -153,7 +152,7 @@ export const CaseDiscussion = ({ caseId, token, currentUser }) => {
           style={{ padding: '7px 12px', fontSize: '0.78rem', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
         >
           {sending ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}
-          <span>Gá»­i</span>
+          <span>Gửi</span>
         </button>
       </form>
     </div>

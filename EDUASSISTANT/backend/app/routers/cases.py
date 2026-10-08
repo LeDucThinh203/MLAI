@@ -7,6 +7,8 @@ from fastapi.responses import HTMLResponse
 from app.db.db import db_service
 from app.services.ai_service import extract_case_data
 from app.services.rule_engine import evaluate_case
+from app.services.workflow_guard import validate_status_transition
+from app.services.escalation_policy_service import record_reviewer_feedback
 from app.services.report_service import (
     generate_cases_csv,
     generate_cases_table_html,
@@ -17,6 +19,7 @@ from app.core.dependencies import get_current_user, require_roles
 from app.schemas.cases import (
     CreateCaseRequest,
     ReviewCaseRequest,
+    ReviewerFeedbackRequest,
     AddCommentRequest,
     SupplementCaseRequest,
     ReRouteCaseRequest
@@ -83,10 +86,20 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
 
     ai_res = await extract_case_data(case_dict, user)
     ai_extraction = ai_res.get('data', {})
-
-    rule_verdict = evaluate_case(case_dict, ai_extraction, student_user or {})
-
     case_dict['aiExtraction'] = ai_extraction
+    case_dict['aiMetadata'] = {
+        'modeUsed': ai_res.get('modeUsed'),
+        'fallbackOccurred': ai_res.get('fallbackOccurred'),
+        'fallbackReason': ai_res.get('fallbackReason'),
+        'durationMs': ai_res.get('durationMs')
+    }
+
+    # Ưu tiên dữ kiện OCR từ tệp minh chứng thực tế thay vì text AI
+    files = case_dict.get('evidenceFiles') or []
+    factual_ocr = files[0].get('ocrData') if (files and isinstance(files[0], dict)) else None
+
+    rule_verdict = evaluate_case(case_dict, factual_ocr, student_user or {})
+
     case_dict['ruleEngine'] = rule_verdict
     case_dict['status'] = rule_verdict['status']
 
@@ -175,8 +188,9 @@ async def evaluate_rules_endpoint(
         return api_response(404, False, f"Không tìm thấy hồ sơ #{case_id}.", None, 'NOT_FOUND')
 
     student_user = await db_service.get_user_by_id(target_case['studentId'])
-    ai_extraction = target_case.get('aiExtraction') or {}
-    rule_verdict = evaluate_case(target_case, ai_extraction, student_user or {})
+    files = target_case.get('evidenceFiles') or []
+    factual_ocr = files[0].get('ocrData') if (files and isinstance(files[0], dict)) else None
+    rule_verdict = evaluate_case(target_case, factual_ocr, student_user or {})
 
     return api_response(200, True, 'Đánh giá lại quy tắc hồ sơ thành công.', {
         'caseId': case_id,
@@ -194,11 +208,27 @@ async def review_case(
     if not target_case:
         return api_response(404, False, f"Không tìm thấy hồ sơ #{case_id}.", None, 'NOT_FOUND')
 
-    action = (req.action or req.decision or 'APPROVE').upper()
-    next_status = 'APPROVED'
-    action_label = 'CHẤP THUẬN (APPROVED)'
+    VALID_ACTIONS = {'APPROVE', 'APPROVED', 'REJECT', 'REJECTED', 'REQUEST_INFO', 'REQUIRE_SUPPLEMENT', 'REQUIRES_SUPPLEMENT', 'OVERRIDE', 'STOP'}
+    raw_action = (req.action or req.decision or '').strip().upper()
+    if not raw_action or raw_action not in VALID_ACTIONS:
+        return api_response(
+            400,
+            False,
+            f"Hành động thẩm định '{req.action or req.decision}' không hợp lệ. Chỉ chấp nhận APPROVE, REJECT, REQUEST_INFO, OVERRIDE, STOP.",
+            None,
+            'INVALID_REVIEW_ACTION'
+        )
 
-    if action in ('APPROVE', 'APPROVED'):
+    action = raw_action
+    is_override = action == 'OVERRIDE'
+    override_reason = req.overrideReason or (req.reason if is_override else None)
+
+    if is_override:
+        if not override_reason or len(override_reason.strip()) < 3:
+            return api_response(400, False, 'Bắt buộc phải cung cấp lý do ghi đè (overrideReason) khi thực hiện OVERRIDE.', None, 'OVERRIDE_REASON_REQUIRED')
+        next_status = (req.targetStatus or 'APPROVED').upper()
+        action_label = f"GHI ĐÈ THẨM ĐỊNH (OVERRIDE -> {next_status})"
+    elif action in ('APPROVE', 'APPROVED'):
         next_status = 'APPROVED'
         action_label = 'CHẤP THUẬN (APPROVED)'
     elif action in ('REJECT', 'REJECTED'):
@@ -207,14 +237,31 @@ async def review_case(
     elif action in ('REQUIRE_SUPPLEMENT', 'REQUIRES_SUPPLEMENT', 'REQUEST_INFO'):
         next_status = 'REQUIRES_SUPPLEMENT'
         action_label = 'YÊU CẦU BỔ SUNG HỒ SƠ'
-    elif action == 'UNDER_REVIEW':
-        next_status = 'UNDER_REVIEW'
-        action_label = 'ĐANG XỬ LÝ'
+    elif action == 'STOP':
+        next_status = 'STOPPED'
+        action_label = 'DỪNG TIẾN TRÌNH XỬ LÝ (STOPPED)'
+    else:
+        return api_response(400, False, f"Hành động '{action}' không hợp lệ.", None, 'INVALID_REVIEW_ACTION')
+
+    # Bảo vệ chuyển đổi trạng thái bằng Workflow State Transition Guard
+    is_admin = user['role'] == 'ADMIN'
+    is_valid_trans, trans_err = validate_status_transition(
+        current_status=target_case['status'],
+        next_status=next_status,
+        actor_role=user['role'],
+        is_admin_override=(is_override and is_admin)
+    )
+    if not is_valid_trans:
+        return api_response(400, False, trans_err, None, 'INVALID_STATUS_TRANSITION')
+
+    prior_rec = (target_case.get('ruleEngine') or {}).get('decision') or 'AUTO_ESCALATED'
 
     review_result = {
         'action': action,
         'decision': action_label,
-        'reason': req.reason or 'Phê duyệt hồ sơ',
+        'reason': override_reason if is_override else (req.reason or 'Thẩm định hồ sơ'),
+        'overrideReason': override_reason if is_override else None,
+        'previousRecommendation': prior_rec if is_override else None,
         'reviewerId': user['id'],
         'reviewerName': user['fullName'],
         'reviewerRole': user['role'],
@@ -222,11 +269,26 @@ async def review_case(
         'reviewedAt': datetime.utcnow().isoformat() + 'Z'
     }
 
+    if is_override:
+        await db_service.log_audit({
+            'action': 'HUMAN_OVERRIDE',
+            'actor': {'id': user['id'], 'username': user['username'], 'role': user['role'], 'name': user.get('fullName')},
+            'caseId': case_id,
+            'input': {
+                'systemRecommendation': prior_rec,
+                'humanAction': 'OVERRIDE',
+                'targetStatus': next_status,
+                'overrideReason': override_reason
+            },
+            'result': f"OVERRIDDEN_TO_{next_status}",
+            'reason': override_reason
+        })
+
     updated = await db_service.update_case_status(
         case_id,
         next_status,
         user,
-        req.reason or f"Thẩm định viên {user['fullName']} đã {action_label}",
+        override_reason if is_override else (req.reason or f"Thẩm định viên {user['fullName']} đã {action_label}"),
         {
             'reviewResult': review_result,
             'assignedDepartment': req.assignedDepartment or target_case.get('assignedDepartment')
@@ -234,6 +296,79 @@ async def review_case(
     )
 
     return api_response(200, True, f"Thẩm định hồ sơ #{case_id} thành công ({next_status}).", {'case': updated, **(updated or {})})
+
+
+@router.post("/api/cases/{case_id}/feedback")
+async def submit_case_feedback(
+    case_id: str,
+    req: ReviewerFeedbackRequest,
+    user: dict = Depends(require_roles('REVIEWER', 'ADMIN'))
+):
+    target_case = await db_service.get_case_by_id(case_id)
+    if not target_case:
+        return api_response(404, False, f"Không tìm thấy hồ sơ #{case_id}.", None, 'NOT_FOUND')
+
+    fb_type = (req.type or '').strip().upper()
+    if fb_type not in ('CORRECT', 'MISSED_ESCALATION', 'UNNECESSARY_ESCALATION'):
+        return api_response(
+            400,
+            False,
+            'Loại phản hồi phải là CORRECT, MISSED_ESCALATION hoặc UNNECESSARY_ESCALATION.',
+            None,
+            'INVALID_FEEDBACK_TYPE'
+        )
+
+    res = record_reviewer_feedback(
+        case_id=case_id,
+        feedback_type=fb_type,
+        reviewer=user.get('fullName') or user.get('username'),
+        note=req.note
+    )
+
+    feedback_entry = {
+        'type': fb_type,
+        'note': req.note or '',
+        'reviewerId': user['id'],
+        'reviewerName': user.get('fullName') or user.get('username'),
+        'reviewerRole': user['role'],
+        'oldThreshold': res['oldThreshold'],
+        'newThreshold': res['newThreshold'],
+        'submittedAt': datetime.utcnow().isoformat() + 'Z'
+    }
+
+    feedbacks = target_case.get('reviewerFeedback') or []
+    if isinstance(feedbacks, list):
+        feedbacks.append(feedback_entry)
+    else:
+        feedbacks = [feedback_entry]
+
+    await db_service.update_case_status(
+        case_id,
+        target_case['status'],
+        user,
+        f"Thẩm định viên {user['fullName']} gửi phản hồi feedback: {fb_type}",
+        {'reviewerFeedback': feedbacks}
+    )
+
+    await db_service.log_audit({
+        'action': 'REVIEWER_FEEDBACK_SUBMITTED',
+        'actor': {'id': user['id'], 'username': user['username'], 'role': user['role'], 'name': user.get('fullName')},
+        'caseId': case_id,
+        'input': {
+            'feedbackType': fb_type,
+            'note': req.note,
+            'oldThreshold': res['oldThreshold'],
+            'newThreshold': res['newThreshold']
+        },
+        'result': 'SUCCESS',
+        'reason': f"Phản hồi thẩm định viên {fb_type}: điều chỉnh ngưỡng tin cậy từ {res['oldThreshold']} sang {res['newThreshold']}"
+    })
+
+    return api_response(200, True, f"Tiếp nhận phản hồi thành công. Ngưỡng tin cậy thích ứng hiện tại: {res['newThreshold']}.", {
+        'caseId': case_id,
+        'feedback': feedback_entry,
+        'threshold': res
+    })
 
 
 @router.get("/api/cases/{case_id}/comments")
@@ -292,7 +427,7 @@ async def verify_case_public(case_id: str):
 async def export_cases_csv(user: dict = Depends(require_roles('REVIEWER', 'ADMIN'))):
     cases = await db_service.get_cases({})
     csv_str = generate_cases_csv(cases)
-    filename = f"CaseFlow_Danh_Sach_Ho_So_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    filename = f"EDUASSISTANT_Danh_Sach_Ho_So_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     return Response(
         content=csv_str.encode('utf-8'),
         media_type='text/csv; charset=utf-8',

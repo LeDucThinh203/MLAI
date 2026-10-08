@@ -394,7 +394,7 @@ async def generate_2fa(user: dict = Depends(get_current_user)):
     user_db = await db_service.get_user_by_id(user['id'])
     secret = pyotp.random_base32()
     totp = pyotp.TOTP(secret)
-    otpauth_url = totp.provisioning_uri(name=user_db['username'], issuer_name='CaseFlow AI (University Portal)')
+    otpauth_url = totp.provisioning_uri(name=user_db['username'], issuer_name='EDUASSISTANT (University Portal)')
 
     qr_img = qrcode.make(otpauth_url)
     qr_buf = io.BytesIO()

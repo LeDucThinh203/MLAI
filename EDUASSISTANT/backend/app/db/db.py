@@ -71,6 +71,7 @@ def format_case_row(row: dict) -> dict:
     res['aiExtraction'] = ai_ext
     res['escalation'] = ai_ext.get('escalation') if isinstance(ai_ext, dict) else None
     res['ruleEngine'] = ai_ext.get('ruleEngine') if isinstance(ai_ext, dict) else None
+    res['reviewerFeedback'] = parse_json_field(row.get('reviewerFeedback'), [])
     return res
 
 
@@ -78,18 +79,31 @@ def format_audit_row(row: dict) -> dict:
     """Định dạng bản ghi nhật ký kiểm toán."""
     if not row:
         return None
+    raw_input = row.get('inputData')
+    input_val = {}
+    if raw_input:
+        if isinstance(raw_input, (dict, list)):
+            input_val = raw_input
+        elif isinstance(raw_input, str):
+            try:
+                input_val = json.loads(raw_input)
+            except Exception:
+                input_val = raw_input
+
     return {
         'id': row.get('id'),
+        'timestamp': row.get('timestamp'),
         'action': row.get('action'),
-        'caseId': row.get('caseId'),
         'actor': {
             'id': row.get('actorId'),
             'name': row.get('actorName'),
             'role': row.get('actorRole'),
             'username': row.get('actorUsername')
         },
-        'reason': row.get('reason'),
-        'timestamp': row.get('timestamp')
+        'caseId': row.get('caseId'),
+        'input': input_val,
+        'result': row.get('result') or 'SUCCESS',
+        'reason': row.get('reason')
     }
 
 
@@ -344,13 +358,18 @@ class DatabaseService:
         ocr_is_live = 1 if data.get('ocrIsLive') else 0
         now_iso = datetime.utcnow().isoformat() + 'Z'
 
-        run_query("""
-            INSERT INTO evidence_uploads (fileName, ownerId, metadata, ocrData, ocrProvider, ocrIsLive, createdAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(fileName) DO UPDATE SET metadata = excluded.metadata, ocrData = excluded.ocrData,
-            ocrProvider = excluded.ocrProvider, ocrIsLive = excluded.ocrIsLive
-            WHERE evidence_uploads.ownerId = excluded.ownerId
-        """, (file_name, owner_id, metadata, ocr_data, ocr_provider, ocr_is_live, now_iso))
+        existing = get_one('SELECT fileName FROM evidence_uploads WHERE fileName = ?', (file_name,))
+        if existing:
+            run_query("""
+                UPDATE evidence_uploads
+                SET metadata = ?, ocrData = ?, ocrProvider = ?, ocrIsLive = ?
+                WHERE fileName = ? AND ownerId = ?
+            """, (metadata, ocr_data, ocr_provider, ocr_is_live, file_name, owner_id))
+        else:
+            run_query("""
+                INSERT INTO evidence_uploads (fileName, ownerId, metadata, ocrData, ocrProvider, ocrIsLive, createdAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (file_name, owner_id, metadata, ocr_data, ocr_provider, ocr_is_live, now_iso))
 
         return await DatabaseService.get_evidence_upload(file_name, owner_id)
 
@@ -508,6 +527,7 @@ class DatabaseService:
         supplement_history = extra_fields.get('supplementHistory', target_case.get('supplementHistory'))
         evidence_files = extra_fields.get('evidenceFiles', target_case.get('evidenceFiles'))
         assigned_dept = extra_fields.get('assignedDepartment', target_case.get('assignedDepartment'))
+        reviewer_feedback = extra_fields.get('reviewerFeedback', target_case.get('reviewerFeedback'))
 
         digital_signature = target_case.get('digitalSignature')
         if status == 'APPROVED':
@@ -515,7 +535,7 @@ class DatabaseService:
             digital_signature = hmac.new(get_signature_key().encode('utf-8'), sign_payload.encode('utf-8'), hashlib.sha256).hexdigest()
 
         run_query("""
-            UPDATE cases SET status = ?, reviewResult = ?, supplementHistory = ?, evidenceFiles = ?, assignedDepartment = ?, digitalSignature = ?, updatedAt = ? WHERE id = ?
+            UPDATE cases SET status = ?, reviewResult = ?, supplementHistory = ?, evidenceFiles = ?, assignedDepartment = ?, digitalSignature = ?, reviewerFeedback = ?, updatedAt = ? WHERE id = ?
         """, (
             status,
             json.dumps(review_result) if review_result else None,
@@ -523,6 +543,7 @@ class DatabaseService:
             json.dumps(evidence_files) if evidence_files else None,
             assigned_dept,
             digital_signature,
+            json.dumps(reviewer_feedback) if reviewer_feedback else None,
             updated_at,
             case_id
         ))
@@ -543,7 +564,8 @@ class DatabaseService:
                 'APPROVED': '✅ Hồ sơ đã được PHÊ DUYỆT',
                 'REJECTED': '❌ Hồ sơ đã bị TỪ CHỐI',
                 'REQUIRES_SUPPLEMENT': '⚠️ Yêu cầu BỔ SUNG MINH CHỨNG',
-                'UNDER_REVIEW': '🔍 Hồ sơ đang được xử lý'
+                'UNDER_REVIEW': '🔍 Hồ sơ đang được xử lý',
+                'STOPPED': '⛔ Tiến trình xử lý hồ sơ đã bị DỪNG'
             }
             await DatabaseService.create_notification({
                 'userId': target_case['studentId'],
@@ -753,9 +775,13 @@ class DatabaseService:
         timestamp = datetime.utcnow().isoformat() + 'Z'
         safe_actor = data.get('actor') or {'id': 'ANONYMOUS', 'username': 'guest', 'role': 'GUEST', 'name': 'Khách vãng lai'}
 
+        input_data = data.get('input', {})
+        input_json = json.dumps(input_data, ensure_ascii=False) if isinstance(input_data, (dict, list)) else (str(input_data) if input_data is not None else None)
+        result_val = str(data.get('result', 'SUCCESS'))
+
         run_query("""
-            INSERT INTO audits (id, action, caseId, actorId, actorName, actorRole, actorUsername, reason, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO audits (id, action, caseId, actorId, actorName, actorRole, actorUsername, inputData, result, reason, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             audit_id,
             data.get('action'),
@@ -764,6 +790,8 @@ class DatabaseService:
             safe_actor.get('name'),
             safe_actor.get('role'),
             safe_actor.get('username'),
+            input_json,
+            result_val,
             data.get('reason', ''),
             timestamp
         ))
@@ -774,8 +802,8 @@ class DatabaseService:
             'action': data.get('action'),
             'actor': safe_actor,
             'caseId': data.get('caseId'),
-            'input': data.get('input', {}),
-            'result': data.get('result', 'SUCCESS'),
+            'input': input_data,
+            'result': result_val,
             'reason': data.get('reason', '')
         }
 

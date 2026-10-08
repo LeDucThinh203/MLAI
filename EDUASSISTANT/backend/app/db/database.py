@@ -304,10 +304,16 @@ def init_database_mssql():
             deadline NVARCHAR(100),
             assignedDepartment NVARCHAR(255),
             digitalSignature NVARCHAR(MAX),
+            reviewerFeedback NVARCHAR(MAX),
             createdAt NVARCHAR(100),
             updatedAt NVARCHAR(100),
             CONSTRAINT FK_cases_users FOREIGN KEY (studentId) REFERENCES dbo.users(id)
         );
+        ELSE
+        BEGIN
+            IF COL_LENGTH('dbo.cases', 'reviewerFeedback') IS NULL
+                ALTER TABLE dbo.cases ADD reviewerFeedback NVARCHAR(MAX);
+        END
     """)
 
     # 3. audits
@@ -321,9 +327,18 @@ def init_database_mssql():
             actorName NVARCHAR(255),
             actorRole NVARCHAR(50),
             actorUsername NVARCHAR(100),
+            inputData NVARCHAR(MAX),
+            result NVARCHAR(MAX),
             reason NVARCHAR(MAX),
             timestamp NVARCHAR(100)
         );
+        ELSE
+        BEGIN
+            IF COL_LENGTH('dbo.audits', 'inputData') IS NULL
+                ALTER TABLE dbo.audits ADD inputData NVARCHAR(MAX);
+            IF COL_LENGTH('dbo.audits', 'result') IS NULL
+                ALTER TABLE dbo.audits ADD result NVARCHAR(MAX);
+        END
     """)
 
     # 4. comments
@@ -492,6 +507,8 @@ def init_database_sqlite():
             actorName TEXT,
             actorRole TEXT,
             actorUsername TEXT,
+            inputData TEXT,
+            result TEXT,
             reason TEXT,
             timestamp TEXT
         )
@@ -544,6 +561,21 @@ def init_database_sqlite():
             FOREIGN KEY (ownerId) REFERENCES users(id)
         )
     """)
+    conn.commit()
+
+    # Additive migration cho bảng audits nếu đã tồn tại từ trước
+    cursor.execute("PRAGMA table_info(audits)")
+    existing_audit_cols = [c['name'] for c in cursor.fetchall()]
+    if 'inputData' not in existing_audit_cols:
+        cursor.execute("ALTER TABLE audits ADD COLUMN inputData TEXT")
+    if 'result' not in existing_audit_cols:
+        cursor.execute("ALTER TABLE audits ADD COLUMN result TEXT")
+
+    # Additive migration cho bảng cases
+    cursor.execute("PRAGMA table_info(cases)")
+    existing_case_cols = [c['name'] for c in cursor.fetchall()]
+    if 'reviewerFeedback' not in existing_case_cols:
+        cursor.execute("ALTER TABLE cases ADD COLUMN reviewerFeedback TEXT")
     conn.commit()
 
     cursor.execute("SELECT COUNT(*) as count FROM users")

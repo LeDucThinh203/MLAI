@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import {
-  User, Lock, KeyRound, Camera, Trash2, Save, CheckCircle2,
-  AlertTriangle, ShieldCheck, Mail, Building, GraduationCap,
-  Eye, EyeOff, RefreshCw
+  User, KeyRound, Camera, Trash2, Save, CheckCircle2,
+  AlertTriangle, ShieldCheck,
+  Eye, EyeOff, RefreshCw, Settings, Check, Key, ShieldAlert, AlertCircle
 } from 'lucide-react';
-import { API_BASE, SERVER_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+
+const PRESET_AVATARS = [
+  { label: 'Avatar 1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' },
+  { label: 'Avatar 2', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150' },
+  { label: 'Avatar 3', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150' },
+  { label: 'Avatar 4', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150' },
+  { label: 'Avatar 5', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150' },
+  { label: 'Avatar 6', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150' }
+];
 
 const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
   const { user, updateProfile, uploadAvatar, changePassword, deleteAccount } = useAuth();
@@ -81,7 +88,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      setProfileFeedback({ type: 'error', message: 'KĂ­ch thÆ°á»›c áº£nh Ä‘áº¡i diá»‡n khĂ´ng Ä‘Æ°á»£c vÆ°á»£t quĂ¡ 5MB!' });
+      setProfileFeedback({ type: 'error', message: 'Kích thước ảnh đại diện không được vượt quá 5MB!' });
       return;
     }
 
@@ -96,7 +103,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
 
     if (res.success) {
       if (res.avatar) setAvatar(res.avatar);
-      setProfileFeedback({ type: 'success', message: 'âœ¨ áº¢nh Ä‘áº¡i diá»‡n Ä‘Ă£ Ä‘Æ°á»£c táº£i lĂªn vĂ  tá»‘i Æ°u hĂ³a WebP thĂ nh cĂ´ng!' });
+      setProfileFeedback({ type: 'success', message: '✨ Ảnh đại diện đã được tải lên và tối ưu hóa WebP thành công!' });
       setTimeout(() => setProfileFeedback(null), 4000);
     } else {
       setProfileFeedback({ type: 'error', message: res.message });
@@ -109,17 +116,17 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
     setPasswordFeedback(null);
 
     if (!oldPassword) {
-      setPasswordFeedback({ type: 'error', message: 'Vui lĂ²ng nháº­p máº­t kháº©u hiá»‡n táº¡i.' });
+      setPasswordFeedback({ type: 'error', message: 'Vui lòng nhập mật khẩu hiện tại.' });
       return;
     }
 
     if (newPassword.length < 6) {
-      setPasswordFeedback({ type: 'error', message: 'Máº­t kháº©u má»›i pháº£i cĂ³ tá»‘i thiá»ƒu 6 kĂ½ tá»±.' });
+      setPasswordFeedback({ type: 'error', message: 'Mật khẩu mới phải có tối thiểu 6 ký tự.' });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordFeedback({ type: 'error', message: 'Máº­t kháº©u xĂ¡c nháº­n khĂ´ng khá»›p vá»›i máº­t kháº©u má»›i.' });
+      setPasswordFeedback({ type: 'error', message: 'Mật khẩu xác nhận không khớp với mật khẩu mới.' });
       return;
     }
 
@@ -128,7 +135,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
     setSavingPassword(false);
 
     if (res.success) {
-      setPasswordFeedback({ type: 'success', message: 'đŸ‰ Äá»•i máº­t kháº©u thĂ nh cĂ´ng! HĂ£y lÆ°u giá»¯ máº­t kháº©u má»›i an toĂ n.' });
+      setPasswordFeedback({ type: 'success', message: '🎉 Đổi mật khẩu thành công! Hãy lưu giữ mật khẩu mới an toàn.' });
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -144,7 +151,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
     setDeleteError('');
 
     if (!deletePassInput) {
-      setDeleteError('Vui lĂ²ng nháº­p máº­t kháº©u hiá»‡n táº¡i Ä‘á»ƒ xĂ¡c thá»±c yĂªu cáº§u xĂ³a tĂ i khoáº£n.');
+      setDeleteError('Vui lòng nhập mật khẩu hiện tại để xác thực yêu cầu xóa tài khoản.');
       return;
     }
 
@@ -186,7 +193,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
           </div>
           <div>
             <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: '0 0 4px 0', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              CĂ i Äáº·t TĂ i Khoáº£n & Há»“ SÆ¡ CĂ¡ NhĂ¢n
+              Cài Đặt Tài Khoản & Hồ Sơ Cá Nhân
               <span style={{
                 fontSize: '0.72rem',
                 fontWeight: 700,
@@ -200,7 +207,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
               </span>
             </h2>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-sub)', margin: 0 }}>
-              Quáº£n lĂ½ thĂ´ng tin cĂ¡ nhĂ¢n, cáº­p nháº­t áº£nh Ä‘áº¡i diá»‡n, viáº¿t lá»i giá»›i thiá»‡u, Ä‘á»•i máº­t kháº©u vĂ  báº£o máº­t 2FA
+              Quản lý thông tin cá nhân, cập nhật ảnh đại diện, viết lời giới thiệu, đổi mật khẩu và bảo mật 2FA
             </p>
           </div>
         </div>
@@ -211,7 +218,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
             className="btn-secondary"
             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px' }}
           >
-            Quay Láº¡i Báº£ng Äiá»u Khiá»ƒn
+            Quay Lại Bảng Điều Khiển
           </button>
         )}
       </div>
@@ -219,11 +226,11 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '24px' }}>
         
         {/* ==========================================
-            Cá»˜T 1: Há»’ SÆ , AVATAR & GIá»I THIá»†U Báº¢N THĂ‚N
+            CỘT 1: HỒ SƠ, AVATAR & GIỚI THIỆU BẢN THÂN
            ========================================== */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* Card: Há»“ SÆ¡ & Giá»›i Thiá»‡u Báº£n ThĂ¢n */}
+          {/* Card: Hồ Sơ & Giới Thiệu Bản Thân */}
           <div style={{
             background: 'rgba(15, 23, 42, 0.75)',
             backdropFilter: 'blur(16px)',
@@ -235,7 +242,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
               <User size={20} color="#38bdf8" />
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                Há»“ SÆ¡ & Giá»›i Thiá»‡u Báº£n ThĂ¢n
+                Hồ Sơ & Giới Thiệu Bản Thân
               </h3>
             </div>
 
@@ -266,7 +273,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
               marginBottom: '20px'
             }}>
               <label style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '12px' }}>
-                đŸ“¸ áº¢nh Äáº¡i Diá»‡n (Avatar)
+                📸 Ảnh Đại Diện (Avatar)
               </label>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', marginBottom: '16px' }}>
@@ -318,7 +325,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                     }}
                   >
                     <Camera size={16} />
-                    <span>{uploadingAvatar ? 'Äang táº£i & tá»‘i Æ°u WebP...' : 'Táº£i LĂªn áº¢nh Má»›i (JPG, PNG, WEBP)'}</span>
+                    <span>{uploadingAvatar ? 'Đang tải & tối ưu WebP...' : 'Tải Lên Ảnh Mới (JPG, PNG, WEBP)'}</span>
                   </label>
                   <input
                     id="avatar-file-input"
@@ -328,7 +335,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                     style={{ display: 'none' }}
                   />
                   <p style={{ fontSize: '0.74rem', color: 'var(--text-sub)', margin: '6px 0 0 0' }}>
-                    Tá»± Ä‘á»™ng tá»‘i Æ°u hĂ³a WebP chuáº©n tá»‰ lá»‡ 1:1, dung lÆ°á»£ng tá»‘i Ä‘a 5MB.
+                    Tự động tối ưu hóa WebP chuẩn tỉ lệ 1:1, dung lượng tối đa 5MB.
                   </p>
                 </div>
               </div>
@@ -336,7 +343,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
               {/* Preset Avatars Selection */}
               <div>
                 <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
-                  Hoáº·c chá»n nhanh avatar máº«u cĂ³ sáºµn:
+                  Hoặc chọn nhanh avatar mẫu có sẵn:
                 </span>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {PRESET_AVATARS.map((item, idx) => (
@@ -369,7 +376,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
               <div style={{ display: 'grid', gridTemplateColumns: user?.role === 'STUDENT' ? '1fr 1fr' : '1fr', gap: '14px' }}>
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', display: 'block' }}>
-                    Há» vĂ  TĂªn:
+                    Họ và Tên:
                   </label>
                   <input
                     type="text"
@@ -377,14 +384,14 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                     className="form-input"
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
-                    placeholder="Nguyá»…n VÄƒn An"
+                    placeholder="Nguyễn Văn An"
                   />
                 </div>
 
                 {user?.role === 'STUDENT' && (
                   <div>
                     <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', display: 'block' }}>
-                      MĂ£ Sá»‘ Sinh ViĂªn (MSSV):
+                      Mã Số Sinh Viên (MSSV):
                     </label>
                     <input
                       type="text"
@@ -400,7 +407,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', display: 'block' }}>
-                    Äá»‹a Chá»‰ Email:
+                    Địa Chỉ Email:
                   </label>
                   <input
                     type="email"
@@ -414,26 +421,26 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
 
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', display: 'block' }}>
-                    Khoa / Ban Phá»¥ TrĂ¡ch:
+                    Khoa / Ban Phụ Trách:
                   </label>
                   <input
                     type="text"
                     className="form-input"
                     value={department}
                     onChange={e => setDepartment(e.target.value)}
-                    placeholder="Khoa CĂ´ng Nghá»‡ ThĂ´ng Tin"
+                    placeholder="Khoa Công Nghệ Thông Tin"
                   />
                 </div>
               </div>
 
-              {/* Bio / Giá»›i thiá»‡u báº£n thĂ¢n */}
+              {/* Bio / Giới thiệu bản thân */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                    đŸ“ Giá»›i Thiá»‡u Báº£n ThĂ¢n (Bio):
+                    📝 Giới Thiệu Bản Thân (Bio):
                   </label>
                   <span style={{ fontSize: '0.74rem', color: bio.length > 450 ? '#f43f5e' : 'var(--text-muted)' }}>
-                    {bio.length}/500 kĂ½ tá»±
+                    {bio.length}/500 ký tự
                   </span>
                 </div>
                 <textarea
@@ -443,17 +450,17 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                   style={{ resize: 'vertical', lineHeight: 1.5, minHeight: '90px' }}
                   value={bio}
                   onChange={e => setBio(e.target.value)}
-                  placeholder="HĂ£y viáº¿t vĂ i dĂ²ng giá»›i thiá»‡u vá» báº£n thĂ¢n, ngĂ nh há»c, Ä‘á»‹nh hÆ°á»›ng nghá» nghiá»‡p hoáº·c sá»Ÿ thĂ­ch cĂ¡ nhĂ¢n..."
+                  placeholder="Hãy viết vài dòng giới thiệu về bản thân, ngành học, định hướng nghề nghiệp hoặc sở thích cá nhân..."
                 />
                 <p style={{ fontSize: '0.74rem', color: 'var(--text-sub)', margin: '4px 0 0 0' }}>
-                  ThĂ´ng tin nĂ y sáº½ hiá»ƒn thá»‹ trong há»“ sÆ¡ minh chá»©ng vĂ  nháº­t kĂ½ tháº©m Ä‘á»‹nh xá»­ lĂ½ Ä‘Æ¡n.
+                  Thông tin này sẽ hiển thị trong hồ sơ minh chứng và nhật ký thẩm định xử lý đơn.
                 </p>
               </div>
 
               {/* Custom Avatar URL Field */}
               <div>
                 <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', display: 'block' }}>
-                  LiĂªn káº¿t áº£nh Ä‘áº¡i diá»‡n tĂ¹y chá»‰nh (Avatar URL):
+                  Liên kết ảnh đại diện tùy chỉnh (Avatar URL):
                 </label>
                 <input
                   type="url"
@@ -482,7 +489,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                 }}
               >
                 <Save size={16} />
-                <span>{savingProfile ? 'Äang lÆ°u há»“ sÆ¡...' : 'LÆ°u Thay Äá»•i Há»“ SÆ¡'}</span>
+                <span>{savingProfile ? 'Đang lưu hồ sơ...' : 'Lưu Thay Đổi Hồ Sơ'}</span>
               </button>
             </form>
           </div>
@@ -490,11 +497,11 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
         </div>
 
         {/* ==========================================
-            Cá»˜T 2: Äá»”I Máº¬T KHáº¨U, 2FA & XĂ“A TĂ€I KHOáº¢N
+            CỘT 2: ĐỔI MẬT KHẨU, 2FA & XÓA TÀI KHOẢN
            ========================================== */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* Card: Äá»•i Máº­t Kháº©u */}
+          {/* Card: Đổi Mật Khẩu */}
           <div style={{
             background: 'rgba(15, 23, 42, 0.75)',
             backdropFilter: 'blur(16px)',
@@ -506,7 +513,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
               <KeyRound size={20} color="#fbbf24" />
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                Äá»•i Máº­t Kháº©u
+                Đổi Mật Khẩu
               </h3>
             </div>
 
@@ -530,10 +537,10 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
 
             <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              {/* Máº­t kháº©u hiá»‡n táº¡i */}
+              {/* Mật khẩu hiện tại */}
               <div>
                 <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', display: 'block' }}>
-                  Máº­t Kháº©u Hiá»‡n Táº¡i:
+                  Mật Khẩu Hiện Tại:
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -542,7 +549,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                     className="form-input"
                     value={oldPassword}
                     onChange={e => setOldPassword(e.target.value)}
-                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                    placeholder="••••••••"
                     style={{ paddingRight: '40px' }}
                   />
                   <button
@@ -565,10 +572,10 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                 </div>
               </div>
 
-              {/* Máº­t kháº©u má»›i */}
+              {/* Mật khẩu mới */}
               <div>
                 <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', display: 'block' }}>
-                  Máº­t Kháº©u Má»›i (Tá»‘i thiá»ƒu 6 kĂ½ tá»±):
+                  Mật Khẩu Mới (Tối thiểu 6 ký tự):
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -578,7 +585,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                     className="form-input"
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                    placeholder="••••••••"
                     style={{ paddingRight: '40px' }}
                   />
                   <button
@@ -601,10 +608,10 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                 </div>
               </div>
 
-              {/* XĂ¡c nháº­n máº­t kháº©u má»›i */}
+              {/* Xác nhận mật khẩu mới */}
               <div>
                 <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', display: 'block' }}>
-                  XĂ¡c Nháº­n Máº­t Kháº©u Má»›i:
+                  Xác Nhận Mật Khẩu Mới:
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -614,7 +621,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                     className="form-input"
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
-                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                    placeholder="••••••••"
                     style={{ paddingRight: '40px' }}
                   />
                   <button
@@ -639,11 +646,11 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                   <div style={{ marginTop: '6px', fontSize: '0.74rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
                     {newPassword === confirmPassword ? (
                       <span style={{ color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Check size={14} /> Máº­t kháº©u xĂ¡c nháº­n khá»›p hoĂ n toĂ n
+                        <Check size={14} /> Mật khẩu xác nhận khớp hoàn toàn
                       </span>
                     ) : (
                       <span style={{ color: '#f87171', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <AlertTriangle size={14} /> Máº­t kháº©u xĂ¡c nháº­n chÆ°a khá»›p
+                        <AlertTriangle size={14} /> Mật khẩu xác nhận chưa khớp
                       </span>
                     )}
                   </div>
@@ -668,12 +675,12 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                 }}
               >
                 <Key size={16} />
-                <span>{savingPassword ? 'Äang cáº­p nháº­t máº­t kháº©u...' : 'Cáº­p Nháº­t Máº­t Kháº©u Má»›i'}</span>
+                <span>{savingPassword ? 'Đang cập nhật mật khẩu...' : 'Cập Nhật Mật Khẩu Mới'}</span>
               </button>
             </form>
           </div>
 
-          {/* Card: XĂ¡c Thá»±c 2FA Shortcut */}
+          {/* Card: Xác Thực 2FA Shortcut */}
           <div style={{
             background: 'rgba(15, 23, 42, 0.75)',
             backdropFilter: 'blur(16px)',
@@ -686,7 +693,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <ShieldCheck size={20} color={user?.twoFactorEnabled ? '#34d399' : '#fbbf24'} />
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                  XĂ¡c Thá»±c 2 BÆ°á»›c (2FA TOTP)
+                  Xác Thực 2 Bước (2FA TOTP)
                 </h3>
               </div>
               <span style={{
@@ -698,12 +705,12 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                 color: user?.twoFactorEnabled ? '#34d399' : '#fbbf24',
                 border: `1px solid ${user?.twoFactorEnabled ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`
               }}>
-                {user?.twoFactorEnabled ? 'ÄANG Báº¬T' : 'CHÆ¯A Báº¬T'}
+                {user?.twoFactorEnabled ? 'ĐANG BẬT' : 'CHƯA BẬT'}
               </span>
             </div>
 
             <p style={{ fontSize: '0.82rem', color: 'var(--text-sub)', lineHeight: 1.5, margin: '0 0 16px 0' }}>
-              Báº£o vá»‡ tĂ i khoáº£n an toĂ n vá»›i Google Authenticator / Microsoft Authenticator. Má»—i láº§n Ä‘Äƒng nháº­p sáº½ yĂªu cáº§u mĂ£ OTP 6 chá»¯ sá»‘ theo thá»i gian thá»±c.
+              Bảo vệ tài khoản an toàn với Google Authenticator / Microsoft Authenticator. Mỗi lần đăng nhập sẽ yêu cầu mã OTP 6 chữ số theo thời gian thực.
             </p>
 
             <button
@@ -725,11 +732,11 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
               }}
             >
               <ShieldAlert size={16} />
-              <span>{user?.twoFactorEnabled ? 'Cáº¥u HĂ¬nh Láº¡i / Táº¯t 2FA' : 'KĂ­ch Hoáº¡t Báº£o Máº­t 2FA Ngay'}</span>
+              <span>{user?.twoFactorEnabled ? 'Cấu Hình Lại / Tắt 2FA' : 'Kích Hoạt Bảo Mật 2FA Ngay'}</span>
             </button>
           </div>
 
-          {/* Card: Danger Zone (XĂ³a TĂ i Khoáº£n) */}
+          {/* Card: Danger Zone (Xóa Tài Khoản) */}
           <div style={{
             background: 'rgba(239, 68, 68, 0.05)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -740,12 +747,12 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <AlertTriangle size={20} color="#f43f5e" />
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#f43f5e' }}>
-                Khu Vá»±c Nguy Hiá»ƒm (Danger Zone)
+                Khu Vực Nguy Hiểm (Danger Zone)
               </h3>
             </div>
 
             <p style={{ fontSize: '0.82rem', color: 'var(--text-sub)', lineHeight: 1.5, margin: '0 0 16px 0' }}>
-              Khi xĂ³a tĂ i khoáº£n, toĂ n bá»™ dá»¯ liá»‡u phiĂªn lĂ m viá»‡c, quyá»n truy cáº­p vĂ  thĂ´ng tin Ä‘Äƒng nháº­p cá»§a báº¡n sáº½ bá»‹ xĂ³a vÄ©nh viá»…n khá»i cÆ¡ sá»Ÿ dá»¯ liá»‡u SQLite vĂ  khĂ´ng thá»ƒ phá»¥c há»“i.
+              Khi xóa tài khoản, toàn bộ dữ liệu phiên làm việc, quyền truy cập và thông tin đăng nhập của bạn sẽ bị xóa vĩnh viễn khỏi cơ sở dữ liệu SQLite và không thể phục hồi.
             </p>
 
             <button
@@ -771,7 +778,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
               }}
             >
               <Trash2 size={16} />
-              <span>XĂ³a TĂ i Khoáº£n VÄ©nh Viá»…n</span>
+              <span>Xóa Tài Khoản Vĩnh Viễn</span>
             </button>
           </div>
 
@@ -779,7 +786,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
 
       </div>
 
-      {/* Modal XĂ¡c Nháº­n XĂ³a TĂ i Khoáº£n */}
+      {/* Modal Xác Nhận Xóa Tài Khoản */}
       {showDeleteModal && (
         <div style={{
           position: 'fixed',
@@ -807,16 +814,16 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
               </div>
               <div>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#f43f5e' }}>
-                  XĂ¡c Nháº­n XĂ³a TĂ i Khoáº£n
+                  Xác Nhận Xóa Tài Khoản
                 </h3>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-sub)', margin: 0 }}>
-                  HĂ nh Ä‘á»™ng nĂ y khĂ´ng thá»ƒ hoĂ n tĂ¡c!
+                  Hành động này không thể hoàn tác!
                 </p>
               </div>
             </div>
 
             <p style={{ fontSize: '0.84rem', color: 'var(--text-main)', lineHeight: 1.5, marginBottom: '20px' }}>
-              Báº¡n Ä‘ang yĂªu cáº§u xĂ³a tĂ i khoáº£n <strong>{user?.username}</strong> ({user?.fullName}). Vui lĂ²ng nháº­p máº­t kháº©u hiá»‡n táº¡i cá»§a báº¡n Ä‘á»ƒ hoĂ n táº¥t xĂ¡c nháº­n:
+              Bạn đang yêu cầu xóa tài khoản <strong>{user?.username}</strong> ({user?.fullName}). Vui lòng nhập mật khẩu hiện tại của bạn để hoàn tất xác nhận:
             </p>
 
             {deleteError && (
@@ -840,7 +847,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
             <form onSubmit={handleConfirmDeleteAccount}>
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px', display: 'block' }}>
-                  Máº­t Kháº©u XĂ¡c Nháº­n:
+                  Mật Khẩu Xác Nhận:
                 </label>
                 <input
                   type="password"
@@ -849,7 +856,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                   className="form-input"
                   value={deletePassInput}
                   onChange={e => setDeletePassInput(e.target.value)}
-                  placeholder="Nháº­p máº­t kháº©u cá»§a báº¡n..."
+                  placeholder="Nhập mật khẩu của bạn..."
                   style={{ borderColor: '#ef4444' }}
                 />
               </div>
@@ -862,7 +869,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                   className="btn-secondary"
                   style={{ padding: '10px 20px', borderRadius: '10px', fontSize: '0.86rem' }}
                 >
-                  Há»§y Bá»
+                  Hủy Bỏ
                 </button>
                 <button
                   type="submit"
@@ -880,7 +887,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                   }}
                 >
                   {deletingAccount ? <RefreshCw size={15} className="animate-spin" /> : <Trash2 size={15} />}
-                  <span>{deletingAccount ? 'Äang xĂ³a...' : 'XĂ¡c Nháº­n XĂ³a'}</span>
+                  <span>{deletingAccount ? 'Đang xóa...' : 'Xác Nhận Xóa'}</span>
                 </button>
               </div>
             </form>

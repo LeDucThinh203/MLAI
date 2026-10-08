@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  FileText, PlusCircle, RefreshCw, Paperclip, UploadCloud, Cpu, Sparkles,
-  Search, Filter, CheckCircle2, AlertTriangle, Clock, Eye, Download, X,
-  Printer, Image, Maximize2, MessageCircle
+  PlusCircle, RefreshCw, Paperclip, UploadCloud, Sparkles,
+  CheckCircle2, AlertTriangle, Printer, Send, Building2, AlertCircle, QrCode
 } from 'lucide-react';
-import { API_BASE, SERVER_BASE } from '../../api/client';
+import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { renderSlaBadge } from '../../utils/formatters';
 import CaseDiscussion from '../../components/discussion/CaseDiscussion';
+import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 
 const StudentPortal = ({ activeTab, setActiveTab }) => {
   const { token, user } = useAuth();
@@ -48,7 +48,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
         setMyAudits(filtered);
       }
     } catch (err) {
-      console.error('Lá»—i táº£i dá»¯ liá»‡u sinh viĂªn:', err);
+      console.error('Lỗi tải dữ liệu sinh viên:', err);
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
 
     setUploadError('');
     if (file.size > 10 * 1024 * 1024) {
-      setUploadError('Dung lÆ°á»£ng file vÆ°á»£t quĂ¡ giá»›i háº¡n 10MB!');
+      setUploadError('Dung lượng file vượt quá giới hạn 10MB!');
       return;
     }
 
@@ -95,11 +95,11 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
           if (ocr.data.suggestedDescription) {
             setDescription(ocr.data.suggestedDescription);
           }
-          setToastMessage({ type: 'success', text: `âœ¨ OCR Ä‘Ă£ trĂ­ch xuáº¥t & tá»± Ä‘á»™ng Ä‘iá»n Ä‘Æ¡n: ${ocr.data.documentType}` });
+          setToastMessage({ type: 'success', text: `✨ OCR đã trích xuất & tự động điền đơn: ${ocr.data.documentType}` });
         }
       }
     } catch (err) {
-      setUploadError(err.response?.data?.message || 'Lá»—i quĂ©t OCR file minh chá»©ng!');
+      setUploadError(err.response?.data?.message || 'Lỗi quét OCR file minh chứng!');
     } finally {
       setOcrScanning(false);
       setUploadingFile(false);
@@ -112,7 +112,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
 
     setUploadError('');
     if (file.size > 10 * 1024 * 1024) {
-      setUploadError('Dung lÆ°á»£ng file vÆ°á»£t quĂ¡ giá»›i háº¡n 10MB!');
+      setUploadError('Dung lượng file vượt quá giới hạn 10MB!');
       return;
     }
 
@@ -136,7 +136,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
         }
       }
     } catch (err) {
-      setUploadError(err.response?.data?.message || 'Táº£i file tháº¥t báº¡i!');
+      setUploadError(err.response?.data?.message || 'Tải file thất bại!');
     } finally {
       setUploadingFile(false);
     }
@@ -159,7 +159,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
       });
 
       if (res.data?.success) {
-        setToastMessage({ type: 'success', text: `ÄĂ£ ná»™p há»“ sÆ¡ #${res.data.data.case.id} thĂ nh cĂ´ng!` });
+        setToastMessage({ type: 'success', text: `Đã nộp hồ sơ #${res.data.data.case.id} thành công!` });
         setTitle('');
         setDescription('');
         setUploadedEvidence([]);
@@ -167,7 +167,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
         setActiveTab('student_cases');
       }
     } catch (err) {
-      setToastMessage({ type: 'error', text: err.response?.data?.message || 'Gá»­i há»“ sÆ¡ tháº¥t báº¡i!' });
+      setToastMessage({ type: 'error', text: err.response?.data?.message || 'Gửi hồ sơ thất bại!' });
     } finally {
       setSubmitting(false);
     }
@@ -184,14 +184,14 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
       });
 
       if (res.data?.success) {
-        setToastMessage({ type: 'success', text: `ÄĂ£ gá»­i bá»• sung há»“ sÆ¡ #${caseId} Ä‘á»ƒ duyá»‡t láº¡i thĂ nh cĂ´ng!` });
+        setToastMessage({ type: 'success', text: `Đã gửi bổ sung hồ sơ #${caseId} để duyệt lại thành công!` });
         setSupplementingCaseId(null);
         setSupplementNote('');
         setSupplementFiles([]);
         fetchStudentData();
       }
     } catch (err) {
-      setToastMessage({ type: 'error', text: err.response?.data?.message || 'Gá»­i bá»• sung tháº¥t báº¡i!' });
+      setToastMessage({ type: 'error', text: err.response?.data?.message || 'Gửi bổ sung thất bại!' });
     } finally {
       setSubmittingSupplement(false);
     }
@@ -200,18 +200,18 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
   const renderStatusBadge = (status) => {
     switch (status) {
       case 'SUBMITTED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8' }}>ÄĂ£ gá»­i (Chá» duyá»‡t)</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8' }}>Đã gửi (Chờ duyệt)</span>;
       case 'UNDER_REVIEW':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(217, 119, 6, 0.15)', color: '#fbbf24' }}>Äang tháº©m Ä‘á»‹nh</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(217, 119, 6, 0.15)', color: '#fbbf24' }}>Đang thẩm định</span>;
       case 'APPROVED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(5, 150, 105, 0.15)', color: '#34d399' }}>ÄĂ£ cháº¥p thuáº­n</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(5, 150, 105, 0.15)', color: '#34d399' }}>Đã chấp thuận</span>;
       case 'REJECTED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(225, 29, 72, 0.15)', color: '#f87171' }}>ÄĂ£ tá»« chá»‘i</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(225, 29, 72, 0.15)', color: '#f87171' }}>Đã từ chối</span>;
       case 'REQUIRES_SUPPLEMENT':
       case 'INFO_REQUESTED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)' }}>Cáº§n bá»• sung há»“ sÆ¡</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)' }}>Cần bổ sung hồ sơ</span>;
       case 'RESUBMITTED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc' }}>ÄĂ£ bá»• sung (Chá» duyá»‡t láº¡i)</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc' }}>Đã bổ sung (Chờ duyệt lại)</span>;
       default:
         return <span>{status}</span>;
     }
@@ -239,21 +239,21 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
       {activeTab === 'student_submit' && (
         <div className="card-panel" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
           <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <PlusCircle size={20} color="var(--accent-primary)" /> Khá»Ÿi Táº¡o Há»“ SÆ¡ Sinh ViĂªn
+            <PlusCircle size={20} color="var(--accent-primary)" /> Khởi Tạo Hồ Sơ Sinh Viên
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
-            Äiá»n cĂ¡c thĂ´ng tin Ä‘á» nghá»‹ vĂ  Ä‘Ă­nh kĂ¨m giáº¥y tá» chá»©ng minh:
+            Điền các thông tin đề nghị và đính kèm giấy tờ chứng minh:
           </p>
 
           <form onSubmit={handleSubmitCase} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                TiĂªu Ä‘á» há»“ sÆ¡ *
+                Tiêu đề hồ sơ *
               </label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="VĂ­ dá»¥: ÄÆ¡n xin miá»…n giáº£m há»c phĂ­ há»c ká»³ 1 nÄƒm há»c 2026-2027..."
+                placeholder="Ví dụ: Đơn xin miễn giảm học phí học kỳ 1 năm học 2026-2027..."
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 required
@@ -263,32 +263,32 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                  Loáº¡i yĂªu cáº§u
+                  Loại yêu cầu
                 </label>
                 <select className="form-input" value={category} onChange={e => setCategory(e.target.value)}>
-                  <option value="TUITION_DISCOUNT">Miá»…n giáº£m há»c phĂ­</option>
-                  <option value="COMMUNITY_SERVICE">Äiá»ƒm rĂ¨n luyá»‡n</option>
-                  <option value="SCHOLARSHIP">Há»c bá»•ng khuyáº¿n khĂ­ch</option>
-                  <option value="GRADE_APPEAL">PhĂºc kháº£o Ä‘iá»ƒm</option>
-                  <option value="GENERAL">KhĂ¡c</option>
+                  <option value="TUITION_DISCOUNT">Miễn giảm học phí</option>
+                  <option value="COMMUNITY_SERVICE">Điểm rèn luyện</option>
+                  <option value="SCHOLARSHIP">Học bổng khuyến khích</option>
+                  <option value="GRADE_APPEAL">Phúc khảo điểm</option>
+                  <option value="GENERAL">Khác</option>
                 </select>
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                  Äá»™ Æ°u tiĂªn
+                  Độ ưu tiên
                 </label>
                 <select className="form-input" value={priority} onChange={e => setPriority(e.target.value)}>
-                  <option value="HIGH">Kháº©n cáº¥p (Cao)</option>
-                  <option value="MEDIUM">BĂ¬nh thÆ°á»ng (Trung bĂ¬nh)</option>
-                  <option value="LOW">Tháº¥p</option>
+                  <option value="HIGH">Khẩn cấp (Cao)</option>
+                  <option value="MEDIUM">Bình thường (Trung bình)</option>
+                  <option value="LOW">Thấp</option>
                 </select>
               </div>
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                Minh chá»©ng Ä‘Ă­nh kĂ¨m & Tá»± Ä‘á»™ng trĂ­ch xuáº¥t thĂ´ng tin báº±ng AI OCR
+                Minh chứng đính kèm & Tự động trích xuất thông tin bằng AI OCR
               </label>
               <div style={{
                 border: '1px dashed var(--border-color)',
@@ -310,7 +310,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                     />
                     <label htmlFor="student-ocr-upload" className="btn-primary shimmer-button" style={{ cursor: 'pointer', fontSize: '0.82rem', padding: '6px 14px', background: 'linear-gradient(135deg, #4f46e5, #0284c7)' }}>
                       <Sparkles size={15} />
-                      <span>{ocrScanning ? 'Äang trĂ­ch xuáº¥t OCR...' : 'âœ¨ QuĂ©t OCR & Tá»± Äá»™ng Äiá»n'}</span>
+                      <span>{ocrScanning ? 'Đang trích xuất OCR...' : '✨ Quét OCR & Tự Động Điền'}</span>
                     </label>
 
                     <input
@@ -322,10 +322,10 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                     />
                     <label htmlFor="student-evidence-upload" className="btn-secondary" style={{ cursor: 'pointer', fontSize: '0.82rem', padding: '6px 12px' }}>
                       <UploadCloud size={15} />
-                      <span>{uploadingFile && !ocrScanning ? 'Äang táº£i file...' : 'Táº£i file thÆ°á»ng'}</span>
+                      <span>{uploadingFile && !ocrScanning ? 'Đang tải file...' : 'Tải file thường'}</span>
                     </label>
                   </div>
-                  <span style={{ fontSize: '0.74rem', color: 'var(--text-sub)' }}>Äá»‹nh dáº¡ng JPG, PNG, WEBP, PDF (Tá»‘i Ä‘a 10MB)</span>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-sub)' }}>Định dạng JPG, PNG, WEBP, PDF (Tối đa 10MB)</span>
                 </div>
 
                 {/* AI OCR RESULT PREVIEW BANNER */}
@@ -344,15 +344,15 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                         <Sparkles size={14} color="#38bdf8" /> AI OCR: {ocrData.documentType}
                       </span>
                       <span style={{ fontSize: '0.72rem', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                        Äá»™ tin cáº­y: {Math.round((ocrData.confidenceScore || 0.96) * 100)}% â€¢ Tamper: {ocrData.tamperRisk || 'LOW'} (An toĂ n)
+                        Độ tin cậy: {Math.round((ocrData.confidenceScore || 0.96) * 100)}% • Tamper: {ocrData.tamperRisk || 'LOW'} (An toàn)
                       </span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.76rem', color: 'var(--text-sub)', marginTop: '4px' }}>
-                      <div>â€¢ Sinh viĂªn: <strong style={{ color: '#fff' }}>{ocrData.studentName}</strong> ({ocrData.studentCode})</div>
-                      <div>â€¢ ÄÆ¡n vá»‹ cáº¥p: <strong style={{ color: '#fff' }}>{ocrData.issuingAuthority}</strong></div>
+                      <div>• Sinh viên: <strong style={{ color: '#fff' }}>{ocrData.studentName}</strong> ({ocrData.studentCode})</div>
+                      <div>• Đơn vị cấp: <strong style={{ color: '#fff' }}>{ocrData.issuingAuthority}</strong></div>
                     </div>
                     <p style={{ fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic', marginTop: '2px' }}>
-                      â„¹ï¸ ÄĂ£ tá»± Ä‘á»™ng Ä‘iá»n TiĂªu Ä‘á», PhĂ¢n loáº¡i vĂ  Ná»™i dung giáº£i trĂ¬nh tá»« minh chá»©ng. Báº¡n cĂ³ thá»ƒ chá»‰nh sá»­a náº¿u cáº§n.
+                      ℹ️ Đã tự động điền Tiêu đề, Phân loại và Nội dung giải trình từ minh chứng. Bạn có thể chỉnh sửa nếu cần.
                     </p>
                   </div>
                 )}
@@ -367,7 +367,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                     </div>
                     {file.metadata?.isOptimized && (
                       <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: 600, background: 'rgba(5, 150, 105, 0.2)', padding: '2px 6px', borderRadius: '4px' }}>
-                        ÄĂ£ tá»‘i Æ°u VLM (-{file.metadata.savings})
+                        Đã tối ưu VLM (-{file.metadata.savings})
                       </span>
                     )}
                   </div>
@@ -377,12 +377,12 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>
-                Ná»™i dung chi tiáº¿t *
+                Nội dung chi tiết *
               </label>
               <textarea
                 className="form-input"
                 rows={4}
-                placeholder="TrĂ¬nh bĂ y lĂ½ do, hoĂ n cáº£nh vĂ  nguyá»‡n vá»ng cá»¥ thá»ƒ cá»§a báº¡n..."
+                placeholder="Trình bày lý do, hoàn cảnh và nguyện vọng cụ thể của bạn..."
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 required
@@ -391,7 +391,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
 
             <button type="submit" disabled={submitting || uploadingFile} className="btn-primary" style={{ height: '42px', marginTop: '6px' }}>
               <Send size={16} />
-              <span>{submitting ? 'Äang gá»­i há»“ sÆ¡...' : 'Ná»™p Há»“ SÆ¡ Xuá»‘ng Há»‡ Thá»‘ng'}</span>
+              <span>{submitting ? 'Đang gửi hồ sơ...' : 'Nộp Hồ Sơ Xuống Hệ Thống'}</span>
             </button>
           </form>
         </div>
@@ -401,12 +401,12 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
         <div className="card-panel" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Há»“ SÆ¡ Cá»§a Báº¡n ({myCases.length})</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Theo dĂµi tiáº¿n Ä‘á»™ duyá»‡t há»“ sÆ¡ cá»§a cĂ¡ nhĂ¢n báº¡n</p>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Hồ Sơ Của Bạn ({myCases.length})</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Theo dõi tiến độ duyệt hồ sơ của cá nhân bạn</p>
             </div>
             <button onClick={fetchStudentData} className="btn-secondary">
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              LĂ m má»›i
+              Làm mới
             </button>
           </div>
 
@@ -428,11 +428,11 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                       {renderStatusBadge(c.status)}
                       {renderSlaBadge(c)}
                       <span style={{ fontSize: '0.68rem', background: '#334155', color: '#93c5fd', padding: '2px 7px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Building2 size={11} /> {c.assignedDepartment || 'PhĂ²ng CĂ´ng tĂ¡c Sinh viĂªn'}
+                        <Building2 size={11} /> {c.assignedDepartment || 'Phòng Công tác Sinh viên'}
                       </span>
                     </div>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)' }}>
-                      NgĂ y ná»™p: {new Date(c.createdAt).toLocaleDateString('vi-VN')}
+                      Ngày nộp: {new Date(c.createdAt).toLocaleDateString('vi-VN')}
                     </span>
                   </div>
 
@@ -449,10 +449,10 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24', fontWeight: 700, fontSize: '0.88rem' }}>
                         <AlertCircle size={18} />
-                        <span>Há»“ sÆ¡ cáº§n bá»• sung giáº¥y tá» Ä‘á»ƒ tháº©m Ä‘á»‹nh láº¡i!</span>
+                        <span>Hồ sơ cần bổ sung giấy tờ để thẩm định lại!</span>
                       </div>
                       <p style={{ fontSize: '0.84rem', color: 'var(--text-main)', marginTop: '4px' }}>
-                        <strong>YĂªu cáº§u tá»« Tháº©m Ä‘á»‹nh viĂªn:</strong> <em>"{c.reviewResult?.reason || 'Vui lĂ²ng bá»• sung giáº¥y tá» rĂµ rĂ ng hÆ¡n.'}"</em>
+                        <strong>Yêu cầu từ Thẩm định viên:</strong> <em>"{c.reviewResult?.reason || 'Vui lòng bổ sung giấy tờ rõ ràng hơn.'}"</em>
                       </p>
 
                       {!isSupplementOpen ? (
@@ -461,17 +461,17 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                           className="btn-primary"
                           style={{ marginTop: '10px', background: '#d97706', fontSize: '0.82rem', padding: '6px 14px' }}
                         >
-                          <PlusCircle size={14} /> Bá»• Sung Giáº¥y Tá» & Gá»­i Duyá»‡t Láº¡i
+                          <PlusCircle size={14} /> Bổ Sung Giấy Tờ & Gửi Duyệt Lại
                         </button>
                       ) : (
                         <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed rgba(245, 158, 11, 0.3)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                            Ghi chĂº giáº£i trĂ¬nh bá»• sung:
+                            Ghi chú giải trình bổ sung:
                           </label>
                           <textarea
                             className="form-input"
                             rows={2}
-                            placeholder="VĂ­ dá»¥: ÄĂ£ bá»• sung báº£n scan dáº¥u má»™c rĂµ rĂ ng..."
+                            placeholder="Ví dụ: Đã bổ sung bản scan dấu mộc rõ ràng..."
                             value={supplementNote}
                             onChange={e => setSupplementNote(e.target.value)}
                           />
@@ -485,7 +485,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                               style={{ display: 'none' }}
                             />
                             <label htmlFor={`supplement-upload-${c.id}`} className="btn-secondary" style={{ cursor: 'pointer', fontSize: '0.8rem', padding: '5px 10px' }}>
-                              <UploadCloud size={14} /> {uploadingFile ? 'Äang nĂ©n file...' : 'Táº£i thĂªm minh chá»©ng bá»• sung'}
+                              <UploadCloud size={14} /> {uploadingFile ? 'Đang nén file...' : 'Tải thêm minh chứng bổ sung'}
                             </label>
                           </div>
 
@@ -502,14 +502,14 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                               className="btn-primary"
                               style={{ background: '#059669', fontSize: '0.82rem', padding: '6px 14px' }}
                             >
-                              <Send size={14} /> Gá»­i Bá»• Sung Äá»ƒ Duyá»‡t Láº¡i
+                              <Send size={14} /> Gửi Bổ Sung Để Duyệt Lại
                             </button>
                             <button
                               onClick={() => setSupplementingCaseId(null)}
                               className="btn-secondary"
                               style={{ fontSize: '0.82rem', padding: '6px 12px' }}
                             >
-                              Há»§y
+                              Hủy
                             </button>
                           </div>
                         </div>
@@ -537,11 +537,11 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                           />
                           <div>
                             <span style={{ fontSize: '0.84rem', fontWeight: 700, color: c.status === 'APPROVED' ? '#34d399' : '#f87171' }}>
-                              {c.status === 'APPROVED' ? 'âœ“ ÄĂ£ phĂª duyá»‡t bá»Ÿi: ' : 'âœ— ÄĂ£ tá»« chá»‘i bá»Ÿi: '}
-                              <strong>{c.reviewResult.reviewerName || 'CĂ¡n Bá»™ Tháº©m Äá»‹nh'}</strong>
+                              {c.status === 'APPROVED' ? '✓ Đã phê duyệt bởi: ' : '✗ Đã từ chối bởi: '}
+                              <strong>{c.reviewResult.reviewerName || 'Cán Bộ Thẩm Định'}</strong>
                             </span>
                             <span style={{ fontSize: '0.72rem', color: 'var(--text-sub)', display: 'block' }}>
-                              {c.reviewResult.reviewerDepartment || 'Ban Tháº©m Äá»‹nh Há»c Vá»¥'} â€¢ {c.reviewResult.reviewedAt ? new Date(c.reviewResult.reviewedAt).toLocaleString('vi-VN') : ''}
+                              {c.reviewResult.reviewerDepartment || 'Ban Thẩm Định Học Vụ'} • {c.reviewResult.reviewedAt ? new Date(c.reviewResult.reviewedAt).toLocaleString('vi-VN') : ''}
                             </span>
                           </div>
                         </div>
@@ -554,23 +554,23 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                               style={{ background: 'linear-gradient(135deg, #059669, #10b981)', fontSize: '0.78rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                             >
                               <Printer size={13} />
-                              <span>In / LÆ°u Quyáº¿t Äá»‹nh PDF</span>
+                              <span>In / Lưu Quyết Định PDF</span>
                             </button>
                             <button
                               onClick={() => window.open(`/verify?caseId=${c.id}`, '_blank')}
                               className="btn-secondary"
                               style={{ fontSize: '0.78rem', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '4px', borderColor: '#38bdf8', color: '#38bdf8' }}
-                              title="Xem trang chá»©ng thá»±c cĂ´ng khai QR code"
+                              title="Xem trang chứng thực công khai QR code"
                             >
                               <QrCode size={13} />
-                              <span>MĂ£ QR XĂ¡c Thá»±c</span>
+                              <span>Mã QR Xác Thực</span>
                             </button>
                           </div>
                         )}
                       </div>
 
                       <div style={{ fontSize: '0.82rem', color: '#e2e8f0', background: 'rgba(9, 13, 26, 0.5)', padding: '8px 12px', borderRadius: '6px' }}>
-                        <span style={{ color: 'var(--text-sub)', fontSize: '0.74rem', textTransform: 'uppercase', fontWeight: 700 }}>ÄĂ¡nh giĂ¡ cá»§a cĂ¡n bá»™:</span>
+                        <span style={{ color: 'var(--text-sub)', fontSize: '0.74rem', textTransform: 'uppercase', fontWeight: 700 }}>Đánh giá của cán bộ:</span>
                         <p style={{ margin: '2px 0 0 0', fontStyle: 'italic' }}>"{c.reviewResult.reason}"</p>
                       </div>
                     </div>
@@ -579,13 +579,13 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
                   {c.aiExtraction && (
                     <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '8px 12px', fontSize: '0.78rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <span style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Sparkles size={13} /> AI Kiá»ƒm tra: <strong>{c.aiExtraction.policyRuleMatch || 'Há»£p lá»‡'}</strong>
+                        <Sparkles size={13} /> AI Kiểm tra: <strong>{c.aiExtraction.policyRuleMatch || 'Hợp lệ'}</strong>
                       </span>
-                      <span style={{ color: '#34d399' }}>Äá»™ tin cáº­y: {Math.round((c.aiExtraction.confidence || 0.95) * 100)}%</span>
+                      <span style={{ color: '#34d399' }}>Độ tin cậy: {Math.round((c.aiExtraction.confidence || 0.95) * 100)}%</span>
                     </div>
                   )}
 
-                  {/* KĂªnh tháº£o luáº­n trá»±c tiáº¿p trĂªn tá»«ng há»“ sÆ¡ */}
+                  {/* Kênh thảo luận trực tiếp trên từng hồ sơ */}
                   <CaseDiscussion caseId={c.id} token={token} currentUser={user} />
                 </div>
               );
@@ -593,7 +593,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
 
             {myCases.length === 0 && !loading && (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-sub)' }}>
-                Báº¡n chÆ°a ná»™p há»“ sÆ¡ nĂ o. HĂ£y báº¥m <strong>Ná»™p Há»“ SÆ¡ Má»›i</strong> Ä‘á»ƒ táº¡o Ä‘Æ¡n.
+                Bạn chưa nộp hồ sơ nào. Hãy bấm <strong>Nộp Hồ Sơ Mới</strong> để tạo đơn.
               </div>
             )}
           </div>
@@ -606,8 +606,8 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
           token={token}
           onRefresh={fetchStudentData}
           loading={loading}
-          title="Lá»‹ch Sá»­ Hoáº¡t Äá»™ng Cá»§a Báº¡n (Theo NgĂ y)"
-          subtitle="Theo dĂµi chi tiáº¿t cĂ¡c thao tĂ¡c Ä‘Ă£ thá»±c hiá»‡n trĂªn tĂ i khoáº£n theo tá»«ng má»‘c thá»i gian"
+          title="Lịch Sử Hoạt Động Của Bạn (Theo Ngày)"
+          subtitle="Theo dõi chi tiết các thao tác đã thực hiện trên tài khoản theo từng mốc thời gian"
           showRoleFilter={false}
           isStudentView={true}
         />

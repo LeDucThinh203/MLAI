@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import {
-  LogOut, Shield, ShieldCheck, UserCheck, GraduationCap, Building,
-  BarChart3, Settings, ShieldAlert, KeyRound, Activity, Camera, ExternalLink,
-  Cpu, Sparkles
+  LogOut, Shield, UserCheck, GraduationCap,
+  BarChart3, Settings, ShieldAlert,
+  PlusCircle, FileText, History, Inbox, Users
 } from 'lucide-react';
-import { API_BASE, SERVER_BASE } from '../../api/client';
+import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import NotificationBell from '../notifications/NotificationBell';
 
 const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
   const { user, token, logout } = useAuth();
+  const location = useLocation();
   const [aiMode, setAiMode] = useState('mock');
 
   useEffect(() => {
@@ -41,14 +42,15 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
         setAiMode(newMode);
       }
     } catch (err) {
-      console.error('KhĂ´ng thá»ƒ Ä‘á»•i AI mode:', err);
+      console.error('Không thể đổi AI mode:', err);
     }
   };
 
   const getPortalTitle = () => {
-    if (user?.role === 'ADMIN') return 'Cá»”NG QUáº¢N TRá» VIĂN';
-    if (user?.role === 'REVIEWER') return 'Cá»”NG THáº¨M Äá»NH Há»’ SÆ ';
-    return 'Cá»”NG SINH VIĂN';
+    if (user?.role === 'ADMIN') return 'CỔNG QUẢN TRỊ VIÊN';
+    if (user?.role === 'REVIEWER') return 'CỔNG THẨM ĐỊNH HỒ SƠ';
+    if (user?.role === 'STUDENT') return 'CỔNG SINH VIÊN';
+    return 'HỆ THỐNG QUẢN LÝ HỒ SƠ';
   };
 
   const getPortalIcon = () => {
@@ -92,11 +94,11 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
             <h1 style={{ fontSize: '1.05rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.01em' }}>
               {getPortalTitle()}
               <span style={{ fontSize: '0.68rem', padding: '2px 7px', borderRadius: '6px', background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.25)', fontWeight: 700 }}>
-                CaseFlow AI
+                EDUASSISTANT
               </span>
             </h1>
             <p style={{ fontSize: '0.74rem', color: 'var(--text-sub)' }}>
-              {user?.department || 'TrÆ°á»ng Äáº¡i Há»c'}
+              {user?.department || 'Trường Đại Học'}
             </p>
           </div>
         </div>
@@ -124,7 +126,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  <PlusCircle size={15} /> Ná»™p Há»“ SÆ¡
+                  <PlusCircle size={15} /> Nộp Hồ Sơ
                 </button>
                 <button
                   onClick={() => setActiveTab('student_cases')}
@@ -144,7 +146,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  <FileText size={15} /> Há»“ SÆ¡ Cá»§a TĂ´i
+                  <FileText size={15} /> Hồ Sơ Của Tôi
                 </button>
                 <button
                   onClick={() => setActiveTab('student_history')}
@@ -164,7 +166,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  <History size={15} /> Lá»‹ch Sá»­ Hoáº¡t Äá»™ng
+                  <History size={15} /> Lịch Sử Hoạt Động
                 </button>
               </>
             )}
@@ -189,7 +191,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  <Inbox size={15} /> HĂ ng Äá»£i Tháº©m Äá»‹nh
+                  <Inbox size={15} /> Hàng Đợi Thẩm Định
                 </button>
                 <button
                   onClick={() => setActiveTab('reviewer_audit')}
@@ -209,7 +211,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  <History size={15} /> Nháº­t KĂ½ Audit
+                  <History size={15} /> Nhật Ký Audit
                 </button>
               </>
             )}
@@ -234,7 +236,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  <BarChart3 size={15} /> Tá»•ng Quan
+                  <BarChart3 size={15} /> Tổng Quan
                 </button>
                 <button
                   onClick={() => setActiveTab('admin_users')}
@@ -254,7 +256,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  <Users size={15} /> Quáº£n LĂ½ & Cáº¥p TĂ i Khoáº£n
+                  <Users size={15} /> Quản Lý & Cấp Tài Khoản
                 </button>
                 <button
                   onClick={() => setActiveTab('reviewer_queue')}
@@ -274,7 +276,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  <Inbox size={15} /> Tháº©m Äá»‹nh ToĂ n Quyá»n
+                  <Inbox size={15} /> Thẩm Định Toàn Quyền
                 </button>
                 <button
                   onClick={() => setActiveTab('reviewer_audit')}
@@ -294,7 +296,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  <History size={15} /> Nháº­t KĂ½ Audit
+                  <History size={15} /> Nhật Ký Audit
                 </button>
               </>
             )}
@@ -349,7 +351,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
             {/* Profile Pill Card */}
             <div 
               onClick={() => setActiveTab('account_settings')}
-              title="Nháº¥n Ä‘á»ƒ má»Ÿ CĂ i Ä‘áº·t tĂ i khoáº£n & Há»“ sÆ¡"
+              title="Nhấn để mở Cài đặt tài khoản & Hồ sơ"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -383,7 +385,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
                   fontWeight: 600,
                   color: user.role === 'ADMIN' ? '#f43f5e' : (user.role === 'REVIEWER' ? '#fbbf24' : '#38bdf8')
                 }}>
-                  {user.role === 'ADMIN' ? 'đŸ›¡ï¸ Quáº£n trá»‹ viĂªn' : (user.role === 'REVIEWER' ? 'đŸ” Ban Tháº©m Äá»‹nh' : 'đŸ“ Sinh ViĂªn')}
+                  {user.role === 'ADMIN' ? '🛡️ Quản trị viên' : (user.role === 'REVIEWER' ? '🔍 Ban Thẩm Định' : '🎓 Sinh Viên')}
                 </span>
               </div>
             </div>
@@ -392,7 +394,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
             <button
               onClick={() => setActiveTab('account_settings')}
               className="btn-secondary"
-              title="CĂ i Ä‘áº·t tĂ i khoáº£n (Äá»•i máº­t kháº©u, avatar, giá»›i thiá»‡u, xĂ³a tĂ i khoáº£n)"
+              title="Cài đặt tài khoản (Đổi mật khẩu, avatar, giới thiệu, xóa tài khoản)"
               style={{
                 borderRadius: '20px',
                 padding: '6px 12px',
@@ -410,14 +412,14 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
               }}
             >
               <Settings size={14} />
-              <span>CĂ i Äáº·t</span>
+              <span>Cài Đặt</span>
             </button>
             
             {/* 2FA Security Settings Button */}
             <button
               onClick={onOpen2FAModal}
               className="btn-secondary"
-              title="Quáº£n lĂ½ XĂ¡c thá»±c 2 bÆ°á»›c (2FA)"
+              title="Quản lý Xác thực 2 bước (2FA)"
               style={{
                 borderRadius: '20px',
                 padding: '6px 12px',
@@ -432,14 +434,14 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
               }}
             >
               <ShieldAlert size={14} />
-              <span>{user.twoFactorEnabled ? '2FA: ÄĂƒ Báº¬T' : 'KĂCH HOáº T 2FA'}</span>
+              <span>{user.twoFactorEnabled ? '2FA: ĐÃ BẬT' : 'KÍCH HOẠT 2FA'}</span>
             </button>
 
             {/* Logout Button */}
             <button 
               onClick={logout} 
               className="btn-danger" 
-              title="ÄÄƒng xuáº¥t tĂ i khoáº£n"
+              title="Đăng xuất tài khoản"
               style={{
                 borderRadius: '20px',
                 padding: '6px 12px',
@@ -451,9 +453,63 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal }) => {
               }}
             >
               <LogOut size={13} />
-              <span>ÄÄƒng xuáº¥t</span>
+              <span>Đăng xuất</span>
             </button>
           </div>
+        )}
+
+        {/* Guest Navigation when unauthenticated */}
+        {!user && (
+          <nav style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Link
+              to="/login"
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+                background: location.pathname === '/login' ? 'linear-gradient(135deg, #4f46e5, #3b82f6)' : 'rgba(255, 255, 255, 0.05)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                transition: 'all 0.2s'
+              }}
+            >
+              🔐 Đăng Nhập
+            </Link>
+            <Link
+              to="/verify"
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+                background: location.pathname === '/verify' ? 'linear-gradient(135deg, #059669, #10b981)' : 'rgba(255, 255, 255, 0.05)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                transition: 'all 0.2s'
+              }}
+            >
+              🔍 Tra Cứu Hồ Sơ
+            </Link>
+            <Link
+              to="/judge"
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+                background: location.pathname === '/judge' ? 'linear-gradient(135deg, #d97706, #f59e0b)' : 'rgba(255, 255, 255, 0.05)',
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                transition: 'all 0.2s'
+              }}
+            >
+              ⚖️ Ban Giám Khảo
+            </Link>
+          </nav>
         )}
 
       </div>

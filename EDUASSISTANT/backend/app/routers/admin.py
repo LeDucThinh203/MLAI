@@ -1,5 +1,6 @@
 import os
-from datetime import datetime
+from collections import Counter
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Response
 
 from app.db.db import db_service
@@ -61,7 +62,7 @@ async def update_user_role_endpoint(
 async def export_users_csv(user: dict = Depends(require_roles('ADMIN'))):
     users = await db_service.get_users()
     csv_str = generate_users_csv(users)
-    filename = f"CaseFlow_Nguoi_Dung_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    filename = f"EDUASSISTANT_Nguoi_Dung_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     return Response(
         content=csv_str.encode('utf-8'),
         media_type='text/csv; charset=utf-8',
@@ -69,12 +70,69 @@ async def export_users_csv(user: dict = Depends(require_roles('ADMIN'))):
     )
 
 
+from app.services.escalation_policy_service import get_confidence_threshold, get_threshold_history
+import json
+
 @router.get("/api/admin/stats")
 @router.get("/api/admin/system/metrics")
 async def get_system_metrics(user: dict = Depends(require_roles('ADMIN'))):
     users = await db_service.get_users()
     cases = await db_service.get_cases({})
     audits = await db_service.get_audits({})
+
+    # The Admin Portal needs its chart data pre-aggregated.  Always include
+    # every supported key so an empty group renders as 0 instead of missing.
+    statuses = ('SUBMITTED', 'UNDER_REVIEW', 'REQUIRES_SUPPLEMENT', 'RESUBMITTED', 'APPROVED', 'REJECTED')
+    categories = ('TUITION_DISCOUNT', 'ACADEMIC_SCHOLARSHIP', 'COMMUNITY_SERVICE', 'EMERGENCY_AID')
+    priorities = ('URGENT', 'HIGH', 'MEDIUM', 'LOW')
+    escalation_reasons = (
+        'OWNERSHIP_UNCLEAR', 'FACT_UNKNOWN', 'DATA_CONFLICT',
+        'AUTHORITY_REQUIRED', 'POLICY_OUT_OF_SCOPE'
+    )
+    status_counts = Counter(case.get('status') for case in cases)
+    category_counts = Counter(case.get('category') for case in cases)
+    priority_counts = Counter(case.get('priority') or 'MEDIUM' for case in cases)
+    role_counts = Counter(account.get('role') for account in users)
+
+    escalation_counts = Counter()
+    auto_approved_cases = 0
+    escalated_cases = 0
+    for case in cases:
+        rule_engine = case.get('ruleEngine') or {}
+        escalation = case.get('escalation') or {}
+        decision = rule_engine.get('decision')
+        reason = escalation.get('reason') or rule_engine.get('escalationReason')
+        if decision == 'AUTO_APPROVE':
+            auto_approved_cases += 1
+        if decision == 'ESCALATE_TO_HUMAN' or reason:
+            escalated_cases += 1
+        if reason:
+            escalation_counts[reason] += 1
+
+    recent_cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    today_cases_count = 0
+    for case in cases:
+        created_at = case.get('createdAt')
+        if not created_at:
+            continue
+        try:
+            created_time = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+            if created_time.tzinfo is None:
+                created_time = created_time.replace(tzinfo=timezone.utc)
+            if created_time >= recent_cutoff:
+                today_cases_count += 1
+        except (TypeError, ValueError):
+            # Legacy rows with malformed dates must not break the dashboard.
+            continue
+
+    status_breakdown = {status: status_counts[status] for status in statuses}
+    category_breakdown = {category: category_counts[category] for category in categories}
+    priority_breakdown = {priority: priority_counts[priority] for priority in priorities}
+    role_breakdown = {role: role_counts[role] for role in ('STUDENT', 'REVIEWER', 'ADMIN')}
+    escalation_reasons_breakdown = {reason: escalation_counts[reason] for reason in escalation_reasons}
+    approved_cases = status_breakdown['APPROVED']
+    rejected_cases = status_breakdown['REJECTED']
+    total_cases = len(cases)
 
     total_uploads = 0
     total_upload_size = 0
@@ -85,13 +143,66 @@ async def get_system_metrics(user: dict = Depends(require_roles('ADMIN'))):
                 total_uploads += 1
                 total_upload_size += os.path.getsize(fp)
 
+    # Đếm Human Overrides & Reviewer Feedback từ Audit Trail
+    total_human_overrides = sum(1 for a in audits if a.get('action') == 'HUMAN_OVERRIDE')
+    feedback_audits = [a for a in audits if a.get('action') == 'REVIEWER_FEEDBACK_SUBMITTED']
+    total_reviewer_feedback = len(feedback_audits)
+    missed_escalation_feedback_count = sum(1 for a in feedback_audits if (a.get('input') or {}).get('feedbackType') == 'MISSED_ESCALATION')
+    unnecessary_escalation_feedback_count = sum(1 for a in feedback_audits if (a.get('input') or {}).get('feedbackType') == 'UNNECESSARY_ESCALATION')
+    correct_feedback_count = sum(1 for a in feedback_audits if (a.get('input') or {}).get('feedbackType') == 'CORRECT')
+
+    # Đọc kết quả benchmark thật nếu có (không bịa số)
+    bm_json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'benchmark', 'results', 'latest.json')
+    benchmark_metrics = {
+        'decisionAccuracy': 'Not measured yet',
+        'missedEscalationRate': 'Not measured yet',
+        'unnecessaryEscalationRate': 'Not measured yet',
+        'automationRate': 'Not measured yet',
+        'lastBenchmarkRun': None
+    }
+
+    if os.path.exists(bm_json_path):
+        try:
+            with open(bm_json_path, 'r', encoding='utf-8') as f:
+                bm_data = json.load(f)
+            m = bm_data.get('metrics', {})
+            benchmark_metrics = {
+                'decisionAccuracy': f"{m.get('decisionAccuracy')}%",
+                'missedEscalationRate': f"{m.get('missedEscalationRate')}%",
+                'unnecessaryEscalationRate': f"{m.get('unnecessaryEscalationRate')}%",
+                'automationRate': f"{m.get('automationRate')}%",
+                'lastBenchmarkRun': bm_data.get('timestamp')
+            }
+        except Exception:
+            pass
+
     return api_response(200, True, 'Lấy chỉ số hệ thống thành công.', {
         'totalUsers': len(users),
-        'totalCases': len(cases),
+        'totalCases': total_cases,
+        'todayCasesCount': today_cases_count,
+        'pendingCases': status_breakdown['SUBMITTED'] + status_breakdown['UNDER_REVIEW'] + status_breakdown['RESUBMITTED'],
+        'approvedCases': approved_cases,
+        'rejectedCases': rejected_cases,
+        'approvalRate': round((approved_cases / total_cases) * 100) if total_cases else 0,
+        'statusBreakdown': status_breakdown,
+        'categoryBreakdown': category_breakdown,
+        'priorityBreakdown': priority_breakdown,
+        'roleBreakdown': role_breakdown,
+        'autoApprovedCases': auto_approved_cases,
+        'escalatedCases': escalated_cases,
+        'escalationReasonsBreakdown': escalation_reasons_breakdown,
+        'recentCases': cases[:5],
         'totalAudits': len(audits),
         'totalUploads': total_uploads,
         'uploadStorageSizeMB': round(total_upload_size / (1024 * 1024), 2),
         'aiMode': get_ai_mode(),
         'systemStatus': 'ONLINE',
+        'currentEscalationThreshold': get_confidence_threshold(),
+        'totalHumanOverrides': total_human_overrides,
+        'totalReviewerFeedback': total_reviewer_feedback,
+        'missedEscalationFeedbackCount': missed_escalation_feedback_count,
+        'unnecessaryEscalationFeedbackCount': unnecessary_escalation_feedback_count,
+        'correctFeedbackCount': correct_feedback_count,
+        'benchmarkMetrics': benchmark_metrics,
         'serverTime': datetime.utcnow().isoformat() + 'Z'
     })

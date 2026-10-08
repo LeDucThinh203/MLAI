@@ -15,7 +15,7 @@ import base64
 import random
 from datetime import datetime
 import httpx
-from app.services.ai_service import sanitize_json_string
+from app.services.ai_service import sanitize_json_string, get_ai_mode
 
 DOCUMENT_PATTERNS = [
     {
@@ -68,14 +68,14 @@ async def extract_document_entities(file_buffer: bytes, file_name: str, user: di
     lower_name = (file_name or '').lower()
     api_key = os.environ.get('GEMINI_API_KEY')
 
-    ai_mode = os.environ.get('AI_MODE', 'mock')
+    ai_mode = get_ai_mode()
     if ai_mode == 'live' and api_key and len(api_key.strip()) > 10 and file_buffer:
         try:
             ext = os.path.splitext(file_name)[1].lower()
             mime_type = 'image/png' if ext == '.png' else ('application/pdf' if ext == '.pdf' else ('image/webp' if ext == '.webp' else 'image/jpeg'))
             base64_data = base64.b64encode(file_buffer).decode('utf-8')
 
-            prompt_text = """Bạn là hệ thống AI Multimodal Vision OCR thẩm định văn bản học vụ và hành chính Việt Nam (CaseFlow AI). Hãy đọc kỹ tài liệu này và trích xuất thông tin dưới định dạng JSON:
+            prompt_text = """Bạn là hệ thống AI Multimodal Vision OCR thẩm định văn bản học vụ và hành chính Việt Nam (EDUASSISTANT). Hãy đọc kỹ tài liệu này và trích xuất thông tin dưới định dạng JSON:
 {
   "documentType": "Tên loại giấy tờ (ví dụ: Giấy chứng nhận Cận nghèo, Giấy chứng nhận Mùa hè xanh, Bảng điểm, Quyết định khen thưởng, v.v.)",
   "studentName": "Họ và tên sinh viên trên giấy tờ",
@@ -141,29 +141,40 @@ Chỉ trả về JSON thuần túy, không thêm lời dẫn."""
                 parsed = json.loads(clean_json)
                 cert_num = parsed.get('certificateNumber') or f"DOC-{random.randint(1000, 9999)}"
 
+                live_ocr_data = {
+                    **parsed,
+                    'certificateNumber': cert_num,
+                    'tamperRisk': parsed.get('tamperRisk', 'LOW'),
+                    'confidenceScore': 0.98,
+                    'confidence': 0.98,
+                    'modeUsed': 'live',
+                    'isLive': True,
+                    'isFallback': False,
+                    'isSynthetic': False,
+                    'extractedEntities': {
+                        'Họ và tên': parsed.get('studentName') or 'Chưa nhận dạng',
+                        'Mã số SV': parsed.get('studentCode') or 'Chưa nhận dạng',
+                        'Số hiệu văn bản': cert_num,
+                        'Cơ quan ban hành': parsed.get('issuingAuthority') or 'Chưa nhận dạng',
+                        'Dấu mộc & Chữ ký': 'Nghi vấn' if parsed.get('tamperRisk') == 'HIGH' else 'Hợp lệ (Đã kiểm tra qua Gemini Vision)',
+                        'Tình trạng tính toàn vẹn': 'Có nguy cơ tẩy xóa' if parsed.get('tamperRisk') == 'HIGH' else 'Toàn vẹn 100%'
+                    }
+                }
+
                 return {
                     'success': True,
                     'provider': f"Google Gemini Multimodal Vision ({used_model} - Live)",
+                    'modeUsed': 'live',
+                    'isLive': True,
+                    'isFallback': False,
+                    'isSynthetic': False,
                     'durationMs': round((time.time() - start_time) * 1000),
-                    'data': {
-                        **parsed,
-                        'certificateNumber': cert_num,
-                        'tamperRisk': parsed.get('tamperRisk', 'LOW'),
-                        'confidenceScore': 0.98,
-                        'extractedEntities': {
-                            'Họ và tên': parsed.get('studentName') or 'Chưa nhận dạng',
-                            'Mã số SV': parsed.get('studentCode') or 'Chưa nhận dạng',
-                            'Số hiệu văn bản': cert_num,
-                            'Cơ quan ban hành': parsed.get('issuingAuthority') or 'Chưa nhận dạng',
-                            'Dấu mộc & Chữ ký': 'Nghi vấn' if parsed.get('tamperRisk') == 'HIGH' else 'Hợp lệ (Đã kiểm tra qua Gemini Vision)',
-                            'Tình trạng tính toàn vẹn': 'Có nguy cơ tẩy xóa' if parsed.get('tamperRisk') == 'HIGH' else 'Toàn vẹn 100%'
-                        }
-                    }
+                    'data': live_ocr_data
                 }
         except Exception as err:
             print(f'⚠️ Gemini Vision live call fallback: {err}')
 
-    # Intelligent Fallback
+    # Intelligent Fallback / Mock / Cache
     matched_pattern = DOCUMENT_PATTERNS[0]
     for pattern in DOCUMENT_PATTERNS:
         if any(kw in lower_name for kw in pattern['keywords']):
@@ -175,6 +186,8 @@ Chỉ trả về JSON thuần túy, không thêm lời dẫn."""
     random_serial = random.randint(1000, 9999)
     cert_number = f"{matched_pattern['sampleCodePrefix']}-{random_serial}"
     today = datetime.now().strftime('%d/%m/%Y')
+
+    provider_label = f"Intelligent Multimodal OCR Engine ({'Synthetic Demo Mock' if ai_mode == 'mock' else ('Cache Profile' if ai_mode == 'cache' else 'Fallback Profile')})"
 
     ocr_data = {
         'documentType': f"Chứng thực {matched_pattern['categoryName']}",
@@ -189,6 +202,12 @@ Chỉ trả về JSON thuần túy, không thêm lời dẫn."""
         'suggestedTitle': matched_pattern['titleGenerator'](student_name, student_code),
         'suggestedDescription': matched_pattern['descGenerator'](student_name, matched_pattern['defaultIssuing']),
         'confidenceScore': 0.96,
+        'confidence': 0.96,
+        'modeUsed': ai_mode,
+        'provider': provider_label,
+        'isLive': False,
+        'isFallback': True,
+        'isSynthetic': True,
         'extractedEntities': {
             'Họ và tên': student_name,
             'Mã số SV': student_code,
@@ -202,7 +221,11 @@ Chỉ trả về JSON thuần túy, không thêm lời dẫn."""
 
     return {
         'success': True,
-        'provider': 'Intelligent Multimodal OCR Engine (Vietnamese Academic VLM)',
+        'provider': provider_label,
+        'modeUsed': ai_mode,
+        'isLive': False,
+        'isFallback': True,
+        'isSynthetic': True,
         'durationMs': round((time.time() - start_time) * 1000),
         'data': ocr_data
     }

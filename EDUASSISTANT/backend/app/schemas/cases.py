@@ -16,7 +16,14 @@ class ReviewCaseRequest(BaseModel):
     action: Optional[str] = None
     decision: Optional[str] = None
     reason: Optional[str] = ''
+    overrideReason: Optional[str] = None
     assignedDepartment: Optional[str] = None
+    targetStatus: Optional[str] = None
+
+
+class ReviewerFeedbackRequest(BaseModel):
+    type: str
+    note: Optional[str] = ''
 
 
 class AddCommentRequest(BaseModel):
