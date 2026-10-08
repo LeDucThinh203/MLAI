@@ -11,6 +11,13 @@ from app.db.database import (
     init_database,
 )
 from app.db.db import db_service, DEPARTMENT_MAP
+from app.db.session import (
+    get_db,
+    get_db_session,
+    get_engine,
+    init_orm_db,
+    get_session_factory,
+)
 
 __all__ = [
     "get_db_path",
@@ -25,4 +32,9 @@ __all__ = [
     "init_database",
     "db_service",
     "DEPARTMENT_MAP",
+    "get_db",
+    "get_db_session",
+    "get_engine",
+    "init_orm_db",
+    "get_session_factory",
 ]

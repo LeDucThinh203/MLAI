@@ -578,12 +578,18 @@ def init_database_sqlite():
 
 
 def init_database():
-    """Khởi tạo cơ sở dữ liệu theo Database Engine đang kích hoạt."""
+    """Khởi tạo cơ sở dữ liệu theo Database Engine đang kích hoạt (kèm SQLAlchemy ORM)."""
     if ACTIVE_ENGINE == 'mssql':
         init_database_mssql()
     else:
         init_database_sqlite()
+    try:
+        from app.db.session import init_orm_db
+        init_orm_db()
+    except Exception as e:
+        print(f"[ORM Init Warning] Lỗi khởi tạo SQLAlchemy ORM: {e}")
 
 
 # Tự động kích hoạt khi nạp module
 init_database()
+
