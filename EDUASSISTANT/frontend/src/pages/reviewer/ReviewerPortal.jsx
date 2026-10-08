@@ -844,7 +844,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                <div className="reviewer-decision-actions" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                   <button
                     onClick={() => handleReviewAction('APPROVE')}
                     disabled={reviewing}
@@ -910,7 +910,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 </div>
 
                 {/* HÀNG NÚT BỔ SUNG: GHI ĐÈ (OVERRIDE) & DỪNG XỬ LÝ (STOP) */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px', marginTop: '8px' }}>
+                <div className="reviewer-decision-actions reviewer-decision-actions--secondary" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px', marginTop: '8px' }}>
                   <button
                     onClick={() => handleReviewAction('OVERRIDE', 'APPROVED')}
                     disabled={reviewing}
@@ -956,17 +956,11 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   </button>
                 </div>
 
-                {/* REVIEWER FEEDBACK PANEL (ADAPTIVE ESCALATION THRESHOLD SPRINT 2) */}
-                <div style={{
-                  marginTop: '12px',
-                  padding: '12px',
-                  background: '#0a0e17',
-                  borderRadius: '8px',
-                  border: '1px solid #1e293b'
-                }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f8fafc', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Sliders size={14} color="#f59e0b" /> Phản hồi về kết quả đánh giá
-                  </div>
+                <details className="reviewer-feedback">
+                  <summary>
+                    <span><Sliders size={15} /> Góp ý về kết quả đánh giá</span>
+                    <small>Tùy chọn</small>
+                  </summary>
                   <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '0 0 8px 0' }}>
                     Cho biết kết quả gợi ý của hệ thống có phù hợp không để cải thiện việc hỗ trợ xử lý hồ sơ.
                   </p>
@@ -1034,7 +1028,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       ▼ Leo Thang Thừa
                     </button>
                   </div>
-                </div>
+                </details>
               </div>
 
               {/* KHUNG ĐIỀU PHỐI ĐƠN VỊ THỤ LÝ (DEPARTMENT RE-ROUTING) */}
@@ -1292,7 +1286,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     );
                   })
                 ) : (
-                  <div style={{
+                  <div className="reviewer-evidence-empty" style={{
                     textAlign: 'center',
                     padding: '36px 16px',
                     background: '#090d16',

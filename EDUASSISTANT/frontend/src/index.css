@@ -588,10 +588,22 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   padding: 18px !important;
   box-shadow: inset 0 3px 0 #2176c7;
 }
+.reviewer-decision-actions { padding: 10px; background: #fff; border: 1px solid #d5e2ef; border-radius: 8px; }
+.reviewer-decision-actions button { min-height: 42px; box-shadow: 0 2px 5px rgba(25,55,89,.12); }
+.reviewer-decision-actions--secondary { margin-top: 0 !important; background: #f7f9fc; }
+.reviewer-feedback { border: 1px solid #d5e2ef; border-radius: 8px; background: #fff; overflow: hidden; }
+.reviewer-feedback summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 13px; color: #294866; font-weight: 800; }
+.reviewer-feedback summary::-webkit-details-marker { display: none; }
+.reviewer-feedback summary span { display: inline-flex; align-items: center; gap: 7px; }
+.reviewer-feedback summary small { color: #617891; font-size: .75rem; font-weight: 700; }
+.reviewer-feedback[open] summary { border-bottom: 1px solid #d5e2ef; background: #f4f8fc; }
+.reviewer-feedback > p, .reviewer-feedback > input, .reviewer-feedback > div { margin-left: 13px !important; margin-right: 13px !important; }
+.reviewer-feedback > p { margin-top: 12px !important; }.reviewer-feedback > div { margin-bottom: 13px !important; }
 .reviewer-case-detail__routing { background: #f8fafc !important; border-color: #d5e2ef !important; border-radius: 10px !important; padding: 14px 16px !important; }
 .reviewer-evidence-panel { background: #ffffff !important; border: 1px solid #b9cde2 !important; border-radius: 14px !important; box-shadow: 0 12px 30px rgba(25, 55, 89, .1) !important; }
 .reviewer-evidence-panel > :first-child { padding-bottom: 12px; border-bottom: 1px solid #d8e4ef; }
 .reviewer-evidence-panel > p { margin: 0; padding: 10px 12px; background: #f4f8fc; border-left: 4px solid #38bdf8; border-radius: 6px; }
+.reviewer-evidence-empty { min-height: 210px; display: grid; place-content: center; }
 .case-discussion { background: #f8fafc !important; border: 1px solid #c8d9e8 !important; border-radius: 10px !important; padding: 18px !important; box-shadow: inset 0 3px 0 #3b82f6; }
 .case-discussion__list { max-height: 320px !important; padding: 4px 8px 4px 2px !important; }
 .case-discussion__item { position: relative; padding: 12px 14px 12px 18px !important; border-radius: 8px !important; box-shadow: 0 1px 3px rgba(25, 55, 89, .06); }
