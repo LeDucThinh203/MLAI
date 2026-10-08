@@ -160,7 +160,7 @@ class DatabaseService:
         department = data.get('department').strip() if data.get('department') else 'Khoa Công Nghệ Thông Tin'
         avatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
         bio = 'Người dùng hệ thống CaseFlow AI.'
-        must_change_pwd = 1 if data.get('mustChangePassword') else 0
+        must_change_pwd = bool(data.get('mustChangePassword'))
         now_iso = datetime.utcnow().isoformat() + 'Z'
 
         run_query("""
@@ -168,7 +168,7 @@ class DatabaseService:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             user_id, username, hashed_password, full_name, student_code, email,
-            role, department, avatar, bio, 0, None, must_change_pwd, now_iso, now_iso
+            role, department, avatar, bio, False, None, must_change_pwd, now_iso, now_iso
         ))
 
         new_user = await DatabaseService.get_user_by_id(user_id)
@@ -261,7 +261,7 @@ class DatabaseService:
         hashed_new = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         updated_at = datetime.utcnow().isoformat() + 'Z'
 
-        run_query('UPDATE users SET password = ?, mustChangePassword = 0, updatedAt = ? WHERE id = ?', (hashed_new, updated_at, user_id))
+        run_query('UPDATE users SET password = ?, mustChangePassword = FALSE, updatedAt = ? WHERE id = ?', (hashed_new, updated_at, user_id))
         
         # Thu hồi toàn bộ refresh token
         await DatabaseService.revoke_all_user_refresh_tokens(user_id)
@@ -309,7 +309,7 @@ class DatabaseService:
             return None
 
         secret_val = target_user.get('twoFactorSecret') if enabled else None
-        run_query('UPDATE users SET twoFactorEnabled = ?, twoFactorSecret = ? WHERE id = ?', (1 if enabled else 0, secret_val, user_id))
+        run_query('UPDATE users SET twoFactorEnabled = ?, twoFactorSecret = ? WHERE id = ?', (enabled, secret_val, user_id))
 
         await DatabaseService.log_audit({
             'action': '2FA_ENABLED' if enabled else '2FA_DISABLED',
@@ -692,7 +692,7 @@ class DatabaseService:
         now_iso = datetime.utcnow().isoformat() + 'Z'
         run_query("""
             INSERT INTO notifications (id, userId, title, message, type, caseId, isRead, createdAt)
-            VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+            VALUES (?, ?, ?, ?, ?, ?, FALSE, ?)
         """, (
             notif_id,
             data['userId'],
@@ -709,18 +709,18 @@ class DatabaseService:
             'message': data['message'],
             'type': data.get('type', 'INFO'),
             'caseId': data.get('caseId'),
-            'isRead': 0,
+            'isRead': False,
             'createdAt': now_iso
         }
 
     @staticmethod
     async def mark_notification_as_read(notif_id: str, user_id: str):
-        res = run_query('UPDATE notifications SET isRead = 1 WHERE id = ? AND userId = ?', (notif_id, user_id))
+        res = run_query('UPDATE notifications SET isRead = TRUE WHERE id = ? AND userId = ?', (notif_id, user_id))
         return res['changes'] > 0
 
     @staticmethod
     async def mark_all_notifications_as_read(user_id: str):
-        run_query('UPDATE notifications SET isRead = 1 WHERE userId = ?', (user_id,))
+        run_query('UPDATE notifications SET isRead = TRUE WHERE userId = ?', (user_id,))
         return True
 
     # ================= AUDITS =================
