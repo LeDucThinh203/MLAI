@@ -43,6 +43,14 @@ CREATE TABLE IF NOT EXISTS evidence_uploads (fileName VARCHAR(255) PRIMARY KEY, 
     with get_db_connection() as c, c.cursor() as q:
         for statement in schema.split(';'):
             if statement.strip(): q.execute(statement)
+        # Audit history is read newest-first and filtered repeatedly by these
+        # fields.  These indexes keep pagination queries from scanning the
+        # complete audit table as the log grows.
+        q.execute('CREATE INDEX IF NOT EXISTS idx_audits_timestamp ON audits (timestamp DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_audits_action_timestamp ON audits (action, timestamp DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_audits_role_timestamp ON audits (actorRole, timestamp DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_audits_case_timestamp ON audits (caseId, timestamp DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_audits_actor_timestamp ON audits (actorId, timestamp DESC)')
         q.execute('SELECT COUNT(*) AS count FROM users')
         if q.fetchone()['count'] == 0:
             path=os.path.join(os.path.dirname(__file__),'data.json')

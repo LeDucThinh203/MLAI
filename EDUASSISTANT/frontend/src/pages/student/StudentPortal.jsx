@@ -30,7 +30,6 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
   const [submittingSupplement, setSubmittingSupplement] = useState(false);
 
   const [myCases, setMyCases] = useState([]);
-  const [myAudits, setMyAudits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
@@ -38,16 +37,9 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
   const fetchStudentData = async () => {
     setLoading(true);
     try {
-      const [casesRes, auditsRes] = await Promise.all([
-        axios.get(`${API_BASE}/cases/my-cases`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_BASE}/audits`, { headers: { Authorization: `Bearer ${token}` } })
-      ]);
+      const casesRes = await axios.get(`${API_BASE}/cases/my-cases`, { headers: { Authorization: `Bearer ${token}` } });
 
       if (casesRes.data?.success) setMyCases(casesRes.data.data.cases);
-      if (auditsRes.data?.success) {
-        const filtered = auditsRes.data.data.audits.filter(a => a.actor?.id === user.id);
-        setMyAudits(filtered);
-      }
     } catch (err) {
       console.error('Lỗi tải dữ liệu sinh viên:', err);
     } finally {
@@ -218,7 +210,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
     }
   };
 
-  if (loading && myCases.length === 0 && myAudits.length === 0) {
+  if (loading && myCases.length === 0) {
     return <PageSkeleton variant="portal" label="Đang tải hồ sơ sinh viên" />;
   }
 
@@ -607,7 +599,6 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
 
       {activeTab === 'student_history' && (
         <AuditTrailViewer
-          audits={myAudits}
           token={token}
           onRefresh={fetchStudentData}
           loading={loading}

@@ -18,7 +18,6 @@ import PaginationControls from '../../components/common/PaginationControls';
 const ReviewerPortal = ({ activeTab }) => {
   const { token, user } = useAuth();
   const [allCases, setAllCases] = useState([]);
-  const [audits, setAudits] = useState([]);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
@@ -41,10 +40,7 @@ const ReviewerPortal = ({ activeTab }) => {
   const fetchReviewerData = async () => {
     setLoading(true);
     try {
-      const [casesRes, auditsRes] = await Promise.all([
-        axios.get(`${API_BASE}/cases`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_BASE}/audits`, { headers: { Authorization: `Bearer ${token}` } })
-      ]);
+      const casesRes = await axios.get(`${API_BASE}/cases`, { headers: { Authorization: `Bearer ${token}` } });
 
       if (casesRes.data?.success) {
         setAllCases(casesRes.data.data.cases);
@@ -53,7 +49,6 @@ const ReviewerPortal = ({ activeTab }) => {
           if (fresh) setSelectedCase(fresh);
         }
       }
-      if (auditsRes.data?.success) setAudits(auditsRes.data.data.audits);
     } catch (err) {
       console.error('Lỗi tải dữ liệu reviewer:', err);
     } finally {
@@ -286,7 +281,7 @@ const ReviewerPortal = ({ activeTab }) => {
     return null;
   };
 
-  if (loading && allCases.length === 0 && audits.length === 0) {
+  if (loading && allCases.length === 0) {
     return <PageSkeleton variant="portal" label="Đang tải hàng đợi thẩm định" />;
   }
 
@@ -1257,7 +1252,6 @@ const ReviewerPortal = ({ activeTab }) => {
 
       {activeTab === 'reviewer_audit' && (
         <AuditTrailViewer
-          audits={audits}
           token={token}
           onRefresh={fetchReviewerData}
           loading={loading}

@@ -808,7 +808,9 @@ class DatabaseService:
         safe_size = min(MAX_AUDIT_PAGE_SIZE, max(MIN_AUDIT_PAGE_SIZE, int(page_size)))
         total_pages = max(1, (total + safe_size - 1) // safe_size)
         safe_page = min(safe_page, total_pages)
-        rows = get_all('SELECT * FROM audits' + where + ' ORDER BY timestamp DESC LIMIT ? OFFSET ?', tuple(params + [safe_size, (safe_page - 1) * safe_size]))
+        # The audit viewer never displays request payloads. Avoid transferring
+        # potentially large JSON in inputData for every history row.
+        rows = get_all('SELECT id, action, caseId, actorId, actorName, actorRole, actorUsername, result, reason, timestamp FROM audits' + where + ' ORDER BY timestamp DESC LIMIT ? OFFSET ?', tuple(params + [safe_size, (safe_page - 1) * safe_size]))
         return {'audits': [format_audit_row(row) for row in rows], 'total': total, 'page': safe_page, 'pageSize': safe_size, 'totalPages': total_pages, 'hasPrevious': safe_page > 1, 'hasNext': safe_page < total_pages}
 
     @staticmethod
