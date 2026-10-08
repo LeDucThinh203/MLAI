@@ -40,9 +40,12 @@ export const CaseDiscussion = ({ caseId, token }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (res.data?.success && res.data.data?.comment) {
-        setComments(prev => [...prev, res.data.data.comment]);
+      const newComment = res.data?.data?.comment || res.data?.data;
+      if (res.data?.success && newComment?.id) {
+        setComments(prev => [...prev, newComment]);
         setInputContent('');
+        // Reconcile with the server in case another participant commented too.
+        fetchComments();
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi gửi bình luận!');
