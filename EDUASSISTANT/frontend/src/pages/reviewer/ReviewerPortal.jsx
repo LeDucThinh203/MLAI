@@ -278,7 +278,7 @@ const ReviewerPortal = ({ activeTab }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="portal-content portal-content--reviewer" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {activeTab === 'reviewer_queue' && (
         <div style={{
           display: 'grid',

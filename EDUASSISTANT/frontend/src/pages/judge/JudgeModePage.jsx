@@ -59,9 +59,9 @@ export default function JudgeModePage({ onNavigateTab }) {
   };
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '40px' }}>
+    <div className="judge-page" style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '40px' }}>
       {/* HEADER BANNER */}
-      <div style={{
+      <div className="judge-banner" style={{
         background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95))',
         border: '1px solid rgba(56, 189, 248, 0.3)',
         borderRadius: '16px',

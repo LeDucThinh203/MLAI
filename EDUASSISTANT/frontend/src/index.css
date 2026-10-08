@@ -347,3 +347,40 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 ::-webkit-scrollbar-track { background: #edf2f7; } ::-webkit-scrollbar-thumb { background: #b6c7d9; } ::-webkit-scrollbar-thumb:hover { background: #8fa8bf; }
 @media (max-width: 1100px) { .app-header__bar { padding: 10px 16px; }.portal-nav { order: 3; width: 100%; overflow-x: auto; }.header-actions { flex: 1; }.profile-summary span, .header-icon-button span, .two-factor-button span, .logout-button span { display: none; } }
 @media (max-width: 640px) { .app-header__bar { gap: 10px; }.brand-title { font-size: .86rem; }.brand-block { min-width: 0; }.ai-status { display: none; }.portal-nav button, .portal-nav a { padding: 7px 8px; font-size: .75rem; } }
+
+/* Page composition: the same language across student, reviewer, administrator and public pages. */
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; width: 100%; background: transparent; }
+.app-main { flex: 1; width: min(100%, 1600px); margin: 0 auto; padding: 24px 32px 44px; box-sizing: border-box; }
+.portal-content { width: 100%; max-width: 1480px; margin: 0 auto; }
+.portal-content .card-panel { overflow: hidden; }
+.portal-content h2, .portal-content h3, .settings-page h2, .settings-page h3 { color: #172b4d !important; letter-spacing: -.01em; }
+.portal-content [style*="background: '#0f172a'"], .portal-content [style*="background: '#090d16'"], .portal-content [style*="background: '#1e293b'"], .settings-page [style*="background: 'rgba(15, 23, 42"], .settings-page [style*="background: 'linear-gradient(135deg, rgba(30, 41, 59"] { background: #fff !important; }
+.portal-content [style*="boxShadow"], .settings-page [style*="boxShadow"] { box-shadow: 0 2px 8px rgba(25, 55, 89, .07) !important; }
+.portal-content [style*="borderRadius: '16px'"], .settings-page [style*="borderRadius: '16px'"] { border-radius: 10px !important; }
+.portal-content table { background: #fff; border: 1px solid #d8e1ec; border-radius: 8px; overflow: hidden; }
+.portal-content th { background: #eef4f9 !important; color: #294866 !important; }
+.portal-content td { border-color: #e2e9f1 !important; }
+.portal-content code { color: #155a93 !important; background: #edf4fa; padding: 1px 4px; border-radius: 3px; }
+
+/* Authentication stays welcoming but no longer resembles a neon product demo. */
+.auth-page { min-height: calc(100vh - 94px) !important; background: linear-gradient(135deg, #eef4f8, #f8fafc) !important; border: 1px solid #d8e1ec; border-radius: 12px; }
+.auth-page > div[style*="position: absolute"] { display: none !important; }
+.auth-card { background: #fff !important; border: 1px solid #d8e1ec !important; border-radius: 12px !important; box-shadow: 0 12px 30px rgba(25, 55, 89, .12) !important; }
+.auth-card .text-gradient-animated { color: #172b4d !important; background: none !important; -webkit-text-fill-color: #172b4d !important; animation: none; }
+.auth-card [style*="background: 'rgba(15, 23, 42"] { background: #f4f7fa !important; border-color: #d8e1ec !important; }
+.auth-card [style*="background: 'rgba(11, 17, 34"] { background: #fff !important; }
+.auth-card [style*="color: '#ffffff'"], .auth-card [style*="color: '#fff'"] { color: #172b4d !important; }
+.auth-card .shimmer-button::after { display: none; }
+
+/* Public verification reads like an official certificate, not a developer screen. */
+.verification-page { min-height: calc(100vh - 94px) !important; background: #f3f6fa !important; color: #172b4d !important; border-radius: 12px; }
+.verification-card { background: #fff !important; border: 1px solid #cbd9e7 !important; border-radius: 10px !important; box-shadow: 0 10px 24px rgba(25, 55, 89, .1) !important; }
+.verification-card [style*="background: '#050811'"] { background: #f7f9fc !important; border-color: #d8e1ec !important; }
+.verification-card [style*="color: '#ffffff'"], .verification-card [style*="color: '#fff'"] { color: #172b4d !important; }
+
+/* Judge and settings receive the same calm administrative treatment. */
+.judge-page { padding-top: 4px; }.judge-banner { background: #fff !important; border-color: #cbd9e7 !important; box-shadow: 0 4px 14px rgba(25, 55, 89, .08) !important; }
+.judge-banner [style*="background: '#090d16'"] { background: #f7f9fc !important; border-color: #d8e1ec !important; }.judge-banner [style*="color: '#f8fafc'"] { color: #172b4d !important; }
+.settings-page { padding-top: 4px; }.settings-page [style*="backdropFilter"] { backdrop-filter: none !important; }.settings-page [style*="color: '#ffffff'"] { color: #172b4d !important; }
+
+@media (max-width: 760px) { .app-main { padding: 16px 12px 32px; }.auth-page, .verification-page { min-height: calc(100vh - 86px) !important; padding: 14px !important; }.auth-card, .verification-card { padding: 22px 18px !important; }.portal-content [style*="gridTemplateColumns: '1fr 1fr'"] { grid-template-columns: 1fr !important; } }

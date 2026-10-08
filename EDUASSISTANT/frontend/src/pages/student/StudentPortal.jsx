@@ -218,7 +218,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="portal-content portal-content--student" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {toastMessage && (
         <div style={{
           background: toastMessage.type === 'success' ? 'rgba(5, 150, 105, 0.15)' : 'rgba(225, 29, 72, 0.15)',

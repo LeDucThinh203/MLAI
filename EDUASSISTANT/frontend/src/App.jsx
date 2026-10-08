@@ -32,10 +32,10 @@ function MainApp() {
   }, [user]);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%', background: 'transparent' }}>
+    <div className="app-shell">
       <AppHeader activeTab={activeTab} setActiveTab={setActiveTab} onOpen2FAModal={() => setShow2FAModal(true)} />
       
-      <main style={{ flex: 1, width: '100%', maxWidth: '100%', margin: '0', padding: '16px 24px', boxSizing: 'border-box' }}>
+      <main className="app-main">
         <Routes>
           <Route path="/login" element={<AuthPage />} />
           <Route path="/verify" element={<PublicVerificationPage />} />

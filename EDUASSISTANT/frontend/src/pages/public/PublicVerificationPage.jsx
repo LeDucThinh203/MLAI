@@ -32,7 +32,7 @@ export const PublicVerificationPage = () => {
   }, [caseId]);
 
   return (
-    <div style={{
+    <div className="verification-page" style={{
       minHeight: '100vh',
       background: 'radial-gradient(ellipse at top, #0f172a 0%, #020617 100%)',
       color: '#ffffff',
@@ -43,7 +43,7 @@ export const PublicVerificationPage = () => {
       padding: '24px',
       boxSizing: 'border-box'
     }}>
-      <div style={{
+      <div className="verification-card" style={{
         maxWidth: '680px',
         width: '100%',
         background: '#090e1a',

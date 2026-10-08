@@ -165,7 +165,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
   };
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', paddingBottom: '60px' }}>
+    <div className="settings-page" style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', paddingBottom: '60px' }}>
       
       {/* Top Banner Header */}
       <div style={{

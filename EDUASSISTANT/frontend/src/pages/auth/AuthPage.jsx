@@ -94,7 +94,7 @@ const AuthPage = () => {
   };
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       position: 'relative',
       minHeight: 'calc(100vh - 40px)',
       display: 'flex',
@@ -150,7 +150,7 @@ const AuthPage = () => {
 
       {/* 2. AUTHENTICATION CONTAINER CARD */}
       <div 
-        className="auth-card-animated"
+        className="auth-card-animated auth-card"
         style={{
           position: 'relative',
           zIndex: 1,
