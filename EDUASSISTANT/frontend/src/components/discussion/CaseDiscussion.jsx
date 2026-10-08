@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { MessageCircle, RefreshCw, Send } from 'lucide-react';
 import { API_BASE, SERVER_BASE } from '../../api/client';
@@ -8,6 +8,7 @@ export const CaseDiscussion = ({ caseId, token }) => {
   const [inputContent, setInputContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
 
   const fetchComments = async () => {
     if (!caseId || !token) return;
@@ -54,8 +55,9 @@ export const CaseDiscussion = ({ caseId, token }) => {
 
   const handleSendComment = async (e) => {
     e.preventDefault();
-    if (!inputContent.trim() || sending) return;
+    if (!inputContent.trim() || sendingRef.current) return;
 
+    sendingRef.current = true;
     setSending(true);
     try {
       const res = await axios.post(`${API_BASE}/cases/${caseId}/comments`, {
@@ -66,12 +68,17 @@ export const CaseDiscussion = ({ caseId, token }) => {
 
       const newComment = res.data?.data?.comment || res.data?.data;
       if (res.data?.success && newComment?.id) {
-        setComments(prev => [...prev, newComment]);
+        setComments((previous) => (
+          previous.some((comment) => comment.id === newComment.id)
+            ? previous
+            : [...previous, newComment]
+        ));
         setInputContent('');
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi gửi bình luận!');
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   };
