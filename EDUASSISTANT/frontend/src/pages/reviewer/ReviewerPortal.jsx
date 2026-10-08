@@ -339,7 +339,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   return (
     <div className="portal-content portal-content--reviewer" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {activeTab === 'reviewer_queue' && (
-        <div style={{
+        <div className={`reviewer-workspace ${selectedCase ? 'reviewer-workspace--detail' : ''}`} style={{
           display: 'grid',
           gridTemplateColumns: selectedCase ? '380px 1.4fr 1.1fr' : '1fr',
           gap: '20px',
@@ -347,7 +347,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
           width: '100%'
         }}>
           {/* CỘT 1: HÀNG ĐỢI THẨM ĐỊNH & BỘ TÌM KIẾM */}
-          <div className="card-panel" style={{ padding: '20px' }}>
+          <div className="card-panel reviewer-queue-panel" style={{ padding: '20px' }}>
             {/* Header hàng đợi */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
               <div>
@@ -809,7 +809,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                   <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-                    <MessageSquare size={16} /> Quyết Định Thẩm Định Của Cán Bộ (Human Review)
+                    <MessageSquare size={16} /> Quyết định của cán bộ thẩm định
                   </h4>
                   {user && (
                     <span style={{ fontSize: '0.72rem', color: '#93c5fd', background: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
@@ -930,7 +930,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       gap: '5px'
                     }}
                   >
-                    <Shield size={14} /> Ghi Đè (Override)
+                    <Shield size={14} /> Duyệt theo quyết định cán bộ
                   </button>
 
                   <button
@@ -952,7 +952,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       gap: '4px'
                     }}
                   >
-                    <StopCircle size={14} /> Dừng Xử Lý (Stop)
+                    <StopCircle size={14} /> Tạm dừng xử lý
                   </button>
                 </div>
 
@@ -1139,7 +1139,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               </div>
 
               <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                Xem trước tài liệu minh chứng và kết quả tối ưu nén ảnh Sharp:
+                Xem trước các tài liệu sinh viên đã đính kèm:
               </p>
 
               {/* Danh sách minh chứng */}

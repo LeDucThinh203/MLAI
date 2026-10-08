@@ -549,6 +549,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border-radius: 14px !important;
   box-shadow: 0 12px 30px rgba(25, 55, 89, .12) !important;
 }
+.reviewer-workspace--detail { grid-template-columns: 360px minmax(520px, 1.35fr) minmax(300px, .82fr) !important; gap: 18px !important; }
+.reviewer-workspace > .card-panel { min-width: 0; }
+.reviewer-queue-panel { align-self: start; position: sticky; top: 12px; }
 .reviewer-case-detail__header {
   padding: 4px 4px 16px 16px;
   border-bottom: 1px solid #d8e4ef;
@@ -602,4 +605,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .reviewer-case-detail__summary { grid-template-columns: 1fr !important; }
   .reviewer-case-detail__summary > div + div { border-left: 0; border-top: 1px solid #d5e2ef; }
   .reviewer-case-detail__header { padding-left: 12px; }
+}
+
+@media (max-width: 1220px) {
+  .reviewer-workspace--detail { grid-template-columns: 340px minmax(0, 1fr) !important; }
+  .reviewer-workspace > .reviewer-evidence-panel { grid-column: 2; }
+}
+@media (max-width: 900px) {
+  .reviewer-workspace--detail { grid-template-columns: 1fr !important; }
+  .reviewer-workspace > .reviewer-evidence-panel { grid-column: auto; }
+  .reviewer-queue-panel { position: static; }
 }
