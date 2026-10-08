@@ -17,7 +17,8 @@ export const CaseDiscussion = ({ caseId, token }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data?.success) {
-        setComments(res.data.data.comments || []);
+        const commentList = res.data?.data?.comments || res.data?.data || [];
+        setComments(Array.isArray(commentList) ? commentList : []);
       }
     } catch {} finally {
       setLoading(false);
