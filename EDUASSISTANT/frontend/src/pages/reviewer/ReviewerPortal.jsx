@@ -60,6 +60,28 @@ const ReviewerPortal = ({ activeTab }) => {
     if (token) fetchReviewerData();
   }, [token]);
 
+  useEffect(() => {
+    if (!token) return undefined;
+    const socketUrl = `${SERVER_BASE.replace(/^http/, 'ws')}/ws/cases?token=${encodeURIComponent(token)}`;
+    const socket = new WebSocket(socketUrl);
+
+    socket.onmessage = (message) => {
+      try {
+        const event = JSON.parse(message.data);
+        if (!event.case || !['case_created', 'case_updated'].includes(event.type)) return;
+        setAllCases(current => {
+          const exists = current.some(item => item.id === event.case.id);
+          if (event.type === 'case_created' && !exists) return [event.case, ...current];
+          return current.map(item => item.id === event.case.id ? event.case : item);
+        });
+        setSelectedCase(current => current?.id === event.case.id ? event.case : current);
+      } catch (error) {
+        console.warn('Không thể xử lý cập nhật hồ sơ trực tiếp:', error);
+      }
+    };
+    return () => socket.close();
+  }, [token]);
+
   const handleReRouteCase = async (newDept) => {
     if (!newDept || !selectedCase) return;
     setReRouting(true);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Bell, CheckCheck } from 'lucide-react';
-import { API_BASE } from '../../api/client';
+import { API_BASE, SERVER_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 
 export const NotificationBell = () => {
@@ -20,16 +20,26 @@ export const NotificationBell = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data?.success) {
-        setNotifications(res.data.data.notifications || []);
-        setUnreadCount(res.data.data.unreadCount || 0);
+        const items = res.data.data?.notifications || res.data.data || [];
+        setNotifications(items);
+        setUnreadCount(items.filter(item => !item.isRead).length);
       }
     } catch {}
   };
 
   useEffect(() => {
     fetchNotifs();
-    const interval = setInterval(fetchNotifs, 10000); // Polling real-time mỗi 10s
-    return () => clearInterval(interval);
+    if (!token) return undefined;
+    const socket = new WebSocket(`${SERVER_BASE.replace(/^http/, 'ws')}/ws/cases?token=${encodeURIComponent(token)}`);
+    socket.onmessage = (message) => {
+      try {
+        const event = JSON.parse(message.data);
+        if (event.type !== 'notification_created' || !event.notification) return;
+        setNotifications(current => [event.notification, ...current]);
+        setUnreadCount(current => current + 1);
+      } catch { /* Ignore malformed realtime payloads. */ }
+    };
+    return () => socket.close();
   }, [token]);
 
   // Tự động tính toán vị trí để popup không bao giờ bị khuất/tràn khỏi mép màn hình

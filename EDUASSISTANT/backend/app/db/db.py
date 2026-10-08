@@ -26,6 +26,7 @@ import secrets
 import bcrypt
 from datetime import datetime
 from app.db.database import run_query, get_one, get_all
+from app.realtime import case_event_hub
 
 DEFAULT_AUDIT_PAGE_SIZE = 10
 MIN_AUDIT_PAGE_SIZE = 5
@@ -580,6 +581,11 @@ class DatabaseService:
                 'caseId': target_case['id']
             })
 
+        event = {'type': 'case_updated', 'case': updated_case}
+        await case_event_hub.broadcast(event, roles={'REVIEWER', 'ADMIN'})
+        if target_case.get('studentId'):
+            await case_event_hub.broadcast(event, user_ids={target_case['studentId']})
+
         return updated_case
 
     # ================= VERIFICATION =================
@@ -707,7 +713,7 @@ class DatabaseService:
             data.get('caseId'),
             now_iso
         ))
-        return {
+        notification = {
             'id': notif_id,
             'userId': data['userId'],
             'title': data['title'],
@@ -717,6 +723,8 @@ class DatabaseService:
             'isRead': False,
             'createdAt': now_iso
         }
+        await case_event_hub.broadcast({'type': 'notification_created', 'notification': notification}, user_ids={data['userId']})
+        return notification
 
     @staticmethod
     async def mark_notification_as_read(notif_id: str, user_id: str):

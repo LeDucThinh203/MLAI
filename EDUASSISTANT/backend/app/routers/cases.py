@@ -18,7 +18,7 @@ from app.services.report_service import (
 from app.core.responses import api_response
 from app.core.dependencies import get_current_user, require_roles
 from app.config import JWT_SECRET
-from app.realtime import comment_hub
+from app.realtime import comment_hub, case_event_hub
 from app.schemas.cases import (
     CreateCaseRequest,
     ReviewCaseRequest,
@@ -59,6 +59,26 @@ async def comment_websocket(
             await websocket.receive_text()
     except WebSocketDisconnect:
         comment_hub.disconnect(case_id, websocket)
+
+
+@router.websocket("/ws/cases")
+async def case_events_websocket(websocket: WebSocket, token: str = Query(...)):
+    """Push new and updated cases to authenticated reviewer/admin queues."""
+    try:
+        identity = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        user = await db_service.get_user_by_id(identity.get("id"))
+        if not user:
+            await websocket.close(code=1008)
+            return
+    except Exception:
+        await websocket.close(code=1008)
+        return
+    await case_event_hub.connect(websocket, {'id': user['id'], 'role': user['role']})
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        case_event_hub.disconnect(websocket)
 
 
 @router.get("/api/cases/my-cases")
@@ -145,6 +165,7 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
         }
 
     created = await db_service.create_case(case_dict, user)
+    await case_event_hub.broadcast({'type': 'case_created', 'case': created}, roles={'REVIEWER', 'ADMIN'})
     return api_response(201, True, 'Tạo hồ sơ học vụ thành công.', {'case': created, **(created or {})})
 
 

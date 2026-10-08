@@ -4,7 +4,7 @@ import {
   PlusCircle, RefreshCw, Paperclip, UploadCloud, Sparkles,
   CheckCircle2, AlertTriangle, Printer, Send, Building2, AlertCircle, QrCode
 } from 'lucide-react';
-import { API_BASE } from '../../api/client';
+import { API_BASE, SERVER_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { renderSlaBadge } from '../../utils/formatters';
 import CaseDiscussion from '../../components/discussion/CaseDiscussion';
@@ -50,6 +50,19 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
   useEffect(() => {
     if (token) fetchStudentData();
   }, [token]);
+
+  useEffect(() => {
+    if (!token) return undefined;
+    const socket = new WebSocket(`${SERVER_BASE.replace(/^http/, 'ws')}/ws/cases?token=${encodeURIComponent(token)}`);
+    socket.onmessage = (message) => {
+      try {
+        const event = JSON.parse(message.data);
+        if (event.type !== 'case_updated' || event.case?.studentId !== user?.id) return;
+        setMyCases(current => current.map(item => item.id === event.case.id ? event.case : item));
+      } catch { /* Ignore malformed realtime payloads. */ }
+    };
+    return () => socket.close();
+  }, [token, user?.id]);
 
   const handleOcrUpload = async (e) => {
     const file = e.target.files[0];
