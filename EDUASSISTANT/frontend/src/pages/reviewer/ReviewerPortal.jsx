@@ -13,6 +13,7 @@ import { renderSlaBadge } from '../../utils/formatters';
 import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const ReviewerPortal = ({ activeTab }) => {
   const { token, user } = useAuth();
@@ -24,6 +25,7 @@ const ReviewerPortal = ({ activeTab }) => {
   const [escalationFilter, setEscalationFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCase, setSelectedCase] = useState(null);
+  const [casePage, setCasePage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [reEvaluating, setReEvaluating] = useState(false);
   const [reRouting, setReRouting] = useState(false);
@@ -207,6 +209,12 @@ const ReviewerPortal = ({ activeTab }) => {
     if (!aOverdue && bOverdue) return 1;
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
+  const casePageSize = 10;
+  const caseTotalPages = Math.max(1, Math.ceil(filteredCases.length / casePageSize));
+  const safeCasePage = Math.min(casePage, caseTotalPages);
+  const pagedCases = filteredCases.slice((safeCasePage - 1) * casePageSize, safeCasePage * casePageSize);
+
+  useEffect(() => { setCasePage(1); }, [statusFilter, categoryFilter, departmentFilter, escalationFilter, searchTerm]);
 
   const renderStatus = (status) => {
     switch (status) {
@@ -446,7 +454,7 @@ const ReviewerPortal = ({ activeTab }) => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '680px', overflowY: 'auto' }}>
-              {filteredCases.map(c => {
+              {pagedCases.map(c => {
                 const isSelected = selectedCase?.id === c.id;
                 return (
                   <div
@@ -517,6 +525,7 @@ const ReviewerPortal = ({ activeTab }) => {
                   </p>
                 </div>
               )}
+              <PaginationControls page={safeCasePage} totalItems={filteredCases.length} pageSize={casePageSize} onPageChange={setCasePage} label="hồ sơ" />
             </div>
           </div>
 

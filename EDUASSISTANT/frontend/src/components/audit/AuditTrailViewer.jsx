@@ -23,7 +23,7 @@ const AuditTrailViewer = ({
   const [groupByDay, setGroupByDay] = useState(true);
   const [serverAudits, setServerAudits] = useState(audits);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [pagination, setPagination] = useState({ total: audits.length, totalPages: 1 });
   const [pageLoading, setPageLoading] = useState(false);
 
@@ -562,6 +562,7 @@ const AuditTrailViewer = ({
           Hiển thị
           <select value={pageSize} onChange={event => setPageSize(Number(event.target.value))} disabled={pageLoading}>
             <option value={10}>10</option>
+            <option value={15}>15</option>
             <option value={25}>25</option>
             <option value={50}>50</option>
           </select>

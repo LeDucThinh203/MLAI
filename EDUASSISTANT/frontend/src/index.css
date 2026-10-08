@@ -534,4 +534,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .audit-pagination select { min-height: 32px; padding: 4px 8px; border: 1px solid #bccbdd; border-radius: 6px; background: #fff; color: #172b4d; }
 .audit-pagination > div { display: flex; gap: 6px; }
 .audit-pagination .btn-secondary { min-width: 54px; justify-content: center; padding: 6px 10px; }
+.list-pagination { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 12px; color: #52677f; font-size: .78rem; }
+.list-pagination > div { display: flex; gap: 6px; }.list-pagination .btn-secondary { min-width: 50px; justify-content: center; padding: 5px 8px; }
 @media (max-width: 640px) { .audit-pagination { align-items: flex-start; flex-direction: column; }.audit-pagination > div { width: 100%; }.audit-pagination .btn-secondary { flex: 1; } }

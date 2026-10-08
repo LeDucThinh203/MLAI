@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, Response, Query
 
-from app.db.db import db_service
+from app.db.db import db_service, DEFAULT_AUDIT_PAGE_SIZE, MIN_AUDIT_PAGE_SIZE, MAX_AUDIT_PAGE_SIZE
 from app.services.report_service import generate_audits_csv
 from app.core.responses import api_response
 from app.core.dependencies import get_current_user, require_roles
@@ -19,7 +19,7 @@ async def get_audits(
     dateFrom: Optional[str] = None,
     search: Optional[str] = Query(None, max_length=120),
     page: int = Query(1, ge=1),
-    pageSize: int = Query(25, ge=10, le=100),
+    pageSize: int = Query(DEFAULT_AUDIT_PAGE_SIZE, ge=MIN_AUDIT_PAGE_SIZE, le=MAX_AUDIT_PAGE_SIZE),
     user: dict = Depends(get_current_user)
 ):
     filter_dict = {}

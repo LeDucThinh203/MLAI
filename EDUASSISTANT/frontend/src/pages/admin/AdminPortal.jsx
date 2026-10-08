@@ -10,11 +10,13 @@ import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import ReviewerPortal from '../reviewer/ReviewerPortal';
 import PageSkeleton from '../../components/common/PageSkeleton';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const AdminPortal = ({ activeTab }) => {
   const { token } = useAuth();
   const [users, setUsers] = useState([]);
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [userPage, setUserPage] = useState(1);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adminMessage, setAdminMessage] = useState(null);
@@ -106,6 +108,12 @@ const AdminPortal = ({ activeTab }) => {
       u.role?.toLowerCase().includes(q)
     );
   });
+  const userPageSize = 10;
+  const userTotalPages = Math.max(1, Math.ceil(filteredUsers.length / userPageSize));
+  const safeUserPage = Math.min(userPage, userTotalPages);
+  const pagedUsers = filteredUsers.slice((safeUserPage - 1) * userPageSize, safeUserPage * userPageSize);
+
+  useEffect(() => { setUserPage(1); }, [userSearchTerm]);
 
   if (loading && !stats && users.length === 0) {
     return <PageSkeleton variant="dashboard" label="Đang tải dữ liệu quản trị" />;
@@ -678,7 +686,7 @@ const AdminPortal = ({ activeTab }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map(u => (
+                  {pagedUsers.map(u => (
                     <tr key={u.id} style={{ borderBottom: '1px solid #1e293b' }}>
                       <td style={{ padding: '10px 8px', fontWeight: 600 }}>{u.fullName}</td>
                       <td style={{ padding: '10px 8px' }}>
@@ -720,6 +728,7 @@ const AdminPortal = ({ activeTab }) => {
                 </tbody>
               </table>
             </div>
+            <PaginationControls page={safeUserPage} totalItems={filteredUsers.length} pageSize={userPageSize} onPageChange={setUserPage} label="tài khoản" />
           </div>
 
         </div>

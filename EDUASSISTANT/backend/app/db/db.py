@@ -27,6 +27,10 @@ import bcrypt
 from datetime import datetime
 from app.db.database import run_query, get_one, get_all
 
+DEFAULT_AUDIT_PAGE_SIZE = 10
+MIN_AUDIT_PAGE_SIZE = 5
+MAX_AUDIT_PAGE_SIZE = 100
+
 DEPARTMENT_MAP = {
     'TUITION_DISCOUNT': 'Phòng Kế hoạch - Tài chính',
     'ACADEMIC_SCHOLARSHIP': 'Phòng Công tác Sinh viên',
@@ -770,7 +774,7 @@ class DatabaseService:
         return [format_audit_row(r) for r in rows]
 
     @staticmethod
-    async def get_audits_page(filter_dict: dict = None, page: int = 1, page_size: int = 25):
+    async def get_audits_page(filter_dict: dict = None, page: int = 1, page_size: int = DEFAULT_AUDIT_PAGE_SIZE):
         """Return one audit page and its total without loading the full audit trail."""
         filter_dict = filter_dict or {}
         where = ' WHERE 1=1'
@@ -800,9 +804,12 @@ class DatabaseService:
             params.extend([term] * 5)
 
         total = (get_one('SELECT COUNT(*) AS count FROM audits' + where, tuple(params)) or {}).get('count', 0)
-        safe_page, safe_size = max(1, int(page)), min(100, max(10, int(page_size)))
+        safe_page = max(1, int(page))
+        safe_size = min(MAX_AUDIT_PAGE_SIZE, max(MIN_AUDIT_PAGE_SIZE, int(page_size)))
+        total_pages = max(1, (total + safe_size - 1) // safe_size)
+        safe_page = min(safe_page, total_pages)
         rows = get_all('SELECT * FROM audits' + where + ' ORDER BY timestamp DESC LIMIT ? OFFSET ?', tuple(params + [safe_size, (safe_page - 1) * safe_size]))
-        return {'audits': [format_audit_row(row) for row in rows], 'total': total, 'page': safe_page, 'pageSize': safe_size, 'totalPages': max(1, (total + safe_size - 1) // safe_size)}
+        return {'audits': [format_audit_row(row) for row in rows], 'total': total, 'page': safe_page, 'pageSize': safe_size, 'totalPages': total_pages, 'hasPrevious': safe_page > 1, 'hasNext': safe_page < total_pages}
 
     @staticmethod
     async def log_audit(data: dict):
