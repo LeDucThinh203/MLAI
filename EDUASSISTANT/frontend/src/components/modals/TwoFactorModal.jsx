@@ -269,7 +269,7 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
                 <div style={{ padding: '30px', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   <RefreshCw size={18} className="animate-spin" /> Đang tạo mã QR...
                 </div>
-              ) : qrCodeData?.qrCodeDataUrl ? (
+              ) : (qrCodeData?.qrCodeUrl || qrCodeData?.qrCodeDataUrl) ? (
                 <div style={{
                   background: '#ffffff',
                   padding: '10px',
@@ -278,7 +278,7 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
                   margin: '0 auto 12px auto',
                   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
                 }}>
-                  <img src={qrCodeData.qrCodeDataUrl} alt="2FA QR Code" style={{ width: '160px', height: '160px', display: 'block' }} />
+                  <img src={qrCodeData.qrCodeUrl || qrCodeData.qrCodeDataUrl} alt="Mã QR thiết lập xác thực 2 bước" style={{ width: '160px', height: '160px', display: 'block' }} />
                 </div>
               ) : null}
 
