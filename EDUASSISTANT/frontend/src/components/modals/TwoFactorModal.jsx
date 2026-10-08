@@ -3,6 +3,7 @@ import {
   X, AlertTriangle, CheckCircle2, Copy, RefreshCw, ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { safeQrImageUrl } from '../../utils/security';
 
 const TwoFactorModal = ({ isOpen, onClose, user }) => {
   const { generate2FA, enable2FA, disable2FA } = useAuth();
@@ -271,7 +272,7 @@ const TwoFactorModal = ({ isOpen, onClose, user }) => {
                   margin: '0 auto 12px auto',
                   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
                 }}>
-                  <img src={qrCodeData.qrCodeUrl || qrCodeData.qrCodeDataUrl} alt="Mã QR thiết lập xác thực 2 bước" style={{ width: '160px', height: '160px', display: 'block' }} />
+                  <img src={safeQrImageUrl(qrCodeData.qrCodeUrl || qrCodeData.qrCodeDataUrl)} alt="Mã QR thiết lập xác thực 2 bước" style={{ width: '160px', height: '160px', display: 'block' }} />
                 </div>
               ) : null}
 

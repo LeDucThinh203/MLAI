@@ -12,6 +12,7 @@ import ReviewerPortal from '../reviewer/ReviewerPortal';
 import PageSkeleton from '../../components/common/PageSkeleton';
 import PaginationControls from '../../components/common/PaginationControls';
 import AnalyticsCharts from '../../components/admin/AnalyticsCharts';
+import { openSafeWindow } from '../../utils/security';
 
 const CATEGORY_LABELS = {
   TUITION_DISCOUNT: 'Miễn, giảm học phí',
@@ -159,7 +160,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
-                onClick={() => window.open(`${API_BASE}/reports/export-csv?token=${token}`, '_blank')}
+                onClick={() => openSafeWindow(`${API_BASE}/reports/export-csv?token=${encodeURIComponent(token)}`)}
                 className="btn-secondary"
                 style={{ padding: '8px 14px', fontSize: '0.82rem', background: 'rgba(5, 150, 105, 0.15)', color: '#34d399', border: '1px solid rgba(5, 150, 105, 0.3)' }}
                 title="Xuất dữ liệu toàn bộ hồ sơ ra file CSV / Excel UTF-8 BOM"
@@ -167,7 +168,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 <Download size={14} /> Xuất Bảng CSV
               </button>
               <button
-                onClick={() => window.open(`${API_BASE}/reports/export-cases-html?token=${token}`, '_blank')}
+                onClick={() => openSafeWindow(`${API_BASE}/reports/export-cases-html?token=${encodeURIComponent(token)}`)}
                 className="btn-primary shimmer-button"
                 style={{ background: 'linear-gradient(135deg, #059669, #10b981)', padding: '8px 14px', fontSize: '0.82rem' }}
                 title="Xuất và in Báo Cáo Bảng Tổng Hợp dạng PDF"
@@ -678,7 +679,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 </div>
 
                 <button
-                  onClick={() => window.open(`${API_BASE}/admin/users/export-csv?token=${token}`, '_blank')}
+                  onClick={() => openSafeWindow(`${API_BASE}/admin/users/export-csv?token=${encodeURIComponent(token)}`)}
                   className="btn-secondary"
                   style={{ padding: '6px 12px', fontSize: '0.78rem', height: '34px', background: 'rgba(5, 150, 105, 0.15)', color: '#34d399', border: '1px solid rgba(5, 150, 105, 0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}
                   title="Xuất bảng người dùng ra file CSV"

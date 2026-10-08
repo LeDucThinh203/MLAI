@@ -5,6 +5,7 @@ import { BarChart3, FileText, GraduationCap, History, Inbox, LogOut, PlusCircle,
 import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import NotificationBell from '../notifications/NotificationBell';
+import { safeImageUrl } from '../../utils/security';
 
 const PORTAL = {
   STUDENT: { title: 'Cổng sinh viên', subtitle: 'Dịch vụ học vụ trực tuyến', icon: GraduationCap, tabs: [['student_submit', 'Nộp hồ sơ', PlusCircle], ['student_cases', 'Hồ sơ của tôi', FileText], ['student_history', 'Lịch sử', History]] },
@@ -52,7 +53,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
         {user && <div className="header-actions">
           {user.role !== 'STUDENT' && <label className="ai-status" title="Cách trợ lý AI hỗ trợ xử lý"><span className={`status-dot status-dot--${aiMode}`} /><span>Trợ lý AI</span><select value={aiMode} onChange={e => changeAiMode(e.target.value)} aria-label="Cách trợ lý AI hỗ trợ"><option value="mock">Dữ liệu minh họa</option><option value="cache">Dùng kết quả đã có</option><option value="live">Xử lý trực tiếp</option></select></label>}
           <NotificationBell onOpenCase={onOpenCase} />
-          <button className="profile-summary" onClick={() => setActiveTab('account_settings')} title="Mở thông tin tài khoản"><img src={user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} alt="" /><span><strong>{user.fullName || user.username}</strong><small>{roleLabel}</small></span></button>
+          <button className="profile-summary" onClick={() => setActiveTab('account_settings')} title="Mở thông tin tài khoản"><img src={safeImageUrl(user.avatar, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150')} alt="" /><span><strong>{user.fullName || user.username}</strong><small>{roleLabel}</small></span></button>
           <button className="header-icon-button" onClick={() => setActiveTab('account_settings')} title="Cài đặt tài khoản"><Settings size={17} /><span>Cài đặt</span></button>
           <button className={`two-factor-button ${user.twoFactorEnabled ? 'is-enabled' : ''}`} onClick={onOpen2FAModal}><ShieldAlert size={16} /><span>{user.twoFactorEnabled ? '2FA đã bật' : 'Bật 2FA'}</span></button>
           <button className="logout-button" onClick={logout}><LogOut size={16} /><span>Đăng xuất</span></button>

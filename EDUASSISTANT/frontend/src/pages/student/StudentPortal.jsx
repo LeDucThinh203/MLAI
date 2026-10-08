@@ -10,6 +10,7 @@ import { renderSlaBadge } from '../../utils/formatters';
 import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
+import { openSafeWindow, safeImageUrl } from '../../utils/security';
 
 const REVIEW_RESULT_LABELS = {
   RULE_STANDARD_VERIFIED: 'Thông tin hồ sơ đã được kiểm tra',
@@ -567,7 +568,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <img
-                            src={c.reviewResult.reviewerAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'}
+                            src={safeImageUrl(c.reviewResult.reviewerAvatar, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150')}
                             alt="Reviewer"
                             style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${c.status === 'APPROVED' ? '#34d399' : '#f87171'}` }}
                           />
@@ -585,7 +586,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                         {c.status === 'APPROVED' && (
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button
-                              onClick={() => window.open(`${API_BASE}/cases/${c.id}/export-decision?token=${token}`, '_blank')}
+                              onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(c.id)}/export-decision?token=${encodeURIComponent(token)}`)}
                               className="btn-primary shimmer-button"
                               style={{ background: 'linear-gradient(135deg, #059669, #10b981)', fontSize: '0.78rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                             >
@@ -593,7 +594,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                               <span>In / Lưu Quyết Định PDF</span>
                             </button>
                             <button
-                              onClick={() => window.open(`/verify?caseId=${c.id}`, '_blank')}
+                              onClick={() => openSafeWindow(`/verify?caseId=${encodeURIComponent(c.id)}`)}
                               className="btn-secondary"
                               style={{ fontSize: '0.78rem', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '4px', borderColor: '#38bdf8', color: '#38bdf8' }}
                               title="Xem trang chứng thực công khai QR code"

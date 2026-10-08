@@ -4,6 +4,7 @@ import {
   Clock, User, History, CalendarDays
 } from 'lucide-react';
 import { API_BASE } from '../../api/client';
+import { openSafeWindow } from '../../utils/security';
 
 const AuditTrailViewer = ({
   audits = [],
@@ -170,7 +171,7 @@ const AuditTrailViewer = ({
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {!isStudentView && token && (
             <button
-              onClick={() => window.open(`${API_BASE}/audits/export-csv?token=${token}${getExportDateParam()}`, '_blank')}
+              onClick={() => openSafeWindow(`${API_BASE}/audits/export-csv?token=${encodeURIComponent(token)}${getExportDateParam()}`)}
               className="btn-secondary"
               style={{
                 padding: '7px 14px',

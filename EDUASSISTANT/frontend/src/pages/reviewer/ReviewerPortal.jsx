@@ -14,6 +14,7 @@ import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
 import PaginationControls from '../../components/common/PaginationControls';
+import { openSafeWindow, safeImageUrl } from '../../utils/security';
 
 const CATEGORY_LABELS = {
   TUITION_DISCOUNT: 'Miễn, giảm học phí',
@@ -367,7 +368,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     if (statusFilter !== 'ALL') q.append('status', statusFilter);
                     if (categoryFilter !== 'ALL') q.append('category', categoryFilter);
                     q.append('token', token);
-                    window.open(`${API_BASE}/reports/export-csv?${q.toString()}`, '_blank');
+                    openSafeWindow(`${API_BASE}/reports/export-csv?${q.toString()}`);
                   }}
                   className="btn-secondary"
                   style={{ padding: '5px 8px', fontSize: '0.74rem', background: 'rgba(5, 150, 105, 0.15)', border: '1px solid rgba(5, 150, 105, 0.3)', color: '#34d399' }}
@@ -382,7 +383,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     if (statusFilter !== 'ALL') q.append('status', statusFilter);
                     if (categoryFilter !== 'ALL') q.append('category', categoryFilter);
                     q.append('token', token);
-                    window.open(`${API_BASE}/reports/export-cases-html?${q.toString()}`, '_blank');
+                    openSafeWindow(`${API_BASE}/reports/export-cases-html?${q.toString()}`);
                   }}
                   className="btn-primary shimmer-button"
                   style={{ padding: '5px 8px', fontSize: '0.74rem', background: 'linear-gradient(135deg, #2563eb, #3b82f6)' }}
@@ -609,7 +610,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     <span>{reEvaluating ? 'Đang đánh giá...' : 'Đánh giá lại'}</span>
                   </button>
                   <button
-                    onClick={() => window.open(`${API_BASE}/cases/${selectedCase.id}/export-decision?token=${token}`, '_blank')}
+                    onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(selectedCase.id)}/export-decision?token=${encodeURIComponent(token)}`)}
                     className="btn-primary shimmer-button"
                     style={{ padding: '4px 10px', fontSize: '0.75rem', background: 'linear-gradient(135deg, #059669, #10b981)' }}
                     title="Xem bản in Quyết định học vụ có mã QR và chữ ký điện tử"
@@ -1098,14 +1099,14 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
-                      onClick={() => window.open(`${API_BASE}/cases/${selectedCase.id}/export-decision?token=${token}`, '_blank')}
+                      onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(selectedCase.id)}/export-decision?token=${encodeURIComponent(token)}`)}
                       className="btn-primary shimmer-button"
                       style={{ background: 'linear-gradient(135deg, #059669, #10b981)', fontSize: '0.76rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
                       <Printer size={13} /> In / Lưu Quyết Định PDF
                     </button>
                     <button
-                      onClick={() => window.open(`/verify?caseId=${selectedCase.id}`, '_blank')}
+                      onClick={() => openSafeWindow(`/verify?caseId=${encodeURIComponent(selectedCase.id)}`)}
                       className="btn-secondary"
                       style={{ fontSize: '0.76rem', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '4px', borderColor: '#38bdf8', color: '#38bdf8' }}
                     >
@@ -1190,7 +1191,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                             title="Bấm để phóng to xem chi tiết minh chứng"
                           >
                             <img
-                              src={fullUrl}
+                              src={safeImageUrl(fullUrl)}
                               alt={fileName}
                               style={{
                                 width: '100%',
@@ -1265,9 +1266,9 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                               <Eye size={13} /> Xem Trực Tiếp
                             </button>
                             <a
-                              href={fullUrl}
+                              href={safeImageUrl(fullUrl)}
                               target="_blank"
-                              rel="noreferrer"
+                              rel="noopener noreferrer"
                               className="btn-secondary"
                               style={{
                                 padding: '6px 10px',
@@ -1373,7 +1374,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
             <div style={{ padding: '16px', background: '#050811', overflow: 'auto', display: 'flex', justifyContent: 'center' }}>
               <img 
-                src={previewModalImg.url} 
+                src={safeImageUrl(previewModalImg.url)}
                 alt={previewModalImg.name}
                 style={{ maxWidth: '100%', maxHeight: '72vh', objectFit: 'contain', borderRadius: '4px' }} 
               />

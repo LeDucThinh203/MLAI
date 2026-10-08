@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import PageSkeleton from '../../components/common/PageSkeleton';
+import { safeImageUrl } from '../../utils/security';
 
 const PRESET_AVATARS = [
   { label: 'Avatar 1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' },
@@ -285,7 +286,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                 {/* Avatar Preview */}
                 <div style={{ position: 'relative', width: '84px', height: '84px', flexShrink: 0 }}>
                   <img
-                    src={avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                    src={safeImageUrl(avatar, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150')}
                     alt="Avatar Preview"
                     style={{
                       width: '84px',
@@ -351,7 +352,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                   {PRESET_AVATARS.map((item, idx) => (
                     <img
                       key={idx}
-                      src={item.url}
+                      src={safeImageUrl(item.url)}
                       alt={item.label}
                       title={item.label}
                       onClick={() => setAvatar(item.url)}
