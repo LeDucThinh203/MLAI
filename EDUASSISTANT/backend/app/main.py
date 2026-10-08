@@ -47,6 +47,8 @@ if configured_frontend.strip():
 app.add_middleware(
     CORSMiddleware,
     allow_origins=sorted(allowed_origins),
+    # Cloudflare Pages uses a unique subdomain for each preview deployment.
+    allow_origin_regex=r"https://[a-z0-9-]+\.edu-sp\.pages\.dev",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
