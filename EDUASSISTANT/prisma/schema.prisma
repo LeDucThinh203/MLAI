@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @db.VarChar(100)
+  username String @unique @db.VarChar(100)
+  password String @db.VarChar(255)
+  fullName String @map("fullname") @db.VarChar(255)
+  studentCode String? @map("studentcode") @db.VarChar(100)
+  email String? @db.VarChar(255)
+  role String @db.VarChar(50)
+  department String? @db.VarChar(255)
+  avatar String?
+  bio String?
+  twoFactorEnabled Boolean @default(false) @map("twofactorenabled")
+  twoFactorSecret String? @map("twofactorsecret") @db.VarChar(255)
+  mustChangePassword Boolean @default(false) @map("mustchangepassword")
+  createdAt String? @map("createdat") @db.VarChar(100)
+  updatedAt String? @map("updatedat") @db.VarChar(100)
+  cases Case[]
+  @@map("users")
+}
+
+model Case {
+  id String @id @db.VarChar(100)
+  studentId String @map("studentid") @db.VarChar(100)
+  studentName String @map("studentname") @db.VarChar(255)
+  title String @db.VarChar(500)
+  category String @db.VarChar(100)
+  priority String? @db.VarChar(50)
+  status String @db.VarChar(50)
+  createdAt String? @map("createdat") @db.VarChar(100)
+  updatedAt String? @map("updatedat") @db.VarChar(100)
+  student User @relation(fields: [studentId], references: [id])
+  @@map("cases")
+}

@@ -41,14 +41,5 @@ if not REFRESH_SECRET:
 
 PORT = int(os.environ.get('PORT', 3001))
 
-# Cấu hình Cơ sở dữ liệu (SQL Server & SQLite)
-DB_TYPE = os.environ.get('DB_TYPE', 'mssql').strip().lower()
-DB_SERVER = os.environ.get('DB_SERVER', 'THINH\\SQL2025').strip()
-DB_NAME = os.environ.get('DB_NAME', 'CaseFlowAI').strip()
-DB_PORT = os.environ.get('DB_PORT', '1433').strip()
-DB_TRUSTED_CONNECTION = os.environ.get('DB_TRUSTED_CONNECTION', 'yes').strip().lower() in ('yes', 'true', '1')
-DB_DRIVER = os.environ.get('DB_DRIVER', 'ODBC Driver 18 for SQL Server').strip()
-DB_TRUST_SERVER_CERTIFICATE = os.environ.get('DB_TRUST_SERVER_CERTIFICATE', 'yes').strip().lower() in ('yes', 'true', '1')
-DB_ENCRYPT = os.environ.get('DB_ENCRYPT', 'yes').strip().lower() in ('yes', 'true', '1')
-DB_USER = os.environ.get('DB_USER', '').strip()
-DB_PASSWORD = os.environ.get('DB_PASSWORD', '').strip()
+# PostgreSQL is the sole supported database engine.
+DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()

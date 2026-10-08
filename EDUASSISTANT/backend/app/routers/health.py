@@ -1,14 +1,14 @@
 from datetime import datetime
 from fastapi import APIRouter
 from app.services.ai_service import get_ai_mode
-from app.db.database import ACTIVE_ENGINE, DB_SERVER, DB_NAME
+from app.db.database import ACTIVE_ENGINE
 
 router = APIRouter(tags=["Health"])
 
 
 @router.get("/api/health")
 async def health_check():
-    db_name = f"Microsoft SQL Server 2025 ({DB_SERVER} -> [{DB_NAME}])" if ACTIVE_ENGINE == 'mssql' else "SQLite Single Source of Truth"
+    db_name = "PostgreSQL (Render)"
     return {
         'status': 'healthy',
         'server': 'EduAssistant Python Enterprise Engine',

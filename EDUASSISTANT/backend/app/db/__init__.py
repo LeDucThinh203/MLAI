@@ -1,10 +1,5 @@
 from app.db.database import (
-    get_db_path,
-    DB_PATH,
-    get_data_json_path,
-    DATA_JSON_PATH,
     get_db_connection,
-    db,
     run_query,
     get_one,
     get_all,
@@ -20,12 +15,7 @@ from app.db.session import (
 )
 
 __all__ = [
-    "get_db_path",
-    "DB_PATH",
-    "get_data_json_path",
-    "DATA_JSON_PATH",
     "get_db_connection",
-    "db",
     "run_query",
     "get_one",
     "get_all",

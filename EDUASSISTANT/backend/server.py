@@ -23,12 +23,12 @@ if workspace_dir not in sys.path:
 import uvicorn
 from app.main import app
 from app.config import PORT
-from app.db.database import ACTIVE_ENGINE, DB_SERVER, DB_NAME
+from app.db.database import ACTIVE_ENGINE
 
 __all__ = ["app"]
 
 if __name__ == "__main__":
-    db_status = f"SQL Server 2025 ({DB_SERVER} -> [{DB_NAME}])" if ACTIVE_ENGINE == 'mssql' else "SQLite Engine"
+    db_status = "Render PostgreSQL"
     print(f"""
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║             🚀 EDUASSISTANT - ENTERPRISE PYTHON ENGINE 3.0               ║

@@ -1,7 +1,7 @@
 {
   "name": "eduassistant",
   "version": "3.0.0",
-  "description": "EduAssistant - Nền tảng thẩm định hồ sơ sinh viên thông minh kết hợp AI Multimodal OCR (Gemini), Rule Engine, Microsoft SQL Server 2025 và Quy trình Ký số điện tử.",
+  "description": "EduAssistant - Nền tảng thẩm định hồ sơ sinh viên thông minh kết hợp AI Multimodal OCR (Gemini), Rule Engine, PostgreSQL và Quy trình Ký số điện tử.",
   "main": "backend/server.py",
   "scripts": {
     "start": "python backend/server.py",
@@ -11,7 +11,15 @@
     "test": "node test/run_security_suite.js",
     "test:security": "node test/run_security_suite.js"
   },
-  "keywords": ["caseflow", "ai", "gemini", "ocr", "jwt", "totp", "sqlite"],
+  "keywords": [
+    "caseflow",
+    "ai",
+    "gemini",
+    "ocr",
+    "jwt",
+    "totp",
+    "postgresql"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -26,7 +34,9 @@
     "multer": "^2.4.0",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.5",
-    "speakeasy": "^2.0.0",
-    "sqlite3": "^6.0.1"
+    "speakeasy": "^2.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^8.0.0-rc.21"
   }
 }
