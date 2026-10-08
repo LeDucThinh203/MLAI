@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { MessageCircle, RefreshCw, Send } from 'lucide-react';
-import { API_BASE } from '../../api/client';
+import { API_BASE, SERVER_BASE } from '../../api/client';
 
 export const CaseDiscussion = ({ caseId, token }) => {
   const [comments, setComments] = useState([]);
@@ -28,6 +28,29 @@ export const CaseDiscussion = ({ caseId, token }) => {
     fetchComments();
   }, [caseId, token]);
 
+  useEffect(() => {
+    if (!caseId || !token) return undefined;
+
+    const wsBase = SERVER_BASE.replace(/^http/, 'ws');
+    const socket = new WebSocket(`${wsBase}/ws/comments/${caseId}?token=${encodeURIComponent(token)}`);
+
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type !== 'comment_created' || !payload.comment?.id) return;
+        setComments((previous) => (
+          previous.some((comment) => comment.id === payload.comment.id)
+            ? previous
+            : [...previous, payload.comment]
+        ));
+      } catch {
+        // Ignore malformed realtime events; the REST refresh remains available.
+      }
+    };
+
+    return () => socket.close();
+  }, [caseId, token]);
+
   const handleSendComment = async (e) => {
     e.preventDefault();
     if (!inputContent.trim() || sending) return;
@@ -44,8 +67,6 @@ export const CaseDiscussion = ({ caseId, token }) => {
       if (res.data?.success && newComment?.id) {
         setComments(prev => [...prev, newComment]);
         setInputContent('');
-        // Reconcile with the server in case another participant commented too.
-        fetchComments();
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi gửi bình luận!');

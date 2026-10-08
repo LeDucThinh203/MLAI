@@ -1,7 +1,8 @@
 import os
 from datetime import datetime
 from typing import Optional, List, Any
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request, Response, WebSocket, WebSocketDisconnect, Query
+import jwt
 from fastapi.responses import HTMLResponse
 
 from app.db.db import db_service
@@ -16,6 +17,8 @@ from app.services.report_service import (
 )
 from app.core.responses import api_response
 from app.core.dependencies import get_current_user, require_roles
+from app.config import JWT_SECRET
+from app.realtime import comment_hub
 from app.schemas.cases import (
     CreateCaseRequest,
     ReviewCaseRequest,
@@ -26,6 +29,36 @@ from app.schemas.cases import (
 )
 
 router = APIRouter(tags=["Cases"])
+
+
+@router.websocket("/ws/comments/{case_id}")
+async def comment_websocket(
+    websocket: WebSocket,
+    case_id: str,
+    token: str = Query(...),
+):
+    """Subscribe an authenticated participant to one case's comment room."""
+    try:
+        identity = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        user = await db_service.get_user_by_id(identity.get("id"))
+        target_case = await db_service.get_case_by_id(case_id)
+        if not user or not target_case:
+            await websocket.close(code=1008)
+            return
+        if user["role"] == "STUDENT" and target_case["studentId"] != user["id"]:
+            await websocket.close(code=1008)
+            return
+    except Exception:
+        await websocket.close(code=1008)
+        return
+
+    await comment_hub.connect(case_id, websocket)
+    try:
+        while True:
+            # Keeps the connection open and permits a lightweight client ping.
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        comment_hub.disconnect(case_id, websocket)
 
 
 @router.get("/api/cases/my-cases")
@@ -397,6 +430,11 @@ async def add_case_comment(case_id: str, req: AddCommentRequest, user: dict = De
         return api_response(400, False, 'Nội dung bình luận không được để trống.', None, 'EMPTY_COMMENT')
 
     new_cmt = await db_service.add_comment(case_id, user, req.content)
+    await comment_hub.broadcast(case_id, {
+        'type': 'comment_created',
+        'caseId': case_id,
+        'comment': new_cmt,
+    })
     return api_response(201, True, 'Thêm bình luận thành công.', new_cmt)
 
 
