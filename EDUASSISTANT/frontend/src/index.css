@@ -380,3 +380,19 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .settings-page { padding-top: 4px; }.settings-page [style*="backdropFilter"] { backdrop-filter: none !important; }.settings-page [style*="color: '#ffffff'"] { color: #172b4d !important; }
 
 @media (max-width: 760px) { .app-main { padding: 16px 12px 32px; }.auth-page, .verification-page { min-height: calc(100vh - 86px) !important; padding: 14px !important; }.auth-card, .verification-card { padding: 22px 18px !important; }.portal-content [style*="gridTemplateColumns: '1fr 1fr'"] { grid-template-columns: 1fr !important; } }
+
+/* High-contrast accessibility layer. React serializes inline colours to rgb(),
+   therefore this layer deliberately targets the rendered values rather than source-code strings. */
+.app-main, .auth-page, .verification-page, .judge-page, .settings-page { color: #102a43 !important; }
+.app-main *, .auth-page *, .verification-page *, .judge-page *, .settings-page * { color: #102a43 !important; }
+.app-main [style*="rgb(15, 23, 42)"], .app-main [style*="rgb(9, 13, 22)"], .app-main [style*="rgb(10, 14, 23)"], .app-main [style*="rgb(30, 41, 59)"], .app-main [style*="rgb(5, 8, 17)"],
+.auth-page [style*="rgb(15, 23, 42)"], .auth-page [style*="rgb(11, 17, 34)"], .verification-page [style*="rgb(5, 8, 17)"], .judge-page [style*="rgb(9, 13, 22)"], .settings-page [style*="rgb(15, 23, 42)"] { background: #f8fafc !important; border-color: #cbd9e7 !important; }
+.app-main [style*="rgba(15, 23, 42"], .auth-page [style*="rgba(15, 23, 42"], .settings-page [style*="rgba(15, 23, 42"] { background: #ffffff !important; border-color: #cbd9e7 !important; }
+.app-main [style*="rgba(9, 13, 26"], .auth-page [style*="rgba(9, 13, 26"] { background: #f8fafc !important; }
+
+/* Keep action hierarchy recognisable after applying the readable text baseline. */
+.app-main .btn-primary, .app-main .btn-primary *, .auth-page .btn-primary, .auth-page .btn-primary *, .verification-page .btn-primary, .verification-page .btn-primary *, .judge-page .btn-primary, .judge-page .btn-primary *, .settings-page .btn-primary, .settings-page .btn-primary *,
+.app-main button[style*="linear-gradient"], .app-main button[style*="linear-gradient"] *, .auth-page button[style*="linear-gradient"], .auth-page button[style*="linear-gradient"] *, .judge-page button[style*="linear-gradient"], .judge-page button[style*="linear-gradient"] * { color: #ffffff !important; }
+.app-main .btn-danger, .app-main .btn-danger *, .settings-page .btn-danger, .settings-page .btn-danger * { color: #8b2432 !important; }
+.app-main .form-input, .app-main .form-input *, .auth-page .form-input, .settings-page .form-input { color: #102a43 !important; }
+.app-main [style*="color: rgb(148, 163, 184)"], .app-main [style*="color: rgb(100, 116, 139)"], .auth-page [style*="color: rgb(148, 163, 184)"], .settings-page [style*="color: rgb(148, 163, 184)"] { color: #52677f !important; }
