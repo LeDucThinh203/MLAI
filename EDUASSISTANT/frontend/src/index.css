@@ -340,10 +340,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .profile-summary { display: inline-flex; align-items: center; gap: 7px; padding: 3px 9px 3px 3px; border: 1px solid #d8e1ec; border-radius: 7px; background: #fff; color: inherit; cursor: pointer; text-align: left; }.profile-summary:hover { border-color: #9db6d1; background: #f8fbff; }.profile-summary img { width: 29px; height: 29px; border-radius: 50%; object-fit: cover; border: 2px solid #b9d0e4; }.profile-summary strong, .profile-summary small { display: block; }.profile-summary strong { font-size: .76rem; color: #233b5c; }.profile-summary small { color: #6c8097; font-size: .66rem; }
 .header-icon-button, .two-factor-button, .logout-button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px; border: 1px solid #c8d5e2; border-radius: 7px; background: #fff; color: #294866; cursor: pointer; font-size: .76rem; font-weight: 650; }.header-icon-button:hover, .two-factor-button:hover { background: #eef4f9; border-color: #9db6d1; }.two-factor-button { color: #805614; border-color: #e0c487; background: #fffaf0; }.two-factor-button.is-enabled { color: #23734d; border-color: #a9d0bc; background: #f4fbf7; }.logout-button { color: #9d3341; border-color: #eabfc5; background: #fff6f6; }.logout-button:hover { background: #fce9eb; }
 
-/* Convert legacy hard-coded dark surfaces to neutral academic panels. */
-[style*="background: '#0f172a'"], [style*="background: '#0a0e17'"], [style*="background: '#090d16'"], [style*="background: '#1e293b'"] { background: #f7f9fc !important; }
-[style*="color: '#f8fafc'"], [style*="color: '#ffffff'"], [style*="color: '#fff'"] { color: #172b4d !important; }
-[style*="border: '1px solid #1e293b'"], [style*="border: '1px solid #334155'"] { border-color: #d8e1ec !important; }
+/* Legacy detail panels retain their own dark surface so their white inline text stays legible. */
 ::-webkit-scrollbar-track { background: #edf2f7; } ::-webkit-scrollbar-thumb { background: #b6c7d9; } ::-webkit-scrollbar-thumb:hover { background: #8fa8bf; }
 @media (max-width: 1100px) { .app-header__bar { padding: 10px 16px; }.portal-nav { order: 3; width: 100%; overflow-x: auto; }.header-actions { flex: 1; }.profile-summary span, .header-icon-button span, .two-factor-button span, .logout-button span { display: none; } }
 @media (max-width: 640px) { .app-header__bar { gap: 10px; }.brand-title { font-size: .86rem; }.brand-block { min-width: 0; }.ai-status { display: none; }.portal-nav button, .portal-nav a { padding: 7px 8px; font-size: .75rem; } }
@@ -354,7 +351,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .portal-content { width: 100%; max-width: 1480px; margin: 0 auto; }
 .portal-content .card-panel { overflow: hidden; }
 .portal-content h2, .portal-content h3, .settings-page h2, .settings-page h3 { color: #172b4d !important; letter-spacing: -.01em; }
-.portal-content [style*="background: '#0f172a'"], .portal-content [style*="background: '#090d16'"], .portal-content [style*="background: '#1e293b'"], .settings-page [style*="background: 'rgba(15, 23, 42"], .settings-page [style*="background: 'linear-gradient(135deg, rgba(30, 41, 59"] { background: #fff !important; }
 .portal-content [style*="boxShadow"], .settings-page [style*="boxShadow"] { box-shadow: 0 2px 8px rgba(25, 55, 89, .07) !important; }
 .portal-content [style*="borderRadius: '16px'"], .settings-page [style*="borderRadius: '16px'"] { border-radius: 10px !important; }
 .portal-content table { background: #fff; border: 1px solid #d8e1ec; border-radius: 8px; overflow: hidden; }
