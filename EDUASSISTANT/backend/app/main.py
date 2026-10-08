@@ -32,10 +32,21 @@ app = FastAPI(
     version="3.0.0"
 )
 
-# CORS
+# CORS: permit the deployed Cloudflare Pages application and local development.
+# Keep credentials enabled for the token refresh flow, therefore origins must be
+# listed explicitly rather than using a wildcard.
+allowed_origins = {
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://edu-sp.pages.dev",
+}
+configured_frontend = os.environ.get("FRONTEND_URL", "")
+if configured_frontend.strip():
+    allowed_origins.add(configured_frontend.strip().rstrip("/"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=sorted(allowed_origins),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
