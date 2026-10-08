@@ -32,7 +32,7 @@ const ESCALATION_LABELS = {
   HUMAN_REVIEW: 'Cần cán bộ xem xét'
 };
 
-const ReviewerPortal = ({ activeTab }) => {
+const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const { token, user } = useAuth();
   const [allCases, setAllCases] = useState([]);
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -76,6 +76,18 @@ const ReviewerPortal = ({ activeTab }) => {
   useEffect(() => {
     if (token) fetchReviewerData();
   }, [token]);
+
+  useEffect(() => {
+    if (!caseToOpen || activeTab !== 'reviewer_queue' || loading) return;
+    const targetCase = allCases.find(item => item.id === caseToOpen);
+    if (!targetCase) return;
+    setSelectedCase(targetCase);
+    setActionMessage(null);
+    setReviewReason('');
+    setTargetDepartment(targetCase.assignedDepartment || '');
+    onCaseOpened?.();
+    requestAnimationFrame(() => document.getElementById('reviewer-case-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }, [caseToOpen, activeTab, loading, allCases, onCaseOpened]);
 
   useEffect(() => {
     if (!token) return undefined;
@@ -565,7 +577,7 @@ const ReviewerPortal = ({ activeTab }) => {
 
           {/* CỘT 2: CHI TIẾT HỒ SƠ & MA TRẬN PHÁN QUYẾT RULE ENGINE */}
           {selectedCase && (
-            <div className="card-panel" style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div id="reviewer-case-detail" className="card-panel" style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>

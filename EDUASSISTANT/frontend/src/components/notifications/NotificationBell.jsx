@@ -4,7 +4,7 @@ import { Bell, CheckCheck } from 'lucide-react';
 import { API_BASE, SERVER_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 
-export const NotificationBell = () => {
+export const NotificationBell = ({ onOpenCase }) => {
   const { token } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -47,7 +47,7 @@ export const NotificationBell = () => {
     if (open && bellContainerRef.current) {
       const rect = bellContainerRef.current.getBoundingClientRect();
       const screenWidth = window.innerWidth;
-      const targetWidth = Math.min(360, screenWidth - 24);
+      const targetWidth = Math.min(420, screenWidth - 24);
 
       if (rect.right - targetWidth < 12) {
         const offset = 12 - (rect.right - targetWidth);
@@ -92,6 +92,12 @@ export const NotificationBell = () => {
     } catch {} finally {
       setLoading(false);
     }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    if (!notification.isRead) await handleMarkAsRead(notification.id);
+    setOpen(false);
+    if (notification.caseId) onOpenCase?.(notification.caseId);
   };
 
   return (
@@ -147,8 +153,8 @@ export const NotificationBell = () => {
             right: dropdownPos.right,
             width: dropdownPos.width,
             maxWidth: 'calc(100vw - 20px)',
-            maxHeight: '480px',
-            background: '#0f172a',
+            maxHeight: '540px',
+            background: '#111c31',
             border: '1px solid #334155',
             borderRadius: '14px',
             boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(99, 102, 241, 0.15)',
@@ -160,21 +166,21 @@ export const NotificationBell = () => {
         >
           {/* Header Popover */}
           <div style={{
-            padding: '12px 16px',
+            padding: '14px 18px',
             borderBottom: '1px solid #1e293b',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             background: 'rgba(255, 255, 255, 0.02)'
           }}>
-            <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Bell size={15} color="#818cf8" /> Thông Báo {unreadCount > 0 && <span style={{ color: '#f43f5e' }}>({unreadCount})</span>}
+            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Bell size={17} color="#a5b4fc" /> Thông báo {unreadCount > 0 && <span style={{ color: '#fda4af' }}>({unreadCount})</span>}
             </span>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
                 disabled={loading}
-                style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.72rem', cursor: 'pointer', fontWeight: 600 }}
+                style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '6px', color: '#7dd3fc', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 700, padding: '5px 8px' }}
               >
                 Đọc tất cả
               </button>
@@ -182,28 +188,37 @@ export const NotificationBell = () => {
           </div>
 
           {/* List items */}
-          <div style={{ overflowY: 'auto', maxHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ overflowY: 'auto', maxHeight: '450px', display: 'flex', flexDirection: 'column' }}>
             {notifications.length > 0 ? (
               notifications.map((n) => (
-                <div
+                <button
+                  type="button"
                   key={n.id}
-                  onClick={() => !n.isRead && handleMarkAsRead(n.id)}
+                  onClick={() => handleNotificationClick(n)}
+                  title={n.caseId ? `Mở hồ sơ ${n.caseId}` : 'Đánh dấu thông báo đã xem'}
                   style={{
-                    padding: '10px 14px',
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '14px 18px',
                     borderBottom: '1px solid #1e293b',
-                    background: n.isRead ? 'transparent' : 'rgba(99, 102, 241, 0.08)',
+                    borderTop: 'none',
+                    borderLeft: 'none',
+                    borderRight: 'none',
+                    background: n.isRead ? 'rgba(15, 23, 42, 0.35)' : 'rgba(99, 102, 241, 0.16)',
+                    color: '#e2e8f0',
+                    fontFamily: 'inherit',
                     cursor: 'pointer',
                     transition: 'background 0.2s',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '3px'
+                    gap: '7px'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                     <span style={{ 
-                      fontSize: '0.8rem', 
+                      fontSize: '0.93rem',
                       fontWeight: n.isRead ? 600 : 800, 
-                      color: n.isRead ? 'var(--text-main)' : '#93c5fd',
+                      color: n.isRead ? '#e2e8f0' : '#dbeafe',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -211,14 +226,15 @@ export const NotificationBell = () => {
                     }}>
                       {n.title}
                     </span>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-sub)', flexShrink: 0 }}>
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8', flexShrink: 0, fontWeight: 600 }}>
                       {new Date(n.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.35, wordBreak: 'break-word' }}>
+                  <p style={{ fontSize: '0.86rem', color: '#cbd5e1', margin: 0, lineHeight: 1.55, wordBreak: 'break-word' }}>
                     {n.message}
                   </p>
-                </div>
+                  {n.caseId && <span style={{ fontSize: '0.78rem', color: '#7dd3fc', fontWeight: 800, marginTop: '2px' }}>Mở hồ sơ {n.caseId} →</span>}
+                </button>
               ))
             ) : (
               <div style={{ padding: '30px 16px', textAlign: 'center', color: 'var(--text-sub)', fontSize: '0.82rem' }}>

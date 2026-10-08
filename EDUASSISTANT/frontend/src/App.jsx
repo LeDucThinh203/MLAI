@@ -24,6 +24,7 @@ function MainApp() {
   };
 
   const [activeTab, setActiveTab] = useState(getDefaultTab(user?.role));
+  const [caseToOpen, setCaseToOpen] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -31,9 +32,15 @@ function MainApp() {
     }
   }, [user]);
 
+  const handleOpenCase = (caseId) => {
+    if (!caseId) return;
+    setCaseToOpen(caseId);
+    setActiveTab(user?.role === 'STUDENT' ? 'student_cases' : 'reviewer_queue');
+  };
+
   return (
     <div className="app-shell">
-      <AppHeader activeTab={activeTab} setActiveTab={setActiveTab} onOpen2FAModal={() => setShow2FAModal(true)} />
+      <AppHeader activeTab={activeTab} setActiveTab={setActiveTab} onOpen2FAModal={() => setShow2FAModal(true)} onOpenCase={handleOpenCase} />
       
       <main className="app-main">
         <Routes>
@@ -52,13 +59,13 @@ function MainApp() {
                 ) : (
                   <>
                     {user?.role === 'ADMIN' && (
-                      <AdminPortal activeTab={activeTab} setActiveTab={setActiveTab} />
+                      <AdminPortal activeTab={activeTab} setActiveTab={setActiveTab} caseToOpen={caseToOpen} onCaseOpened={() => setCaseToOpen(null)} />
                     )}
                     {user?.role === 'REVIEWER' && (
-                      <ReviewerPortal activeTab={activeTab} setActiveTab={setActiveTab} />
+                      <ReviewerPortal activeTab={activeTab} setActiveTab={setActiveTab} caseToOpen={caseToOpen} onCaseOpened={() => setCaseToOpen(null)} />
                     )}
                     {(user?.role === 'STUDENT' || (!['ADMIN', 'REVIEWER'].includes(user?.role))) && (
-                      <StudentPortal activeTab={activeTab} setActiveTab={setActiveTab} />
+                      <StudentPortal activeTab={activeTab} setActiveTab={setActiveTab} caseToOpen={caseToOpen} onCaseOpened={() => setCaseToOpen(null)} />
                     )}
                   </>
                 )}

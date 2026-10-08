@@ -21,7 +21,7 @@ const CATEGORY_LABELS = {
   GRADE_APPEAL: 'Phúc khảo điểm'
 };
 
-const AdminPortal = ({ activeTab }) => {
+const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const { token } = useAuth();
   const [users, setUsers] = useState([]);
   const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -746,7 +746,7 @@ const AdminPortal = ({ activeTab }) => {
       )}
 
       {/* Tái sử dụng Reviewer Queue & Audit cho Admin */}
-      {activeTab === 'reviewer_queue' && <ReviewerPortal activeTab="reviewer_queue" />}
+      {activeTab === 'reviewer_queue' && <ReviewerPortal activeTab="reviewer_queue" caseToOpen={caseToOpen} onCaseOpened={onCaseOpened} />}
       {activeTab === 'reviewer_audit' && <ReviewerPortal activeTab="reviewer_audit" />}
     </div>
   );

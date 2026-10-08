@@ -11,7 +11,7 @@ import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
 
-const StudentPortal = ({ activeTab, setActiveTab }) => {
+const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) => {
   const { token, user } = useAuth();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('TUITION_DISCOUNT');
@@ -33,6 +33,7 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const [highlightedCaseId, setHighlightedCaseId] = useState(null);
 
   const fetchStudentData = async () => {
     setLoading(true);
@@ -50,6 +51,17 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
   useEffect(() => {
     if (token) fetchStudentData();
   }, [token]);
+
+  useEffect(() => {
+    if (!caseToOpen || activeTab !== 'student_cases' || loading) return;
+    const target = document.getElementById(`student-case-${caseToOpen}`);
+    if (!target) return;
+    setHighlightedCaseId(caseToOpen);
+    requestAnimationFrame(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    const timer = window.setTimeout(() => setHighlightedCaseId(null), 2400);
+    onCaseOpened?.();
+    return () => window.clearTimeout(timer);
+  }, [caseToOpen, activeTab, loading, myCases, onCaseOpened]);
 
   useEffect(() => {
     if (!token) return undefined;
@@ -426,11 +438,13 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
               const isSupplementOpen = supplementingCaseId === c.id;
 
               return (
-                <div key={c.id} style={{
+                <div id={`student-case-${c.id}`} key={c.id} style={{
                   background: '#0f172a',
-                  border: `1px solid ${isNeedingSupplement ? 'rgba(245, 158, 11, 0.5)' : 'var(--border-color)'}`,
+                  border: `1px solid ${highlightedCaseId === c.id ? '#60a5fa' : (isNeedingSupplement ? 'rgba(245, 158, 11, 0.5)' : 'var(--border-color)')}`,
                   borderRadius: '8px',
-                  padding: '16px'
+                  padding: '16px',
+                  boxShadow: highlightedCaseId === c.id ? '0 0 0 4px rgba(96, 165, 250, 0.16)' : 'none',
+                  transition: 'border-color 0.25s, box-shadow 0.25s'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
