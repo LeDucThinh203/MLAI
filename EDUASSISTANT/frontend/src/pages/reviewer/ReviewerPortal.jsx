@@ -59,8 +59,8 @@ const ReviewerPortal = ({ activeTab }) => {
   };
 
   useEffect(() => {
-    fetchReviewerData();
-  }, []);
+    if (token) fetchReviewerData();
+  }, [token]);
 
   const handleReRouteCase = async (newDept) => {
     if (!newDept || !selectedCase) return;

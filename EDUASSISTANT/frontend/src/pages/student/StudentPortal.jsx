@@ -55,8 +55,8 @@ const StudentPortal = ({ activeTab, setActiveTab }) => {
   };
 
   useEffect(() => {
-    fetchStudentData();
-  }, []);
+    if (token) fetchStudentData();
+  }, [token]);
 
   const handleOcrUpload = async (e) => {
     const file = e.target.files[0];

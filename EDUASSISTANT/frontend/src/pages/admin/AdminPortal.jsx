@@ -45,8 +45,8 @@ const AdminPortal = ({ activeTab }) => {
   };
 
   useEffect(() => {
-    fetchAdminData();
-  }, []);
+    if (token) fetchAdminData();
+  }, [token]);
 
   const handleAdminCreateUser = async (e) => {
     e.preventDefault();
