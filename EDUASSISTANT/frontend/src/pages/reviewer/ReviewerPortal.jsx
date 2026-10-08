@@ -506,20 +506,30 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   <div
                     key={c.id}
                     onClick={() => { setSelectedCase(c); setActionMessage(null); setReviewReason(''); setTargetDepartment(c.assignedDepartment || ''); }}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
+                    onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedCase(c); setActionMessage(null); setReviewReason(''); setTargetDepartment(c.assignedDepartment || ''); } }}
                     style={{
-                      background: isSelected ? '#1e293b' : '#0f172a',
-                      border: `1px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+                      background: isSelected ? 'linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(30, 41, 59, 0.96))' : '#0f172a',
+                      border: `1px solid ${isSelected ? '#60a5fa' : 'var(--border-color)'}`,
+                      borderLeft: `5px solid ${isSelected ? '#38bdf8' : 'transparent'}`,
                       borderRadius: '8px',
                       padding: '12px',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
+                      boxShadow: isSelected ? '0 0 0 2px rgba(56, 189, 248, 0.22), 0 8px 20px rgba(30, 64, 175, 0.22)' : 'none',
+                      transform: isSelected ? 'translateX(2px)' : 'none',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '6px'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                      <span style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: '#818cf8', fontWeight: 700 }}>{c.id}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: isSelected ? '#bae6fd' : '#818cf8', fontWeight: 700 }}>{c.id}</span>
+                        {isSelected && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#0ea5e9', color: '#fff', borderRadius: '999px', padding: '2px 6px', fontSize: '0.62rem', fontWeight: 800 }}><CheckCircle2 size={10} /> Đang xem</span>}
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {renderStatus(c.status)}
                         {renderSlaBadge(c)}
@@ -577,8 +587,8 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
           {/* CỘT 2: CHI TIẾT HỒ SƠ & MA TRẬN PHÁN QUYẾT RULE ENGINE */}
           {selectedCase && (
-            <div id="reviewer-case-detail" className="card-panel" style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+            <div id="reviewer-case-detail" className="card-panel reviewer-case-detail" style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="reviewer-case-detail__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.82rem', color: '#818cf8', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{selectedCase.id}</span>
@@ -612,7 +622,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#0f172a', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+              <div className="reviewer-case-detail__summary" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#0f172a', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <div>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Sinh viên nộp:</span>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 600 }}>{selectedCase.studentName}</p>
@@ -627,7 +637,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 </div>
               </div>
 
-              <div>
+              <div className="reviewer-case-detail__statement">
                 <span style={{ fontSize: '0.76rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Nội dung giải trình của sinh viên:</span>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', background: '#0f172a', padding: '10px 12px', borderRadius: '8px', marginTop: '4px', lineHeight: '1.5', border: '1px solid var(--border-color)' }}>
                   {selectedCase.description}
@@ -637,7 +647,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               {/* ========================================================================= */}
               {/* KHUNG RULE ENGINE & MA TRẬN ĐỐI CHIẾU THỰC THỂ (GEMINI OCR VS FORM) */}
               {/* ========================================================================= */}
-              <div style={{
+              <div className="reviewer-case-detail__assessment" style={{
                 background: '#090d16',
                 border: selectedCase.status === 'APPROVED' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(249, 115, 22, 0.4)',
                 borderRadius: '8px',
@@ -729,7 +739,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               </div>
 
               {selectedCase.supplementHistory && selectedCase.supplementHistory.length > 0 && (
-                <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
+                <div className="reviewer-case-detail__history" style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: '8px', padding: '10px 12px' }}>
                   <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <History size={14} /> Lịch sử sinh viên đã bổ sung:
                   </span>
@@ -743,7 +753,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
               {/* THÔNG TIN NGƯỜI ĐÃ PHÊ DUYỆT / TỪ CHỐI (NẾU ĐÃ THẨM ĐỊNH) */}
               {selectedCase.reviewResult && (
-                <div style={{
+                <div className="reviewer-case-detail__decision-summary" style={{
                   background: selectedCase.status === 'APPROVED' ? 'rgba(5, 150, 105, 0.08)' : (selectedCase.status === 'REJECTED' ? 'rgba(225, 29, 72, 0.08)' : 'rgba(217, 119, 6, 0.08)'),
                   border: `1px solid ${selectedCase.status === 'APPROVED' ? '#059669' : (selectedCase.status === 'REJECTED' ? '#e11d48' : '#d97706')}`,
                   borderRadius: '8px',
@@ -788,7 +798,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               )}
 
               {/* KHUNG THẨM ĐỊNH TAY (HUMAN REVIEW DECISION) */}
-              <div style={{
+              <div className="reviewer-case-detail__decision" style={{
                 background: '#0b1329',
                 border: '1px solid #3b82f6',
                 borderRadius: '8px',
@@ -1028,7 +1038,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               </div>
 
               {/* KHUNG ĐIỀU PHỐI ĐƠN VỊ THỤ LÝ (DEPARTMENT RE-ROUTING) */}
-              <div style={{
+              <div className="reviewer-case-detail__routing" style={{
                 background: '#090d16',
                 border: '1px solid #1e293b',
                 borderRadius: '8px',
@@ -1118,7 +1128,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
           {/* CỘT 3 (NGOÀI CÙNG BÊN PHẢI): KHUNG MINH CHỨNG KÈM THEO & TRỰC QUAN HÓA */}
           {selectedCase && (
-            <div className="card-panel" style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="card-panel reviewer-evidence-panel" style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Paperclip size={18} color="#38bdf8" /> Minh Chứng Kèm Theo

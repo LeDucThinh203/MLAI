@@ -84,7 +84,7 @@ export const CaseDiscussion = ({ caseId, token }) => {
   };
 
   return (
-    <div style={{
+    <div className="case-discussion" style={{
       background: '#070b19',
       border: '1px solid #1e293b',
       borderRadius: '10px',
@@ -109,7 +109,7 @@ export const CaseDiscussion = ({ caseId, token }) => {
       </div>
 
       {/* Comment List */}
-      <div style={{
+      <div className="case-discussion__list" style={{
         maxHeight: '220px',
         overflowY: 'auto',
         display: 'flex',
@@ -123,6 +123,7 @@ export const CaseDiscussion = ({ caseId, token }) => {
 
             return (
               <div
+                className={`case-discussion__item ${isStaff ? 'case-discussion__item--staff' : 'case-discussion__item--student'}`}
                 key={cmt.id}
                 style={{
                   background: isStaff ? 'rgba(59, 130, 246, 0.08)' : 'rgba(15, 23, 42, 0.7)',
