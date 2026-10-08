@@ -35,14 +35,18 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
 
   const roleLabel = user?.role === 'ADMIN' ? 'Quản trị viên' : user?.role === 'REVIEWER' ? 'Cán bộ thẩm định' : 'Sinh viên';
   const guestLinks = [['/login', 'Đăng nhập'], ['/verify', 'Tra cứu hồ sơ'], ['/judge', 'Ban giám khảo']];
+  const goToHome = () => {
+    const homeTab = portal.tabs[0]?.[0];
+    if (homeTab) setActiveTab(homeTab);
+  };
 
   return (
     <header className="app-header">
       <div className="app-header__bar">
-        <div className="brand-block">
+        <button type="button" className="brand-block" onClick={goToHome} title="Về trang chủ">
           <div className={`brand-mark brand-mark--${user?.role?.toLowerCase() || 'guest'}`}><PortalIcon size={22} /></div>
           <div><div className="brand-title">{portal.title}<span>EDUASSISTANT</span></div><p>{user?.department || portal.subtitle}</p></div>
-        </div>
+        </button>
         {user ? <nav className="portal-nav" aria-label="Điều hướng chính">
           {portal.tabs.map(([key, label, Icon]) => <button key={key} className={activeTab === key ? 'is-active' : ''} onClick={() => setActiveTab(key)}><Icon size={15} />{label}</button>)}
         </nav> : <nav className="portal-nav portal-nav--guest" aria-label="Điều hướng công khai">
