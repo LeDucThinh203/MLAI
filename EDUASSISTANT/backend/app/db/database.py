@@ -8,7 +8,13 @@ import bcrypt
 from psycopg import connect
 from psycopg.rows import dict_row
 
+try:
+    from psycopg_pool import ConnectionPool
+except ImportError:  # Keeps local development usable until dependencies install.
+    ConnectionPool = None  # type: ignore[assignment,misc]
+
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+_connection_pool = None
 ACTIVE_ENGINE = "postgresql"
 DB_SERVER = "Render PostgreSQL"
 DB_NAME = "eduassistant_db"
@@ -17,7 +23,31 @@ _KEYS = {"fullname":"fullName","studentid":"studentId","studentname":"studentNam
 def _url():
     if not DATABASE_URL: raise RuntimeError("DATABASE_URL is required for PostgreSQL.")
     return DATABASE_URL
-def get_db_connection(): return connect(_url(), row_factory=dict_row)
+
+
+def get_db_connection():
+    """Borrow a PostgreSQL connection instead of handshaking on every query."""
+    global _connection_pool
+    if ConnectionPool is None:
+        return connect(_url(), row_factory=dict_row, connect_timeout=8)
+    if _connection_pool is None:
+        _connection_pool = ConnectionPool(
+            conninfo=_url(),
+            min_size=1,
+            max_size=4,
+            max_idle=300,
+            timeout=8,
+            kwargs={"row_factory": dict_row, "connect_timeout": 8},
+            open=True,
+        )
+    return _connection_pool.connection(timeout=8)
+
+
+def close_database_pool() -> None:
+    global _connection_pool
+    if _connection_pool is not None:
+        _connection_pool.close()
+        _connection_pool = None
 def _sql(sql): return re.sub(r"\?", "%s", sql)
 def _row(row): return None if row is None else {_KEYS.get(k,k):v for k,v in row.items()}
 def run_query(sql: str, params: tuple=()) -> Dict[str, Any]:

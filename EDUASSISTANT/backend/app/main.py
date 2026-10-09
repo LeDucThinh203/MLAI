@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import CSRF_COOKIE_NAME, PORT
 from app.core.redis_client import close_redis
+from app.db.database import close_database_pool
 from app.core.responses import api_response, custom_http_exception_handler
 from app.routers import (
     auth,
@@ -80,6 +81,7 @@ app.add_exception_handler(HTTPException, custom_http_exception_handler)
 @app.on_event("shutdown")
 async def close_optional_redis_connection():
     await close_redis()
+    close_database_pool()
 
 
 @app.exception_handler(Exception)
