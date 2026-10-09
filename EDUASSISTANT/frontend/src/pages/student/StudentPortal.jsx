@@ -44,18 +44,30 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
 
   const [myCases, setMyCases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [caseLoadError, setCaseLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [highlightedCaseId, setHighlightedCaseId] = useState(null);
 
   const fetchStudentData = async () => {
     setLoading(true);
+    setCaseLoadError('');
     try {
-      const casesRes = await axios.get(`${API_BASE}/cases/my-cases`, { headers: { Authorization: `Bearer ${token}` } });
+      const casesRes = await axios.get(`${API_BASE}/cases/my-cases`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 12000
+      });
 
-      if (casesRes.data?.success) setMyCases(casesRes.data.data.cases);
+      if (casesRes.data?.success) {
+        setMyCases(casesRes.data.data.cases);
+      } else {
+        setCaseLoadError(casesRes.data?.message || 'Không thể tải danh sách hồ sơ.');
+      }
     } catch (err) {
       console.error('Lỗi tải dữ liệu sinh viên:', err);
+      setCaseLoadError(err.code === 'ECONNABORTED'
+        ? 'Máy chủ phản hồi quá lâu. Vui lòng thử lại.'
+        : (err.response?.data?.message || 'Không thể kết nối đến máy chủ.'));
     } finally {
       setLoading(false);
     }
@@ -79,7 +91,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
   }, [caseToOpen, activeTab, loading, myCases, onCaseOpened]);
 
   useEffect(() => {
-    if (!token) return undefined;
+    if (!token || activeTab !== 'student_cases') return undefined;
     const socket = new WebSocket(`${SERVER_BASE.replace(/^http/, 'ws')}/ws/cases`);
     socket.onmessage = (message) => {
       try {
@@ -89,7 +101,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
       } catch { /* Ignore malformed realtime payloads. */ }
     };
     return () => socket.close();
-  }, [token, user?.id]);
+  }, [token, user?.id, activeTab]);
 
   const handleOcrUpload = async (e) => {
     const file = e.target.files[0];
@@ -448,6 +460,13 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
               Làm mới
             </button>
           </div>
+
+          {caseLoadError && (
+            <div style={{ marginBottom: '16px', padding: '12px', borderRadius: '8px', border: '1px solid rgba(248, 113, 113, 0.35)', background: 'rgba(127, 29, 29, 0.18)', color: '#fecaca', fontSize: '0.84rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+              <span>{caseLoadError}</span>
+              <button type="button" onClick={fetchStudentData} className="btn-secondary" style={{ padding: '6px 10px', fontSize: '0.78rem' }}>Thử lại</button>
+            </div>
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {myCases.map(c => {
