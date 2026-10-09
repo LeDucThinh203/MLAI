@@ -64,12 +64,15 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const restoreSession = async () => {
-      if (!(await fetchMe())) {
-        try {
-          const csrfResponse = await axios.get(`${API_BASE}/auth/csrf`);
-          rememberCsrfToken(csrfResponse.data?.data?.csrfToken);
-        } catch { /* No refresh session is available. */ }
-        await tryRefreshToken();
+      try {
+        const csrfResponse = await axios.get(`${API_BASE}/auth/csrf`);
+        const session = csrfResponse.data?.data;
+        if (session?.hasSession) {
+          rememberCsrfToken(session.csrfToken);
+          if (!(await fetchMe())) await tryRefreshToken();
+        }
+      } catch {
+        // Treat a temporarily unavailable API exactly like a signed-out state.
       }
       setLoading(false);
     };

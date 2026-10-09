@@ -398,9 +398,10 @@ async def logout(request: Request, req: Optional[RefreshRequest] = None):
 async def get_csrf_token(request: Request):
     """Expose the non-secret CSRF value to the allowed frontend origin."""
     if not (request.cookies.get(ACCESS_COOKIE_NAME) or request.cookies.get(REFRESH_COOKIE_NAME)):
-        return api_response(401, False, 'Không có phiên đăng nhập.', None, 'UNAUTHORIZED')
+        # A first visit has no session. This is an expected state, not an error.
+        return api_response(200, True, 'Không có phiên đăng nhập.', {'csrfToken': None, 'hasSession': False})
     csrf_token = request.cookies.get(CSRF_COOKIE_NAME) or secrets.token_urlsafe(32)
-    response = api_response(200, True, 'CSRF token đã sẵn sàng.', {'csrfToken': csrf_token})
+    response = api_response(200, True, 'CSRF token đã sẵn sàng.', {'csrfToken': csrf_token, 'hasSession': True})
     _set_csrf_cookie(response, csrf_token)
     return response
 
