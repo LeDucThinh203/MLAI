@@ -4,66 +4,66 @@ import { API_BASE } from '../api/client';
 
 const AuthContext = createContext();
 
+// JWTs live only in HttpOnly cookies. Remove legacy bearer headers and attach
+// credentials plus the non-secret CSRF value on every Axios request.
+axios.defaults.withCredentials = true;
+axios.interceptors.request.use((config) => {
+  config.withCredentials = true;
+  if (config.headers) {
+    delete config.headers.Authorization;
+    delete config.headers.authorization;
+  }
+  const method = (config.method || 'get').toLowerCase();
+  if (!['get', 'head', 'options'].includes(method) && typeof document !== 'undefined') {
+    const csrf = document.cookie.split('; ').find((part) => part.startsWith('edu_csrf='))?.split('=')[1];
+    if (csrf) config.headers = { ...config.headers, 'X-CSRF-Token': decodeURIComponent(csrf) };
+  }
+  return config;
+});
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('cf_token') || null);
-  const [refreshToken, setRefreshToken] = useState(localStorage.getItem('cf_refresh_token') || null);
+  const [token, setToken] = useState(null);
+  const [refreshToken, setRefreshToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchMe = async (savedToken = token) => {
-    if (!savedToken) {
-      setLoading(false);
-      return;
-    }
+  const fetchMe = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/auth/me`, {
-        headers: { Authorization: `Bearer ${savedToken}` }
-      });
+      const res = await axios.get(`${API_BASE}/auth/me`);
       if (res.data?.success && res.data?.data?.user) {
         setUser(res.data.data.user);
-        setToken(savedToken);
+        setToken(true); // session flag only; the JWT remains HttpOnly.
+        return true;
       } else {
-        await tryRefreshToken();
+        return false;
       }
     } catch {
-      await tryRefreshToken();
-    } finally {
-      setLoading(false);
+      return false;
     }
   };
 
   const tryRefreshToken = async () => {
-    const savedRefresh = localStorage.getItem('cf_refresh_token');
-    if (!savedRefresh) {
-      logout();
-      return;
-    }
     try {
-      const res = await axios.post(`${API_BASE}/auth/refresh`, { refreshToken: savedRefresh });
-      if (res.data?.success && res.data.data?.token) {
-        const newToken = res.data.data.token;
-        const newRefresh = res.data.data.refreshToken || savedRefresh;
-        setToken(newToken);
-        setRefreshToken(newRefresh);
-        localStorage.setItem('cf_token', newToken);
-        localStorage.setItem('cf_refresh_token', newRefresh);
-        const meRes = await axios.get(`${API_BASE}/auth/me`, {
-          headers: { Authorization: `Bearer ${newToken}` }
-        });
-        if (meRes.data?.success) {
-          setUser(meRes.data.data.user);
-        }
+      const res = await axios.post(`${API_BASE}/auth/refresh`, {});
+      if (res.data?.success && res.data.data?.user) {
+        setUser(res.data.data.user);
+        setToken(true);
+        return true;
       } else {
-        logout();
+        clearLocalSession();
       }
     } catch {
-      logout();
+      clearLocalSession();
     }
+    return false;
   };
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('cf_token');
-    fetchMe(savedToken);
+    const restoreSession = async () => {
+      if (!(await fetchMe())) await tryRefreshToken();
+      setLoading(false);
+    };
+    restoreSession();
   }, []);
 
   const login = async (username, password) => {
@@ -79,14 +79,9 @@ export const AuthProvider = ({ children }) => {
             maskedEmail: res.data.data.maskedEmail
           };
         }
-        const { token: newToken, refreshToken: newRefresh, user: userData } = res.data.data;
-        setToken(newToken);
-        if (newRefresh) {
-          setRefreshToken(newRefresh);
-          localStorage.setItem('cf_refresh_token', newRefresh);
-        }
+        const { user: userData } = res.data.data;
         setUser(userData);
-        localStorage.setItem('cf_token', newToken);
+        setToken(true);
         return { success: true, user: userData };
       }
       return { success: false, message: res.data?.message || 'Đăng nhập thất bại' };
@@ -100,14 +95,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await axios.post(`${API_BASE}/auth/2fa/login`, { tempToken, otpCode });
       if (res.data?.success) {
-        const { token: newToken, refreshToken: newRefresh, user: userData } = res.data.data;
-        setToken(newToken);
-        if (newRefresh) {
-          setRefreshToken(newRefresh);
-          localStorage.setItem('cf_refresh_token', newRefresh);
-        }
+        const { user: userData } = res.data.data;
         setUser(userData);
-        localStorage.setItem('cf_token', newToken);
+        setToken(true);
         return { success: true, user: userData };
       }
       return { success: false, message: res.data?.message || 'Xác thực OTP thất bại' };
@@ -121,14 +111,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await axios.post(`${API_BASE}/register`, studentData);
       if (res.data?.success) {
-        const { token: newToken, refreshToken: newRefresh, user: userProfile } = res.data.data;
-        setToken(newToken);
-        if (newRefresh) {
-          setRefreshToken(newRefresh);
-          localStorage.setItem('cf_refresh_token', newRefresh);
-        }
+        const { user: userProfile } = res.data.data;
         setUser(userProfile);
-        localStorage.setItem('cf_token', newToken);
+        setToken(true);
         return { success: true, user: userProfile, message: res.data.message };
       }
       return { success: false, message: res.data?.message || 'Đăng ký thất bại' };
@@ -245,22 +230,13 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setRefreshToken(null);
     setUser(null);
-    localStorage.removeItem('cf_token');
-    localStorage.removeItem('cf_refresh_token');
   };
 
   const logout = async () => {
     // Revoke the server-side refresh token first. Local cleanup still runs if
     // the network is unavailable, so the current browser session always ends.
-    const activeRefreshToken = refreshToken || localStorage.getItem('cf_refresh_token');
     try {
-      if (activeRefreshToken) {
-        await axios.post(
-          `${API_BASE}/auth/logout`,
-          { refreshToken: activeRefreshToken },
-          { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
-        );
-      }
+      await axios.post(`${API_BASE}/auth/logout`, {});
     } catch {
       // A failed revocation must not keep the user signed in on this device.
     } finally {

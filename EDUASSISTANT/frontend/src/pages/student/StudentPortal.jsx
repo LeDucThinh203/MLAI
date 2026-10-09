@@ -78,7 +78,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
 
   useEffect(() => {
     if (!token) return undefined;
-    const socket = new WebSocket(`${SERVER_BASE.replace(/^http/, 'ws')}/ws/cases?token=${encodeURIComponent(token)}`);
+    const socket = new WebSocket(`${SERVER_BASE.replace(/^http/, 'ws')}/ws/cases`);
     socket.onmessage = (message) => {
       try {
         const event = JSON.parse(message.data);
@@ -586,7 +586,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                         {c.status === 'APPROVED' && (
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button
-                              onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(c.id)}/export-decision?token=${encodeURIComponent(token)}`)}
+                              onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(c.id)}/export-decision`)}
                               className="btn-primary shimmer-button"
                               style={{ background: 'linear-gradient(135deg, #059669, #10b981)', fontSize: '0.78rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                             >

@@ -92,7 +92,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
   useEffect(() => {
     if (!token) return undefined;
-    const socketUrl = `${SERVER_BASE.replace(/^http/, 'ws')}/ws/cases?token=${encodeURIComponent(token)}`;
+    const socketUrl = `${SERVER_BASE.replace(/^http/, 'ws')}/ws/cases`;
     const socket = new WebSocket(socketUrl);
 
     socket.onmessage = (message) => {
@@ -610,7 +610,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     <span>{reEvaluating ? 'Đang đánh giá...' : 'Đánh giá lại'}</span>
                   </button>
                   <button
-                    onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(selectedCase.id)}/export-decision?token=${encodeURIComponent(token)}`)}
+                    onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(selectedCase.id)}/export-decision`)}
                     className="btn-primary shimmer-button"
                     style={{ padding: '4px 10px', fontSize: '0.75rem', background: 'linear-gradient(135deg, #059669, #10b981)' }}
                     title="Xem bản in Quyết định học vụ có mã QR và chữ ký điện tử"
@@ -1099,7 +1099,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
-                      onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(selectedCase.id)}/export-decision?token=${encodeURIComponent(token)}`)}
+                      onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(selectedCase.id)}/export-decision`)}
                       className="btn-primary shimmer-button"
                       style={{ background: 'linear-gradient(135deg, #059669, #10b981)', fontSize: '0.76rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
@@ -1143,8 +1143,9 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   selectedCase.evidenceFiles.map((f, idx) => {
                     const fileName = f.fileName || f.name || (f.fileUrl ? f.fileUrl.split('/').pop() : `Minh chứng ${idx + 1}`);
                     const isImg = f.fileUrl ? (f.fileUrl.endsWith('.webp') || f.fileUrl.endsWith('.png') || f.fileUrl.endsWith('.jpg') || f.fileUrl.endsWith('.jpeg')) : true;
-                    const authToken = localStorage.getItem('cf_token') || localStorage.getItem('token') || '';
-                    const fullUrl = f.fileUrl ? `${SERVER_BASE}${f.fileUrl}${f.fileUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(authToken)}` : null;
+                    // The browser supplies the HttpOnly authentication cookie;
+                    // never put a credential into a URL where it can leak.
+                    const fullUrl = f.fileUrl ? `${SERVER_BASE}${f.fileUrl}` : null;
 
                     return (
                       <div

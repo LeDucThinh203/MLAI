@@ -5,7 +5,7 @@ import { API_BASE, SERVER_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 
 export const NotificationBell = ({ onOpenCase }) => {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -14,7 +14,7 @@ export const NotificationBell = ({ onOpenCase }) => {
   const [dropdownPos, setDropdownPos] = useState({ right: '0px', width: '360px' });
 
   const fetchNotifs = async () => {
-    if (!token) return;
+    if (!user) return;
     try {
       const res = await axios.get(`${API_BASE}/notifications`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -29,8 +29,8 @@ export const NotificationBell = ({ onOpenCase }) => {
 
   useEffect(() => {
     fetchNotifs();
-    if (!token) return undefined;
-    const socket = new WebSocket(`${SERVER_BASE.replace(/^http/, 'ws')}/ws/cases?token=${encodeURIComponent(token)}`);
+    if (!user) return undefined;
+    const socket = new WebSocket(`${SERVER_BASE.replace(/^http/, 'ws')}/ws/cases`);
     socket.onmessage = (message) => {
       try {
         const event = JSON.parse(message.data);
@@ -40,7 +40,7 @@ export const NotificationBell = ({ onOpenCase }) => {
       } catch { /* Ignore malformed realtime payloads. */ }
     };
     return () => socket.close();
-  }, [token]);
+  }, [user]);
 
   // Tự động tính toán vị trí để popup không bao giờ bị khuất/tràn khỏi mép màn hình
   useEffect(() => {
@@ -74,7 +74,6 @@ export const NotificationBell = ({ onOpenCase }) => {
   const handleMarkAsRead = async (id) => {
     try {
       await axios.post(`${API_BASE}/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: 1 } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -85,7 +84,6 @@ export const NotificationBell = ({ onOpenCase }) => {
     setLoading(true);
     try {
       await axios.post(`${API_BASE}/notifications/read-all`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: 1 })));
       setUnreadCount(0);

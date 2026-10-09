@@ -3,7 +3,7 @@ import axios from 'axios';
 import { MessageCircle, RefreshCw, Send } from 'lucide-react';
 import { API_BASE, SERVER_BASE } from '../../api/client';
 
-export const CaseDiscussion = ({ caseId, token }) => {
+export const CaseDiscussion = ({ caseId }) => {
   const [comments, setComments] = useState([]);
   const [inputContent, setInputContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -11,12 +11,10 @@ export const CaseDiscussion = ({ caseId, token }) => {
   const sendingRef = useRef(false);
 
   const fetchComments = async () => {
-    if (!caseId || !token) return;
+    if (!caseId) return;
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/cases/${caseId}/comments`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(`${API_BASE}/cases/${caseId}/comments`);
       if (res.data?.success) {
         const commentList = res.data?.data?.comments || res.data?.data || [];
         setComments(Array.isArray(commentList) ? commentList : []);
@@ -28,13 +26,13 @@ export const CaseDiscussion = ({ caseId, token }) => {
 
   useEffect(() => {
     fetchComments();
-  }, [caseId, token]);
+  }, [caseId]);
 
   useEffect(() => {
-    if (!caseId || !token) return undefined;
+    if (!caseId) return undefined;
 
     const wsBase = SERVER_BASE.replace(/^http/, 'ws');
-    const socket = new WebSocket(`${wsBase}/ws/comments/${caseId}?token=${encodeURIComponent(token)}`);
+    const socket = new WebSocket(`${wsBase}/ws/comments/${caseId}`);
 
     socket.onmessage = (event) => {
       try {
@@ -51,7 +49,7 @@ export const CaseDiscussion = ({ caseId, token }) => {
     };
 
     return () => socket.close();
-  }, [caseId, token]);
+  }, [caseId]);
 
   const handleSendComment = async (e) => {
     e.preventDefault();
@@ -62,8 +60,6 @@ export const CaseDiscussion = ({ caseId, token }) => {
     try {
       const res = await axios.post(`${API_BASE}/cases/${caseId}/comments`, {
         content: inputContent.trim()
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       const newComment = res.data?.data?.comment || res.data?.data;

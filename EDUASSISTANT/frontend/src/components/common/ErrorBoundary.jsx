@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw, LogOut } from 'lucide-react';
+import { API_BASE } from '../../api/client';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -21,9 +22,12 @@ export class ErrorBoundary extends React.Component {
   };
 
   handleResetSession = () => {
-    localStorage.removeItem('cf_token');
-    localStorage.removeItem('cf_refresh_token');
-    window.location.href = '/login';
+    const csrf = document.cookie.split('; ').find((part) => part.startsWith('edu_csrf='))?.split('=')[1];
+    fetch(`${API_BASE}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: csrf ? { 'X-CSRF-Token': decodeURIComponent(csrf) } : {}
+    }).finally(() => { window.location.href = '/login'; });
   };
 
   render() {

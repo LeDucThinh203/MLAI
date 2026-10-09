@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import secrets
 from datetime import datetime
 
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
@@ -12,7 +13,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.config import PORT
+from app.config import CSRF_COOKIE_NAME, PORT
 from app.core.responses import api_response, custom_http_exception_handler
 from app.routers import (
     auth,
@@ -53,6 +54,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+CSRF_EXEMPT_PATHS = {'/api/login', '/api/register', '/api/auth/2fa/login'}
+
+
+@app.middleware('http')
+async def csrf_protection(request: Request, call_next):
+    if (
+        request.method in {'POST', 'PUT', 'PATCH', 'DELETE'}
+        and request.url.path.startswith('/api/')
+        and request.url.path not in CSRF_EXEMPT_PATHS
+        and (request.cookies.get('edu_access') or request.cookies.get('edu_refresh'))
+    ):
+        csrf_cookie = request.cookies.get(CSRF_COOKIE_NAME)
+        csrf_header = request.headers.get('X-CSRF-Token')
+        if not csrf_cookie or not csrf_header or not secrets.compare_digest(csrf_cookie, csrf_header):
+            return api_response(403, False, 'CSRF validation failed.', None, 'CSRF_INVALID')
+    return await call_next(request)
 
 # Exception handlers
 app.add_exception_handler(HTTPException, custom_http_exception_handler)

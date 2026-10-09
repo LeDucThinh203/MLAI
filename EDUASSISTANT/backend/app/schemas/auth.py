@@ -27,7 +27,7 @@ class RegisterRequest(BaseModel):
 
 
 class RefreshRequest(BaseModel):
-    refreshToken: str
+    refreshToken: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):

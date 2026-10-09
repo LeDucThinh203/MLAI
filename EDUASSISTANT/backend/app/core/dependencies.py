@@ -1,21 +1,16 @@
 from fastapi import Request, Depends, HTTPException, status
 import jwt
-from app.config import JWT_SECRET
+from app.config import ACCESS_COOKIE_NAME, JWT_SECRET
 from app.db.db import db_service
 
 
 async def get_current_user(request: Request) -> dict:
-    auth_header = request.headers.get('Authorization') or request.headers.get('x-access-token')
-    raw_token = None
-    if auth_header:
-        raw_token = auth_header[7:] if auth_header.startswith('Bearer ') else auth_header
-    elif 'token' in request.query_params:
-        raw_token = request.query_params['token']
+    raw_token = request.cookies.get(ACCESS_COOKIE_NAME)
 
     if not raw_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={'success': False, 'message': 'Thiếu Token trong Authorization header hoặc query param token.', 'error': 'UNAUTHORIZED'}
+            detail={'success': False, 'message': 'Thiếu cookie xác thực.', 'error': 'UNAUTHORIZED'}
         )
 
     try:

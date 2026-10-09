@@ -42,7 +42,7 @@ const AuditTrailViewer = ({
         if (dateFilterMode === 'YESTERDAY') params.set('date', new Date(Date.now() - 86400000).toISOString().slice(0, 10));
         if (dateFilterMode === '7DAYS') params.set('dateFrom', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10));
         if (searchTerm.trim()) params.set('search', searchTerm.trim());
-        const response = await fetch(`${API_BASE}/audits?${params}`, { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal });
+        const response = await fetch(`${API_BASE}/audits?${params}`, { credentials: 'include', signal: controller.signal });
         const payload = await response.json();
         if (payload.success) {
           setServerAudits(payload.data.audits || []);
@@ -147,9 +147,9 @@ const AuditTrailViewer = ({
   };
 
   const getExportDateParam = () => {
-    if (dateFilterMode === 'TODAY') return `&date=${todayStr}`;
-    if (dateFilterMode === 'YESTERDAY') return `&date=${yesterdayStr}`;
-    if (dateFilterMode === 'CUSTOM' && customDate) return `&date=${customDate}`;
+    if (dateFilterMode === 'TODAY') return `?date=${todayStr}`;
+    if (dateFilterMode === 'YESTERDAY') return `?date=${yesterdayStr}`;
+    if (dateFilterMode === 'CUSTOM' && customDate) return `?date=${customDate}`;
     return '';
   };
 
@@ -171,7 +171,7 @@ const AuditTrailViewer = ({
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {!isStudentView && token && (
             <button
-              onClick={() => openSafeWindow(`${API_BASE}/audits/export-csv?token=${encodeURIComponent(token)}${getExportDateParam()}`)}
+              onClick={() => openSafeWindow(`${API_BASE}/audits/export-csv${getExportDateParam()}`)}
               className="btn-secondary"
               style={{
                 padding: '7px 14px',

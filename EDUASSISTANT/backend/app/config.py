@@ -41,5 +41,17 @@ if not REFRESH_SECRET:
 
 PORT = int(os.environ.get('PORT', 3001))
 
+# Authentication cookies are inaccessible to JavaScript, preventing token theft
+# through browser storage when an XSS vulnerability is present.
+APP_ENV = os.environ.get('APP_ENV', os.environ.get('ENV', os.environ.get('NODE_ENV', 'development'))).lower()
+COOKIE_SECURE = os.environ.get('COOKIE_SECURE', str(APP_ENV == 'production')).lower() == 'true'
+COOKIE_SAMESITE = os.environ.get('COOKIE_SAMESITE', 'none' if COOKIE_SECURE else 'lax').lower()
+if COOKIE_SAMESITE == 'none' and not COOKIE_SECURE:
+    raise RuntimeError('COOKIE_SAMESITE=none requires COOKIE_SECURE=true')
+COOKIE_DOMAIN = os.environ.get('COOKIE_DOMAIN') or None
+ACCESS_COOKIE_NAME = 'edu_access'
+REFRESH_COOKIE_NAME = 'edu_refresh'
+CSRF_COOKIE_NAME = 'edu_csrf'
+
 # PostgreSQL is the sole supported database engine.
 DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()

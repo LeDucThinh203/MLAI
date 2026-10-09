@@ -12,7 +12,15 @@ import bcrypt
 import pyotp
 import qrcode
 
-from app.config import JWT_SECRET
+from app.config import (
+    ACCESS_COOKIE_NAME,
+    COOKIE_DOMAIN,
+    COOKIE_SAMESITE,
+    COOKIE_SECURE,
+    CSRF_COOKIE_NAME,
+    JWT_SECRET,
+    REFRESH_COOKIE_NAME,
+)
 from app.core.security import check_rate_limit, record_failed_attempt, clear_rate_limit
 from app.core.responses import api_response
 from app.core.dependencies import get_current_user
@@ -29,6 +37,45 @@ from app.schemas.auth import (
 from app.db.db import db_service
 
 router = APIRouter(tags=["Authentication"])
+
+ACCESS_TOKEN_MAX_AGE = 8 * 60 * 60
+REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60
+
+
+def _issue_auth_cookies(response, access_token: str, refresh_token: str) -> None:
+    """Store credentials in HttpOnly cookies; never expose them to JavaScript."""
+    common = {
+        'secure': COOKIE_SECURE,
+        'samesite': COOKIE_SAMESITE,
+        'domain': COOKIE_DOMAIN,
+    }
+    response.set_cookie(
+        ACCESS_COOKIE_NAME, access_token, httponly=True, max_age=ACCESS_TOKEN_MAX_AGE,
+        path='/', **common
+    )
+    response.set_cookie(
+        REFRESH_COOKIE_NAME, refresh_token, httponly=True, max_age=REFRESH_TOKEN_MAX_AGE,
+        path='/api/auth', **common
+    )
+    # This value is intentionally not secret. It protects cookie-authenticated
+    # state-changing requests with the double-submit CSRF pattern.
+    response.set_cookie(
+        CSRF_COOKIE_NAME, secrets.token_urlsafe(32), httponly=False,
+        max_age=REFRESH_TOKEN_MAX_AGE, path='/', **common
+    )
+
+
+def _clear_auth_cookies(response) -> None:
+    common = {'secure': COOKIE_SECURE, 'samesite': COOKIE_SAMESITE, 'domain': COOKIE_DOMAIN}
+    response.delete_cookie(ACCESS_COOKIE_NAME, path='/', **common)
+    response.delete_cookie(REFRESH_COOKIE_NAME, path='/api/auth', **common)
+    response.delete_cookie(CSRF_COOKIE_NAME, path='/', **common)
+
+
+def _auth_response(status_code: int, message: str, user_data: dict, access_token: str, refresh_token: str):
+    response = api_response(status_code, True, message, {'user': user_data})
+    _issue_auth_cookies(response, access_token, refresh_token)
+    return response
 
 
 @router.post("/api/login")
@@ -142,12 +189,7 @@ async def login(req: LoginRequest):
         'reason': f"Đăng nhập thành công vào hệ thống với vai trò {user['role']}"
     })
 
-    return api_response(200, True, 'Đăng nhập thành công.', {
-        'token': access_token,
-        'accessToken': access_token,
-        'refreshToken': refresh_token,
-        'user': user_data
-    })
+    return _auth_response(200, 'Đăng nhập thành công.', user_data, access_token, refresh_token)
 
 
 @router.post("/api/auth/2fa/login")
@@ -221,12 +263,7 @@ async def login_2fa_endpoint(req: Login2FARequest):
         'reason': f"Đăng nhập thành công với 2FA TOTP ({user['role']})"
     })
 
-    return api_response(200, True, 'Xác thực OTP thành công.', {
-        'token': access_token,
-        'accessToken': access_token,
-        'refreshToken': refresh_token,
-        'user': user_data
-    })
+    return _auth_response(200, 'Xác thực OTP thành công.', user_data, access_token, refresh_token)
 
 
 @router.post("/api/register")
@@ -273,17 +310,12 @@ async def register(req: RegisterRequest):
         'createdAt': user.get('createdAt')
     }
 
-    return api_response(201, True, 'Đăng ký tài khoản sinh viên thành công.', {
-        'token': access_token,
-        'accessToken': access_token,
-        'refreshToken': refresh_token,
-        'user': user_data
-    })
+    return _auth_response(201, 'Đăng ký tài khoản sinh viên thành công.', user_data, access_token, refresh_token)
 
 
 @router.post("/api/auth/refresh")
-async def refresh_token(req: RefreshRequest):
-    refresh_token_val = req.refreshToken
+async def refresh_token(request: Request, req: Optional[RefreshRequest] = None):
+    refresh_token_val = request.cookies.get(REFRESH_COOKIE_NAME)
     if not refresh_token_val:
         return api_response(400, False, 'Refresh Token là bắt buộc.', None, 'VALIDATION_ERROR')
 
@@ -320,31 +352,25 @@ async def refresh_token(req: RefreshRequest):
     }
     new_access_token = jwt.encode(token_payload, JWT_SECRET, algorithm='HS256')
 
-    res_data = {
-        'token': new_access_token,
-        'accessToken': new_access_token,
-        'refreshToken': new_refresh_token,
-        'user': {
-            'id': user['id'],
-            'username': user['username'],
-            'fullName': user['fullName'],
-            'role': user['role'],
-            'department': user.get('department'),
-            'studentCode': user.get('studentCode'),
-            'avatar': user.get('avatar'),
-            'mustChangePassword': bool(user.get('mustChangePassword'))
-        }
+    user_data = {
+        'id': user['id'],
+        'username': user['username'],
+        'fullName': user['fullName'],
+        'role': user['role'],
+        'department': user.get('department'),
+        'studentCode': user.get('studentCode'),
+        'avatar': user.get('avatar'),
+        'mustChangePassword': bool(user.get('mustChangePassword'))
     }
-
-    return api_response(200, True, 'Làm mới Token thành công.', res_data)
+    return _auth_response(200, 'Làm mới phiên đăng nhập thành công.', user_data, new_access_token, new_refresh_token)
 
 
 @router.post("/api/auth/logout")
 async def logout(request: Request, req: Optional[RefreshRequest] = None):
-    if req and req.refreshToken:
-        await db_service.delete_refresh_token(req.refreshToken)
-    auth_header = request.headers.get('Authorization') or request.headers.get('x-access-token')
-    raw_token = auth_header[7:] if auth_header and auth_header.startswith('Bearer ') else auth_header
+    refresh_token_val = request.cookies.get(REFRESH_COOKIE_NAME)
+    if refresh_token_val:
+        await db_service.delete_refresh_token(refresh_token_val)
+    raw_token = request.cookies.get(ACCESS_COOKIE_NAME)
     if raw_token:
         try:
             decoded = jwt.decode(raw_token, JWT_SECRET, algorithms=['HS256'])
@@ -353,7 +379,9 @@ async def logout(request: Request, req: Optional[RefreshRequest] = None):
                 await db_service.revoke_access_token(decoded['jti'], expiry)
         except jwt.PyJWTError:
             pass
-    return api_response(200, True, 'Đăng xuất thành công.')
+    response = api_response(200, True, 'Đăng xuất thành công.')
+    _clear_auth_cookies(response)
+    return response
 
 
 @router.get("/api/auth/me")

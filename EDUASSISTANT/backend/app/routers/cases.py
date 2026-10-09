@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from typing import Optional, List, Any
-from fastapi import APIRouter, Depends, Request, Response, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, Depends, Request, Response, WebSocket, WebSocketDisconnect
 import jwt
 from fastapi.responses import HTMLResponse
 
@@ -17,7 +17,7 @@ from app.services.report_service import (
 )
 from app.core.responses import api_response
 from app.core.dependencies import get_current_user, require_roles
-from app.config import JWT_SECRET
+from app.config import ACCESS_COOKIE_NAME, JWT_SECRET
 from app.realtime import comment_hub, case_event_hub
 from app.schemas.cases import (
     CreateCaseRequest,
@@ -31,16 +31,29 @@ from app.schemas.cases import (
 router = APIRouter(tags=["Cases"])
 
 
+async def _get_websocket_identity(websocket: WebSocket) -> Optional[dict]:
+    """WebSockets authenticate with the same HttpOnly access cookie as HTTP."""
+    raw_token = websocket.cookies.get(ACCESS_COOKIE_NAME)
+    if not raw_token:
+        return None
+    try:
+        identity = jwt.decode(raw_token, JWT_SECRET, algorithms=["HS256"])
+        if identity.get('jti') and await db_service.is_access_token_revoked(identity['jti']):
+            return None
+        return identity
+    except jwt.PyJWTError:
+        return None
+
+
 @router.websocket("/ws/comments/{case_id}")
 async def comment_websocket(
     websocket: WebSocket,
     case_id: str,
-    token: str = Query(...),
 ):
     """Subscribe an authenticated participant to one case's comment room."""
     try:
-        identity = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        if identity.get('jti') and await db_service.is_access_token_revoked(identity['jti']):
+        identity = await _get_websocket_identity(websocket)
+        if not identity:
             await websocket.close(code=1008)
             return
         user = await db_service.get_user_by_id(identity.get("id"))
@@ -65,11 +78,11 @@ async def comment_websocket(
 
 
 @router.websocket("/ws/cases")
-async def case_events_websocket(websocket: WebSocket, token: str = Query(...)):
+async def case_events_websocket(websocket: WebSocket):
     """Push new and updated cases to authenticated reviewer/admin queues."""
     try:
-        identity = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        if identity.get('jti') and await db_service.is_access_token_revoked(identity['jti']):
+        identity = await _get_websocket_identity(websocket)
+        if not identity:
             await websocket.close(code=1008)
             return
         user = await db_service.get_user_by_id(identity.get("id"))
