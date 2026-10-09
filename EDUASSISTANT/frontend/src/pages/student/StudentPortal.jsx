@@ -250,7 +250,9 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
     }
   };
 
-  if (loading && myCases.length === 0) {
+  // Case data is loaded lazily only for the case-list tab. Do not let that
+  // independent loading state block the submission or history tabs.
+  if (activeTab === 'student_cases' && loading && myCases.length === 0) {
     return <PageSkeleton variant="portal" label="Đang tải hồ sơ sinh viên" />;
   }
 
