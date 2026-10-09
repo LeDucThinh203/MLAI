@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { BarChart3, FileText, GraduationCap, History, Inbox, LogOut, PlusCircle, Settings, Shield, ShieldAlert, UserCheck, Users } from 'lucide-react';
+import { BarChart3, FileText, GraduationCap, History, Inbox, LoaderCircle, LogOut, PlusCircle, Settings, Shield, ShieldAlert, UserCheck, Users } from 'lucide-react';
 import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import NotificationBell from '../notifications/NotificationBell';
@@ -17,6 +17,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
   const { user, token, logout } = useAuth();
   const location = useLocation();
   const [aiMode, setAiMode] = useState('mock');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const portal = PORTAL[user?.role] || { title: 'Hệ thống quản lý hồ sơ', subtitle: 'Trường đại học', icon: Shield, tabs: [] };
   const PortalIcon = portal.icon;
 
@@ -32,6 +33,12 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
       const res = await axios.post(`${API_BASE}/system/ai-mode`, { mode }, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data?.success) setAiMode(mode);
     } catch { /* keep current mode */ }
+  };
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    await logout();
   };
 
   const roleLabel = user?.role === 'ADMIN' ? 'Quản trị viên' : user?.role === 'REVIEWER' ? 'Cán bộ thẩm định' : 'Sinh viên';
@@ -56,7 +63,10 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
           <button className="profile-summary" onClick={() => setActiveTab('account_settings')} title="Mở thông tin tài khoản"><img src={safeImageUrl(user.avatar, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150')} alt="" /><span><strong>{user.fullName || user.username}</strong><small>{roleLabel}</small></span></button>
           <button className="header-icon-button" onClick={() => setActiveTab('account_settings')} title="Cài đặt tài khoản"><Settings size={17} /><span>Cài đặt</span></button>
           <button className={`two-factor-button ${user.twoFactorEnabled ? 'is-enabled' : ''}`} onClick={onOpen2FAModal}><ShieldAlert size={16} /><span>{user.twoFactorEnabled ? '2FA đã bật' : 'Bật 2FA'}</span></button>
-          <button className="logout-button" onClick={logout}><LogOut size={16} /><span>Đăng xuất</span></button>
+          <button className="logout-button" onClick={handleLogout} disabled={isLoggingOut} aria-busy={isLoggingOut}>
+            {isLoggingOut ? <LoaderCircle className="animate-spin" size={16} /> : <LogOut size={16} />}
+            <span>{isLoggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}</span>
+          </button>
         </div>}
       </div>
     </header>
