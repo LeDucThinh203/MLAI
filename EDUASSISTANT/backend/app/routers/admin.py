@@ -8,6 +8,7 @@ from app.services.upload_service import UPLOAD_DIR
 from app.services.ai_service import get_ai_mode
 from app.core.responses import api_response
 from app.core.dependencies import require_roles
+from app.core.cache import get_json as get_cached_json, set_json as set_cached_json
 from app.schemas.admin import UpdateRoleRequest, CreateAdminUserRequest
 
 router = APIRouter(tags=["Admin"])
@@ -15,12 +16,18 @@ router = APIRouter(tags=["Admin"])
 
 @router.get("/api/admin/users")
 async def get_admin_users(user: dict = Depends(require_roles('ADMIN'))):
+    cache_identity = {'view': 'directory'}
+    cached = await get_cached_json('admin-users', cache_identity)
+    if cached is not None:
+        return api_response(200, True, 'Cached user directory.', cached)
     users = await db_service.get_users()
     clean_users = [{k: v for k, v in u.items() if k != 'password'} for u in users]
-    return api_response(200, True, 'Lấy danh sách người dùng thành công.', {
+    result = {
         'users': clean_users,
         'total': len(clean_users)
-    })
+    }
+    await set_cached_json('admin-users', cache_identity, result, 20)
+    return api_response(200, True, 'Lấy danh sách người dùng thành công.', result)
 
 
 @router.post("/api/admin/users/create")
@@ -75,6 +82,11 @@ import json
 @router.get("/api/admin/stats")
 @router.get("/api/admin/system/metrics")
 async def get_system_metrics(user: dict = Depends(require_roles('ADMIN'))):
+    cache_identity = {'view': 'dashboard'}
+    cached = await get_cached_json('admin-stats', cache_identity)
+    if cached is not None:
+        return api_response(200, True, 'Cached system metrics.', cached)
+
     # Aggregate in PostgreSQL so the dashboard never loads full tables merely
     # to calculate counters and chart data.
     recent_cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat().replace('+00:00', 'Z')
@@ -141,7 +153,7 @@ async def get_system_metrics(user: dict = Depends(require_roles('ADMIN'))):
         except Exception:
             pass
 
-    return api_response(200, True, 'Lấy chỉ số hệ thống thành công.', {
+    result = {
         'totalUsers': int(dashboard.get('users', {}).get('total_users') or 0),
         'totalCases': total_cases,
         'todayCasesCount': int(case_summary.get('today_cases_count') or 0),
@@ -170,4 +182,6 @@ async def get_system_metrics(user: dict = Depends(require_roles('ADMIN'))):
         'correctFeedbackCount': int(audit_summary.get('correct_feedback_count') or 0),
         'benchmarkMetrics': benchmark_metrics,
         'serverTime': datetime.utcnow().isoformat() + 'Z'
-    })
+    }
+    await set_cached_json('admin-stats', cache_identity, result, 20)
+    return api_response(200, True, 'Lấy chỉ số hệ thống thành công.', result)

@@ -17,6 +17,7 @@ from app.services.report_service import (
 )
 from app.core.responses import api_response
 from app.core.dependencies import get_current_user, require_roles
+from app.core.cache import get_json as get_cached_json, set_json as set_cached_json
 from app.config import ACCESS_COOKIE_NAME, JWT_SECRET
 from app.realtime import comment_hub, case_event_hub
 from app.schemas.cases import (
@@ -102,7 +103,12 @@ async def case_events_websocket(websocket: WebSocket):
 
 @router.get("/api/cases/my-cases")
 async def get_my_cases(user: dict = Depends(get_current_user)):
+    cache_identity = {'userId': user['id'], 'view': 'my-cases'}
+    cached = await get_cached_json('cases', cache_identity)
+    if cached is not None:
+        return api_response(200, True, 'Cached case list.', cached)
     student_cases = await db_service.get_cases({'studentId': user['id']})
+    await set_cached_json('cases', cache_identity, {'cases': student_cases, 'total': len(student_cases)}, 30)
     return api_response(200, True, 'Lấy danh sách hồ sơ của sinh viên thành công.', {
         'cases': student_cases,
         'total': len(student_cases)
@@ -124,7 +130,12 @@ async def get_cases(
     if user['role'] == 'STUDENT':
         filter_dict['studentId'] = user['id']
 
+    cache_identity = {'userId': user['id'], 'role': user['role'], 'filters': filter_dict}
+    cached = await get_cached_json('cases', cache_identity)
+    if cached is not None:
+        return api_response(200, True, 'Cached case list.', cached)
     cases = await db_service.get_cases(filter_dict)
+    await set_cached_json('cases', cache_identity, {'cases': cases, 'total': len(cases)}, 20)
     return api_response(200, True, 'Lấy danh sách hồ sơ thành công.', {'cases': cases, 'total': len(cases)})
 
 

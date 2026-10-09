@@ -62,8 +62,10 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
   };
 
   useEffect(() => {
-    if (token) fetchStudentData();
-  }, [token]);
+    // The default tab is the submission form; defer the case-list request
+    // until the user actually opens it.
+    if (token && activeTab === 'student_cases') fetchStudentData();
+  }, [token, activeTab]);
 
   useEffect(() => {
     if (!caseToOpen || activeTab !== 'student_cases' || loading) return;

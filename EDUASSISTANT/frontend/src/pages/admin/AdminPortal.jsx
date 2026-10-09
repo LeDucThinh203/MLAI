@@ -40,16 +40,20 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const [newDepartment, setNewDepartment] = useState('Ban Giám Sát & Xét Duyệt');
   const [creatingUser, setCreatingUser] = useState(false);
 
-  const fetchAdminData = async () => {
+  const fetchAdminData = async ({
+    loadUsers = activeTab === 'admin_users',
+    loadStats = activeTab === 'admin_overview'
+  } = {}) => {
+    if (!loadUsers && !loadStats) return;
     setLoading(true);
     try {
       const [usersRes, statsRes] = await Promise.all([
-        axios.get(`${API_BASE}/admin/users`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_BASE}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } })
+        loadUsers ? axios.get(`${API_BASE}/admin/users`, { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null),
+        loadStats ? axios.get(`${API_BASE}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null)
       ]);
 
-      if (usersRes.data?.success) setUsers(usersRes.data.data.users);
-      if (statsRes.data?.success) setStats(statsRes.data.data);
+      if (usersRes?.data?.success) setUsers(usersRes.data.data.users);
+      if (statsRes?.data?.success) setStats(statsRes.data.data);
     } catch (err) {
       console.error('Lỗi tải dữ liệu quản trị:', err);
     } finally {
@@ -59,7 +63,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
   useEffect(() => {
     if (token) fetchAdminData();
-  }, [token]);
+  }, [token, activeTab]);
 
   const handleAdminCreateUser = async (e) => {
     e.preventDefault();
@@ -125,7 +129,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
   useEffect(() => { setUserPage(1); }, [userSearchTerm]);
 
-  if (loading && !stats && users.length === 0) {
+  if (loading && activeTab === 'admin_overview' && !stats) {
     return <PageSkeleton variant="dashboard" label="Đang tải dữ liệu quản trị" />;
   }
 

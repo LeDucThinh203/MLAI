@@ -16,9 +16,7 @@ export const NotificationBell = ({ onOpenCase }) => {
   const fetchNotifs = async () => {
     if (!user) return;
     try {
-      const res = await axios.get(`${API_BASE}/notifications`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(`${API_BASE}/notifications`);
       if (res.data?.success) {
         const items = res.data.data?.notifications || res.data.data || [];
         setNotifications(items);

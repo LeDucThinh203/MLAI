@@ -27,6 +27,7 @@ import bcrypt
 from datetime import datetime
 from app.db.database import run_query, get_one, get_all, get_dashboard_statistics
 from app.realtime import case_event_hub
+from app.core.cache import bump_cache_version
 
 DEFAULT_AUDIT_PAGE_SIZE = 10
 MIN_AUDIT_PAGE_SIZE = 5
@@ -187,6 +188,8 @@ class DatabaseService:
             'reason': f"Đăng ký tài khoản mới thành công với vai trò {new_user['role']}{student_code_suffix}"
         })
 
+        await bump_cache_version('admin-stats')
+        await bump_cache_version('admin-users')
         return new_user
 
     @staticmethod
@@ -208,6 +211,8 @@ class DatabaseService:
             'reason': f"Quản trị viên đã thay đổi quyền của tài khoản {target_user['username']} từ {old_role} thành {new_role}"
         })
 
+        await bump_cache_version('admin-stats')
+        await bump_cache_version('admin-users')
         return await DatabaseService.get_user_by_id(user_id)
 
     @staticmethod
@@ -564,6 +569,8 @@ class DatabaseService:
                 'caseId': created_case['id']
             })
 
+        await bump_cache_version('cases')
+        await bump_cache_version('admin-stats')
         return created_case
 
     @staticmethod
@@ -630,6 +637,8 @@ class DatabaseService:
                 'caseId': target_case['id']
             })
 
+        await bump_cache_version('cases')
+        await bump_cache_version('admin-stats')
         event = {'type': 'case_updated', 'case': updated_case}
         await case_event_hub.broadcast(event, roles={'REVIEWER', 'ADMIN'})
         if target_case.get('studentId'):
@@ -808,16 +817,20 @@ class DatabaseService:
             'createdAt': now_iso
         }
         await case_event_hub.broadcast({'type': 'notification_created', 'notification': notification}, user_ids={data['userId']})
+        await bump_cache_version(f"notifications:{data['userId']}")
         return notification
 
     @staticmethod
     async def mark_notification_as_read(notif_id: str, user_id: str):
         res = run_query('UPDATE notifications SET isRead = TRUE WHERE id = ? AND userId = ?', (notif_id, user_id))
+        if res['changes'] > 0:
+            await bump_cache_version(f"notifications:{user_id}")
         return res['changes'] > 0
 
     @staticmethod
     async def mark_all_notifications_as_read(user_id: str):
         run_query('UPDATE notifications SET isRead = TRUE WHERE userId = ?', (user_id,))
+        await bump_cache_version(f"notifications:{user_id}")
         return True
 
     # ================= AUDITS =================
