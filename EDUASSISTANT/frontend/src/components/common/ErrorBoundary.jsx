@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw, LogOut } from 'lucide-react';
 import { API_BASE } from '../../api/client';
+import { getCsrfToken } from '../../context/AuthContext';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -22,11 +23,11 @@ export class ErrorBoundary extends React.Component {
   };
 
   handleResetSession = () => {
-    const csrf = document.cookie.split('; ').find((part) => part.startsWith('edu_csrf='))?.split('=')[1];
+    const csrf = getCsrfToken();
     fetch(`${API_BASE}/auth/logout`, {
       method: 'POST',
       credentials: 'include',
-      headers: csrf ? { 'X-CSRF-Token': decodeURIComponent(csrf) } : {}
+      headers: csrf ? { 'X-CSRF-Token': csrf } : {}
     }).finally(() => { window.location.href = '/login'; });
   };
 

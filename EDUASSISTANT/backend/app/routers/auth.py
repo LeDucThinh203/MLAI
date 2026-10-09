@@ -42,7 +42,19 @@ ACCESS_TOKEN_MAX_AGE = 8 * 60 * 60
 REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60
 
 
-def _issue_auth_cookies(response, access_token: str, refresh_token: str) -> None:
+def _set_csrf_cookie(response, csrf_token: str) -> None:
+    common = {
+        'secure': COOKIE_SECURE,
+        'samesite': COOKIE_SAMESITE,
+        'domain': COOKIE_DOMAIN,
+    }
+    response.set_cookie(
+        CSRF_COOKIE_NAME, csrf_token, httponly=False,
+        max_age=REFRESH_TOKEN_MAX_AGE, path='/', **common
+    )
+
+
+def _issue_auth_cookies(response, access_token: str, refresh_token: str, csrf_token: str) -> None:
     """Store credentials in HttpOnly cookies; never expose them to JavaScript."""
     common = {
         'secure': COOKIE_SECURE,
@@ -57,12 +69,9 @@ def _issue_auth_cookies(response, access_token: str, refresh_token: str) -> None
         REFRESH_COOKIE_NAME, refresh_token, httponly=True, max_age=REFRESH_TOKEN_MAX_AGE,
         path='/api/auth', **common
     )
-    # This value is intentionally not secret. It protects cookie-authenticated
-    # state-changing requests with the double-submit CSRF pattern.
-    response.set_cookie(
-        CSRF_COOKIE_NAME, secrets.token_urlsafe(32), httponly=False,
-        max_age=REFRESH_TOKEN_MAX_AGE, path='/', **common
-    )
+    # This value is intentionally not secret. The frontend receives it in the
+    # response body because a cross-origin frontend cannot read the API cookie.
+    _set_csrf_cookie(response, csrf_token)
 
 
 def _clear_auth_cookies(response) -> None:
@@ -73,8 +82,9 @@ def _clear_auth_cookies(response) -> None:
 
 
 def _auth_response(status_code: int, message: str, user_data: dict, access_token: str, refresh_token: str):
-    response = api_response(status_code, True, message, {'user': user_data})
-    _issue_auth_cookies(response, access_token, refresh_token)
+    csrf_token = secrets.token_urlsafe(32)
+    response = api_response(status_code, True, message, {'csrfToken': csrf_token, 'user': user_data})
+    _issue_auth_cookies(response, access_token, refresh_token, csrf_token)
     return response
 
 
@@ -384,16 +394,29 @@ async def logout(request: Request, req: Optional[RefreshRequest] = None):
     return response
 
 
+@router.get("/api/auth/csrf")
+async def get_csrf_token(request: Request):
+    """Expose the non-secret CSRF value to the allowed frontend origin."""
+    if not (request.cookies.get(ACCESS_COOKIE_NAME) or request.cookies.get(REFRESH_COOKIE_NAME)):
+        return api_response(401, False, 'Không có phiên đăng nhập.', None, 'UNAUTHORIZED')
+    csrf_token = request.cookies.get(CSRF_COOKIE_NAME) or secrets.token_urlsafe(32)
+    response = api_response(200, True, 'CSRF token đã sẵn sàng.', {'csrfToken': csrf_token})
+    _set_csrf_cookie(response, csrf_token)
+    return response
+
+
 @router.get("/api/auth/me")
-async def get_current_user_profile(user: dict = Depends(get_current_user)):
+async def get_current_user_profile(request: Request, user: dict = Depends(get_current_user)):
     user_db = await db_service.get_user_by_id(user['id'])
     if not user_db:
         return api_response(404, False, 'Không tìm thấy người dùng.', None, 'NOT_FOUND')
     clean_user = {k: v for k, v in user_db.items() if k != 'password'}
-    return api_response(200, True, 'Lấy thông tin tài khoản thành công.', {
-        'user': clean_user,
-        **clean_user
+    csrf_token = request.cookies.get(CSRF_COOKIE_NAME) or secrets.token_urlsafe(32)
+    response = api_response(200, True, 'Lấy thông tin tài khoản thành công.', {
+        'csrfToken': csrf_token, 'user': clean_user, **clean_user
     })
+    _set_csrf_cookie(response, csrf_token)
+    return response
 
 
 @router.put("/api/auth/profile")

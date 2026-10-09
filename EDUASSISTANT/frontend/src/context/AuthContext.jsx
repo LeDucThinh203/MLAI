@@ -3,6 +3,9 @@ import axios from 'axios';
 import { API_BASE } from '../api/client';
 
 const AuthContext = createContext();
+let csrfToken = null;
+export const getCsrfToken = () => csrfToken;
+const rememberCsrfToken = (value) => { csrfToken = value || null; };
 
 // JWTs live only in HttpOnly cookies. Remove legacy bearer headers and attach
 // credentials plus the non-secret CSRF value on every Axios request.
@@ -14,9 +17,8 @@ axios.interceptors.request.use((config) => {
     delete config.headers.authorization;
   }
   const method = (config.method || 'get').toLowerCase();
-  if (!['get', 'head', 'options'].includes(method) && typeof document !== 'undefined') {
-    const csrf = document.cookie.split('; ').find((part) => part.startsWith('edu_csrf='))?.split('=')[1];
-    if (csrf) config.headers = { ...config.headers, 'X-CSRF-Token': decodeURIComponent(csrf) };
+  if (!['get', 'head', 'options'].includes(method) && csrfToken) {
+    config.headers = { ...config.headers, 'X-CSRF-Token': csrfToken };
   }
   return config;
 });
@@ -31,6 +33,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await axios.get(`${API_BASE}/auth/me`);
       if (res.data?.success && res.data?.data?.user) {
+        rememberCsrfToken(res.data.data.csrfToken);
         setUser(res.data.data.user);
         setToken(true); // session flag only; the JWT remains HttpOnly.
         return true;
@@ -46,6 +49,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await axios.post(`${API_BASE}/auth/refresh`, {});
       if (res.data?.success && res.data.data?.user) {
+        rememberCsrfToken(res.data.data.csrfToken);
         setUser(res.data.data.user);
         setToken(true);
         return true;
@@ -60,7 +64,13 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const restoreSession = async () => {
-      if (!(await fetchMe())) await tryRefreshToken();
+      if (!(await fetchMe())) {
+        try {
+          const csrfResponse = await axios.get(`${API_BASE}/auth/csrf`);
+          rememberCsrfToken(csrfResponse.data?.data?.csrfToken);
+        } catch { /* No refresh session is available. */ }
+        await tryRefreshToken();
+      }
       setLoading(false);
     };
     restoreSession();
@@ -80,6 +90,7 @@ export const AuthProvider = ({ children }) => {
           };
         }
         const { user: userData } = res.data.data;
+        rememberCsrfToken(res.data.data.csrfToken);
         setUser(userData);
         setToken(true);
         return { success: true, user: userData };
@@ -96,6 +107,7 @@ export const AuthProvider = ({ children }) => {
       const res = await axios.post(`${API_BASE}/auth/2fa/login`, { tempToken, otpCode });
       if (res.data?.success) {
         const { user: userData } = res.data.data;
+        rememberCsrfToken(res.data.data.csrfToken);
         setUser(userData);
         setToken(true);
         return { success: true, user: userData };
@@ -112,6 +124,7 @@ export const AuthProvider = ({ children }) => {
       const res = await axios.post(`${API_BASE}/register`, studentData);
       if (res.data?.success) {
         const { user: userProfile } = res.data.data;
+        rememberCsrfToken(res.data.data.csrfToken);
         setUser(userProfile);
         setToken(true);
         return { success: true, user: userProfile, message: res.data.message };
@@ -227,6 +240,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const clearLocalSession = () => {
+    rememberCsrfToken(null);
     setToken(null);
     setRefreshToken(null);
     setUser(null);
