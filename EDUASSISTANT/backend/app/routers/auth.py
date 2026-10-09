@@ -94,13 +94,13 @@ async def login(req: LoginRequest):
     password = req.password if req.password else ''
     two_factor_code = req.twoFactorCode or req.otpCode
 
-    limiter = check_rate_limit(username.lower())
+    limiter = await check_rate_limit(username.lower())
     if not limiter['allowed']:
         return api_response(429, False, f"Tài khoản đang bị tạm khóa do nhập sai mật khẩu nhiều lần. Vui lòng thử lại sau {limiter['remainingSeconds']} giây.", None, 'RATE_LIMIT_EXCEEDED')
 
     user = await db_service.get_user_by_username(username)
     if not user:
-        record_failed_attempt(username.lower())
+        await record_failed_attempt(username.lower())
         await db_service.log_audit({
             'action': 'AUTH_LOGIN_FAILED',
             'actor': {'id': None, 'username': username, 'role': 'GUEST', 'name': 'Khách'},
@@ -112,7 +112,7 @@ async def login(req: LoginRequest):
 
     is_match = bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8'))
     if not is_match:
-        record_failed_attempt(username.lower())
+        await record_failed_attempt(username.lower())
         await db_service.log_audit({
             'action': 'AUTH_LOGIN_FAILED',
             'actor': {'id': user['id'], 'username': user['username'], 'role': user['role'], 'name': user['fullName']},
@@ -122,7 +122,7 @@ async def login(req: LoginRequest):
         })
         return api_response(401, False, 'Tên đăng nhập hoặc mật khẩu không chính xác.', None, 'INVALID_CREDENTIALS')
 
-    clear_rate_limit(username.lower())
+    await clear_rate_limit(username.lower())
 
     # 2FA TOTP Challenge
     if user.get('twoFactorEnabled'):

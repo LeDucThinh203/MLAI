@@ -53,5 +53,9 @@ ACCESS_COOKIE_NAME = 'edu_access'
 REFRESH_COOKIE_NAME = 'edu_refresh'
 CSRF_COOKIE_NAME = 'edu_csrf'
 
+# Optional shared cache. Leave empty to retain the safe in-memory fallback.
+REDIS_URL = os.environ.get('REDIS_URL', '').strip()
+REDIS_KEY_PREFIX = os.environ.get('REDIS_KEY_PREFIX', 'eduassistant').strip() or 'eduassistant'
+
 # PostgreSQL is the sole supported database engine.
 DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()

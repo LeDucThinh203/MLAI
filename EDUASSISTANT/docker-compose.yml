@@ -20,9 +20,20 @@ services:
       - SIGNATURE_KEY=${SIGNATURE_KEY}
       - AI_MODE=${AI_MODE:-mock}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
       - DATA_DIR=/app/data
     volumes:
       - eduassistant_persistent_data:/app/data
+    networks:
+      - eduassistant-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: eduassistant-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - eduassistant_redis_data:/data
     networks:
       - eduassistant-network
 
@@ -44,6 +55,8 @@ services:
 volumes:
   eduassistant_persistent_data:
     name: eduassistant_persistent_data
+  eduassistant_redis_data:
+    name: eduassistant_redis_data
 
 networks:
   eduassistant-network:

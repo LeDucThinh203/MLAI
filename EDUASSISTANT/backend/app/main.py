@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import CSRF_COOKIE_NAME, PORT
+from app.core.redis_client import close_redis
 from app.core.responses import api_response, custom_http_exception_handler
 from app.routers import (
     auth,
@@ -74,6 +75,11 @@ async def csrf_protection(request: Request, call_next):
 
 # Exception handlers
 app.add_exception_handler(HTTPException, custom_http_exception_handler)
+
+
+@app.on_event("shutdown")
+async def close_optional_redis_connection():
+    await close_redis()
 
 
 @app.exception_handler(Exception)
