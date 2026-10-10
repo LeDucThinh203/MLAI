@@ -1,7 +1,7 @@
 # 📖 HƯỚNG DẪN VẬN HÀNH & KHỞI CHẠY HỆ THỐNG (RUNBOOK)
 **Dự Án**: EDUASSISTANT – Hệ Thống Thẩm Định & Quản Lý Hồ Sơ Học Vụ Thông Minh  
 **Đội Thi**: Team 1 (MLAI Hackathon 2026 - Track VNG – Option A: Escalation Referee)  
-**Phiên Bản**: 3.0 (Enterprise Python Edition: FastAPI + React Vite + SQL Server/SQLite + Gemini OCR + Adaptive Escalation Referee + Verify Harness)
+**Phiên Bản**: 3.0 (Enterprise Python Edition: FastAPI + React Vite + PostgreSQL + Gemini OCR + Adaptive Escalation Referee + Verify Harness)
 
 ---
 
@@ -35,7 +35,7 @@ Mở terminal tại thư mục `EDUASSISTANT/`:
 
 ### Bước 2.1: Cài đặt thư viện Backend Python
 ```powershell
-pip install -r backend/requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Bước 2.2: Cài đặt thư viện Frontend
@@ -49,16 +49,18 @@ cd ..
 
 ## 3. Cấu Hình Biến Môi Trường (.env)
 
-Tệp `.env` mẫu tại `EDUASSISTANT/backend/.env`:
+Create the local `.env` file in the `EDUASSISTANT/` project root. Do not commit it:
 ```ini
 PORT=3001
 NODE_ENV=development
+APP_ENV=development
+DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
 DATA_DIR=backend/app/db
 AI_MODE=mock
 GEMINI_API_KEY=your_gemini_api_key_here
-JWT_SECRET=c2e8a15fd7894a43bfa993e5da98471b3e81
-REFRESH_SECRET=7f91b3842c7de02816f5c8893fa914cb
-SIGNATURE_KEY=eduassistant_digital_signature_master_key_2026
+JWT_SECRET=<generate-a-random-secret-at-least-32-characters>
+REFRESH_SECRET=<generate-a-different-random-secret-at-least-32-characters>
+SIGNATURE_KEY=<generate-a-random-secret-at-least-32-characters>
 ```
 
 ---

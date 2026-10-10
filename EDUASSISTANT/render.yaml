@@ -1,18 +1,28 @@
 services:
   - type: web
-    name: caseflow-api
-    runtime: node
+    name: MLAI
+    runtime: python
     plan: free
-    buildCommand: npm install
-    startCommand: node backend/server.js
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: python backend/server.py
+    healthCheckPath: /api/health
     envVars:
+      - key: APP_ENV
+        value: production
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: REFRESH_SECRET
         generateValue: true
       - key: SIGNATURE_KEY
         generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
       - key: AI_MODE
         value: live
+      - key: FRONTEND_URL
+        sync: false
