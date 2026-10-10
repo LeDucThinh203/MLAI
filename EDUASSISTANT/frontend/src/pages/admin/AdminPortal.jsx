@@ -40,12 +40,28 @@ const POLICY_DISPLAY = {
   'POL-NVQS-005': 'Thiếu thông tin địa chỉ cần thiết',
   'POL-NVQS-006': 'Địa chỉ thường trú không khớp',
   'POL-NVQS-007': 'Kiểm tra độ tin cậy của AI',
-  'POL-NVQS-008': 'Kiểm tra thời gian khóa học'
+  'POL-NVQS-008': 'Kiểm tra thời gian khóa học',
+  'POL-NVQS-009': 'Kiểm tra địa chỉ thường trú đã xác minh',
+  'POL-NVQS-010': 'Đủ điều kiện xử lý tự động'
 };
 
-const POLICY_CATEGORY_LABELS = { IDENTITY: 'Danh tính', POLICY_SCOPE: 'Phạm vi quy trình', ACADEMIC: 'Thông tin học vụ', ADDRESS: 'Địa chỉ', AI_SAFETY: 'An toàn AI' };
-const POLICY_ACTION_LABELS = { ESCALATE_TO_HUMAN: 'Chuyển cán bộ xử lý' };
+const POLICY_CATEGORY_LABELS = { IDENTITY: 'Danh tính', POLICY_SCOPE: 'Phạm vi quy trình', ACADEMIC: 'Thông tin học vụ', ADDRESS: 'Địa chỉ', AI_SAFETY: 'An toàn AI', AUTOMATION: 'Xử lý tự động' };
+const POLICY_ACTION_LABELS = { ESCALATE_TO_HUMAN: 'Chuyển cán bộ xử lý', AUTO_APPROVE: 'Tự động xử lý' };
 const POLICY_REASON_LABELS = { OWNERSHIP_UNCLEAR: 'Cần xác minh người sở hữu', POLICY_OUT_OF_SCOPE: 'Ngoài phạm vi quy trình', AUTHORITY_REQUIRED: 'Cần cán bộ có thẩm quyền xác nhận', DATA_CONFLICT: 'Thông tin chưa khớp', FACT_UNKNOWN: 'Thiếu thông tin để xác nhận' };
+const POLICY_STATUS_LABELS = { ACTIVE: 'Đang áp dụng' };
+
+const POLICY_GUIDANCE = {
+  'POL-NVQS-001': { trigger: 'Mã số sinh viên hoặc họ tên trên hồ sơ không khớp với dữ liệu của trường.', action: 'Kiểm tra lại thông tin nhận dạng của sinh viên.' },
+  'POL-NVQS-002': { trigger: 'Hồ sơ có yêu cầu đặc biệt hoặc nằm ngoài quy trình thông thường.', action: 'Tiếp nhận và xử lý theo quy trình ngoại lệ của nhà trường.' },
+  'POL-NVQS-003': { trigger: 'Tình trạng học vụ, học kỳ đang học hoặc thời khóa biểu cần được xác nhận.', action: 'Kiểm tra thông tin học vụ do nhà trường quản lý.' },
+  'POL-NVQS-004': { trigger: 'Sinh viên khai báo địa chỉ tạm trú thay vì địa chỉ thường trú.', action: 'Yêu cầu sinh viên cung cấp địa chỉ thường trú phù hợp.' },
+  'POL-NVQS-005': { trigger: 'Địa chỉ thiếu số nhà, đường/thôn/ấp, phường/xã hoặc tỉnh/thành phố.', action: 'Yêu cầu sinh viên bổ sung phần địa chỉ còn thiếu.' },
+  'POL-NVQS-006': { trigger: 'Địa chỉ thường trú được khai báo khác đáng kể với dữ liệu của trường.', action: 'Kiểm tra lại địa chỉ thường trú trong hồ sơ sinh viên.' },
+  'POL-NVQS-007': { trigger: 'Thông tin do AI phân tích chưa đủ độ tin cậy hoặc không phải dữ liệu trực tiếp.', action: 'Cán bộ kiểm tra hồ sơ theo cách thủ công.' },
+  'POL-NVQS-008': { trigger: 'Ngày bắt đầu/kết thúc khóa học bị thiếu, không hợp lệ hoặc ngoài thời gian đào tạo.', action: 'Kiểm tra lại thời gian khóa học của sinh viên.' },
+  'POL-NVQS-009': { trigger: 'Hồ sơ sinh viên chưa có địa chỉ thường trú đã được xác minh để đối chiếu.', action: 'Cập nhật và xác nhận địa chỉ thường trú trước khi tiếp tục xử lý.' },
+  'POL-NVQS-010': { trigger: 'Thông tin danh tính, học vụ, địa chỉ và an toàn AI đều đạt yêu cầu.', action: 'Hệ thống tiếp tục xử lý; chỉ cần cán bộ can thiệp nếu phát sinh vấn đề sau đó.' }
+};
 
 const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const { token } = useAuth();
@@ -56,6 +72,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const [loading, setLoading] = useState(true);
   const [adminMessage, setAdminMessage] = useState(null);
   const [policies, setPolicies] = useState([]);
+  const [policyRuntime, setPolicyRuntime] = useState(null);
   const [sisRecords, setSisRecords] = useState([]);
   const [sisSearch, setSisSearch] = useState('');
   const [sisStatus, setSisStatus] = useState('');
@@ -125,7 +142,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
     if (activeTab === 'admin_sis') setSisLoading(true);
     axios.get(`${API_BASE}${endpoint}`).then(res => {
       if (res.data?.success) {
-        if (activeTab === 'admin_policies') setPolicies(res.data.data.policies || []);
+        if (activeTab === 'admin_policies') {
+          setPolicies(res.data.data.policies || []);
+          setPolicyRuntime(res.data.data.adaptivePolicy || null);
+        }
         else {
           setSisRecords(res.data.data.records || []);
           setSisTotal(res.data.data.total || 0);
@@ -299,13 +319,36 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
       {activeTab === 'admin_policies' && <section className="card-panel" style={{ padding: '24px' }}>
         <h2>Danh mục quy tắc nghiệp vụ <small style={{ fontWeight: 500 }}>(Policy Registry)</small></h2>
-        <p>Các quy tắc nội bộ hướng dẫn việc kiểm tra hồ sơ. Chỉ xem; hệ thống xét duyệt tự động là nguồn quyết định cuối cùng <span>(Rule Engine)</span>.</p>
-        {policies.map(policy => <div key={policy.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
-          <strong>{policy.id} — {POLICY_DISPLAY[policy.id] || policy.name} <small style={{ fontWeight: 500 }}>({policy.name})</small></strong><br />
-          <small>
-            {POLICY_CATEGORY_LABELS[policy.category] || policy.category} ({policy.category}) · {POLICY_ACTION_LABELS[policy.systemAction] || policy.systemAction} ({policy.systemAction}) · {POLICY_REASON_LABELS[policy.escalationReason] || policy.escalationReason} ({policy.escalationReason}) · Quy tắc quy trình nội bộ (Internal Workflow Policy)
-          </small>
-        </div>)}
+        <p>Tất cả quy tắc dưới đây được hệ thống xét duyệt tự động sử dụng khi kiểm tra hồ sơ <span>(Rule Engine)</span>. Trang này chỉ dùng để theo dõi, không thay đổi quy tắc.</p>
+        {policyRuntime && <div style={{ margin: '16px 0', padding: '12px 14px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.10)', fontSize: '0.88rem' }}>
+          <strong>Thiết lập đang áp dụng:</strong> Độ tin cậy tối thiểu để hệ thống tự xử lý là <strong>{Math.round(Number(policyRuntime.currentThreshold || 0) * 100)}%</strong> <span>(currentThreshold)</span>; chỉ được điều chỉnh trong khoảng {Math.round(Number(policyRuntime.minThreshold || 0) * 100)}%–{Math.round(Number(policyRuntime.maxThreshold || 0) * 100)}%.
+        </div>}
+        <div style={{ display: 'grid', gap: '14px' }}>
+          {policies.map((policy, index) => {
+            const guidance = POLICY_GUIDANCE[policy.id];
+            const reason = policy.escalationReason
+              ? `${POLICY_REASON_LABELS[policy.escalationReason] || policy.escalationReason} (${policy.escalationReason})`
+              : 'Không áp dụng';
+            return <article key={policy.id} style={{ padding: '18px', border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-secondary)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div>
+                  <small style={{ color: 'var(--text-muted)', fontWeight: 700 }}>BƯỚC {index + 1} · {policy.id}</small>
+                  <h3 style={{ margin: '5px 0 0', fontSize: '1rem' }}>{POLICY_DISPLAY[policy.id] || policy.name} <small style={{ fontWeight: 500, color: 'var(--text-muted)' }}>({policy.name})</small></h3>
+                </div>
+                <span style={{ padding: '4px 9px', borderRadius: '999px', background: 'rgba(22, 163, 74, 0.12)', color: '#15803d', fontSize: '0.78rem', fontWeight: 700 }}>{POLICY_STATUS_LABELS[policy.status] || policy.status} ({policy.status})</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '12px', marginTop: '14px', fontSize: '0.88rem' }}>
+                <div><small style={{ color: 'var(--text-muted)', display: 'block' }}>Khi nào kiểm tra</small><span>{guidance?.trigger || policy.trigger}</span></div>
+                <div><small style={{ color: 'var(--text-muted)', display: 'block' }}>Hệ thống sẽ làm gì</small><strong>{POLICY_ACTION_LABELS[policy.systemAction] || policy.systemAction} ({policy.systemAction})</strong></div>
+                <div><small style={{ color: 'var(--text-muted)', display: 'block' }}>Lý do chuyển cán bộ</small><span>{reason}</span></div>
+                <div><small style={{ color: 'var(--text-muted)', display: 'block' }}>Việc cần thực hiện</small><span>{guidance?.action || policy.humanAction}</span></div>
+              </div>
+              <div style={{ marginTop: '13px', paddingTop: '12px', borderTop: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                Mã quy tắc thực thi: <strong>{policy.ruleCode}</strong> · Nhóm: {POLICY_CATEGORY_LABELS[policy.category] || policy.category} ({policy.category}) · Phiên bản: {policy.version}
+              </div>
+            </article>;
+          })}
+        </div>
       </section>}
 
       {activeTab === 'admin_sis' && <section className="card-panel" style={{ padding: '24px', overflow: 'hidden' }}>
