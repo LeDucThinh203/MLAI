@@ -1,0 +1,49 @@
+{
+  "last_reminder": 0,
+  "cached_at": 1791657686901,
+  "version": "7.10.0",
+  "cli_path": "H:\\MLAI\\EDUASSISTANT\\node_modules\\prisma\\build\\index.js",
+  "output": {
+    "product": "prisma",
+    "previous_version": "7.10.0",
+    "checkpoint_version": 4,
+    "local_timestamp_without_timezone": "2026-10-11T01:41:26Z",
+    "current_version": "8.0.0-rc.22",
+    "current_release_date": 1791483570,
+    "client_event_id": "b8f822bb-7856-4f9f-9b72-035902a6d114",
+    "current_download_url": "https://github.com/prisma/prisma",
+    "package": "prisma",
+    "release_tag": "latest",
+    "install_command": "npm install --save-dev prisma",
+    "schema_providers": [],
+    "schema_preview_features": [],
+    "schema_generators_providers": [],
+    "current_changelog_url": "https://github.com/prisma/prisma",
+    "outdated": true,
+    "project_website": "https://prisma.io",
+    "alerts": []
+  },
+  "product": "prisma",
+  "cli_install_type": "local",
+  "local_timestamp": "2026-10-11T00:32:12+07:00",
+  "project_hash": "0e74fd3c",
+  "cli_path_hash": "39dbacef",
+  "endpoint": "https://checkpoint.prisma.io",
+  "arch": "x64",
+  "os": "win32",
+  "node_version": "v24.21.0",
+  "command": "studio",
+  "schema_providers": [
+    "postgresql"
+  ],
+  "schema_preview_features": [],
+  "schema_generators_providers": [
+    "prisma-client-js"
+  ],
+  "cache_file": "H:\\MLAI\\EDUASSISTANT\\.localappdata\\checkpoint-nodejs\\Cache\\prisma-39dbacef",
+  "cache_duration": 43200000,
+  "remind_duration": 172800000,
+  "timeout": 5000,
+  "unref": true,
+  "child_path": "H:\\MLAI\\EDUASSISTANT\\node_modules\\prisma\\build\\child"
+}
