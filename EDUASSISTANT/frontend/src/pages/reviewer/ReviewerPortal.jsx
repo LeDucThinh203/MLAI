@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { API_BASE, SERVER_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { renderSlaBadge } from '../../utils/formatters';
+import { getSlaDeadlineMs, renderSlaBadge } from '../../utils/formatters';
 import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
@@ -246,8 +246,8 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
     return true;
   }).sort((a, b) => {
     // Sort logic: Overdue first, then pending, then approved
-    const aOverdue = a.deadline && new Date(a.deadline).getTime() < Date.now() && a.status !== 'APPROVED';
-    const bOverdue = b.deadline && new Date(b.deadline).getTime() < Date.now() && b.status !== 'APPROVED';
+    const aOverdue = getSlaDeadlineMs(a) < Date.now() && !['APPROVED', 'REJECTED'].includes(a.status);
+    const bOverdue = getSlaDeadlineMs(b) < Date.now() && !['APPROVED', 'REJECTED'].includes(b.status);
     if (aOverdue && !bOverdue) return -1;
     if (!aOverdue && bOverdue) return 1;
     return new Date(b.createdAt) - new Date(a.createdAt);

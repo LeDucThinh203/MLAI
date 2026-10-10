@@ -24,7 +24,7 @@ import hmac
 import hashlib
 import secrets
 import bcrypt
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from app.db.database import run_query, get_one, get_all, get_dashboard_statistics
 from app.realtime import case_event_hub
@@ -496,11 +496,12 @@ class DatabaseService:
         student_code = actor.get('studentCode') or (student_user.get('studentCode') if student_user else None) or 'SV2026-9921'
         category = case_data.get('category') or 'GENERAL'
         assigned_dept = case_data.get('assignedDepartment') or DEPARTMENT_MAP.get(category, 'Phòng Công tác Sinh viên')
-        deadline_date = case_data.get('deadline') or datetime.utcnow().isoformat() + 'Z'
-
         random_suffix = secrets.token_hex(3).upper()
         case_id = f"CASE-{datetime.now().year}-{str(int(datetime.now().timestamp() * 1000))[-4:]}{random_suffix}"
-        created_at = datetime.utcnow().isoformat() + 'Z'
+        created_at_time = datetime.utcnow()
+        created_at = created_at_time.isoformat() + 'Z'
+        # Hồ sơ không có hạn riêng luôn được xử lý theo SLA chuẩn 48 giờ.
+        deadline_date = case_data.get('deadline') or (created_at_time + timedelta(hours=48)).isoformat() + 'Z'
         updated_at = created_at
 
         digital_signature = None
