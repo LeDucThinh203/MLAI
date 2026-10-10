@@ -16,6 +16,8 @@ export default function JudgeModePage({ onNavigateTab }) {
   const [metrics, setMetrics] = useState(null);
   const [verifyResults, setVerifyResults] = useState(null);
   const [runningVerify, setRunningVerify] = useState(false);
+  const [benchmarkRunResults, setBenchmarkRunResults] = useState(null);
+  const [runningBenchmark, setRunningBenchmark] = useState(false);
   const [loadingMetrics, setLoadingMetrics] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
 
@@ -48,6 +50,34 @@ export default function JudgeModePage({ onNavigateTab }) {
       setErrorMsg(err.response?.data?.message || 'Lỗi khi thực thi Verify Harness!');
     } finally {
       setRunningVerify(false);
+    }
+  };
+
+  const handleRunBenchmark = async () => {
+    setRunningBenchmark(true);
+    setErrorMsg(null);
+    try {
+      const res = await axios.post(`${API_BASE}/judge/benchmark/run`);
+      if (res.data?.success) {
+        const result = res.data.data;
+        setBenchmarkRunResults(result);
+        setMetrics((current) => current ? ({
+          ...current,
+          benchmark: {
+            ...current.benchmark,
+            ...result.metrics,
+            benchmarkRunId: result.benchmarkRunId,
+            timestamp: result.timestamp,
+            executionTimeSec: result.executionTimeSec,
+            benchmarkType: result.benchmarkType,
+            aiCallsPerformed: result.aiCallsPerformed,
+          },
+        }) : current);
+      }
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Không chạy được benchmark trên máy chủ.');
+    } finally {
+      setRunningBenchmark(false);
     }
   };
 
@@ -427,12 +457,31 @@ export default function JudgeModePage({ onNavigateTab }) {
         <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Activity size={18} color="#34d399" /> Chỉ Số Đo Lường Benchmark Thật (Measurement Metrics)
         </h3>
+        <button onClick={handleRunBenchmark} disabled={runningBenchmark} className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '9px 14px', marginBottom: '12px' }}>
+          <RefreshCw size={15} className={runningBenchmark ? 'animate-spin' : ''} />
+          {runningBenchmark ? 'Đang chạy 18 tình huống…' : 'Chạy lại 18 tình huống'}
+        </button>
         <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
           Kết quả từ bộ kiểm chuẩn quyết định NVQS độc lập. Bộ kiểm chuẩn không gọi Gemini và không sinh số giả.
         </p>
 
         {metrics?.benchmark?.totalCases && <div style={{ margin: '0 0 16px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.20)', color: '#cbd5e1', fontSize: '0.78rem' }}>
           <strong style={{ color: '#38bdf8' }}>Kết quả đang hiển thị:</strong> {metrics.benchmark.totalCases} tình huống độc lập · Mã chạy {metrics.benchmark.benchmarkRunId || '—'} · Cập nhật {metrics.benchmark.timestamp ? new Date(metrics.benchmark.timestamp).toLocaleString('vi-VN') : '—'}.
+        </div>}
+
+        {benchmarkRunResults?.results && <div style={{ overflowX: 'auto', marginBottom: '16px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+            <thead><tr style={{ textAlign: 'left', color: '#94a3b8', borderBottom: '1px solid #334155' }}>
+              <th style={{ padding: '8px' }}>Kết quả</th><th style={{ padding: '8px' }}>Tình huống</th><th style={{ padding: '8px' }}>Kỳ vọng</th><th style={{ padding: '8px' }}>Thực tế</th><th style={{ padding: '8px' }}>Lý do</th>
+            </tr></thead>
+            <tbody>{benchmarkRunResults.results.map((item) => <tr key={item.id} style={{ borderBottom: '1px solid #1e293b' }}>
+              <td style={{ padding: '8px', color: item.isCorrect ? '#34d399' : '#ef4444', fontWeight: 700 }}>{item.isCorrect ? 'PASS' : 'FAIL'}</td>
+              <td style={{ padding: '8px' }}>{item.name}<div style={{ color: '#64748b', fontSize: '0.7rem' }}>{item.id}</div></td>
+              <td style={{ padding: '8px' }}>{item.expectedDecision}{item.expectedReason ? ` \u00b7 ${item.expectedReason}` : ''}</td>
+              <td style={{ padding: '8px' }}>{item.actualDecision}{item.actualReason ? ` \u00b7 ${item.actualReason}` : ''}</td>
+              <td style={{ padding: '8px' }}><code>{item.ruleMatched}</code></td>
+            </tr>)}</tbody>
+          </table>
         </div>}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>

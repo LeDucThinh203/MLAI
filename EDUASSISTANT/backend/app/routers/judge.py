@@ -1,6 +1,9 @@
 """Public, non-sensitive status data used by the unauthenticated judge page."""
 import json
 import os
+import asyncio
+import importlib.util
+import threading
 
 from fastapi import APIRouter
 
@@ -9,6 +12,19 @@ from app.services.escalation_policy_service import get_confidence_threshold
 from app.services.verify_harness_service import HARNESS_CASES
 
 router = APIRouter(tags=["Judge"])
+_benchmark_lock = threading.Lock()
+
+
+def _run_benchmark_on_server():
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    runner_path = os.path.join(project_root, 'benchmark', 'run_benchmark.py')
+    spec = importlib.util.spec_from_file_location('eduassistant_benchmark_runner', runner_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError('Benchmark runner is unavailable.')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    with _benchmark_lock:
+        return module.run_benchmark()
 
 
 def _benchmark_summary():
@@ -50,3 +66,13 @@ async def get_judge_summary():
         'benchmark': _benchmark_summary(),
         'verifyHarness': {'scenarioCount': len(HARNESS_CASES), 'type': 'DETERMINISTIC_RULE_ENGINE_VERIFICATION'},
     })
+
+
+@router.post('/api/judge/benchmark/run')
+async def run_judge_benchmark():
+    """Run the fixed, synthetic 18-case benchmark on this deployed server."""
+    try:
+        result = await asyncio.to_thread(_run_benchmark_on_server)
+        return api_response(200, True, 'Benchmark 18 tình huống đã chạy.', result)
+    except Exception:
+        return api_response(500, False, 'Không thể chạy benchmark trên máy chủ.', None, 'BENCHMARK_RUN_FAILED')
