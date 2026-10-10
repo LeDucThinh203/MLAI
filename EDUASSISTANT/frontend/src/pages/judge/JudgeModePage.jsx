@@ -203,9 +203,7 @@ export default function JudgeModePage({ onNavigateTab }) {
           <li>Kiểm tra các scenario deterministic và kết quả PASS/FAIL.</li>
           <li>Xem chỉ số benchmark độc lập, ngưỡng tin cậy và thử Live Student Workflow khi cần.</li>
         </ol>
-        <p style={{ margin: '10px 0 0', color: '#94a3b8', fontSize: '0.78rem' }}>
-          RUN VERIFY kiểm tra nhanh 9 tình huống và không gọi Gemini Live. Các chỉ số bên dưới lấy từ lần benchmark độc lập gần nhất gồm nhiều tình huống hơn; chúng được tải lại sau khi chạy kiểm chuẩn.
-        </p>
+        <p style={{ margin: '10px 0 0', color: '#94a3b8', fontSize: '0.78rem' }}>RUN VERIFY dùng bộ quy tắc để xác định PASS/FAIL, đồng thời gọi Gemini để rà soát thêm khi API dùng được. Nếu Gemini chưa cấu hình hoặc gặp lỗi, trang dùng kết quả kiểm tra sẵn có. Các chỉ số benchmark bên dưới là dữ liệu của lần chạy độc lập gần nhất.</p>
       </section>
 
       {errorMsg && (
@@ -298,7 +296,7 @@ export default function JudgeModePage({ onNavigateTab }) {
               gap: '6px'
             }}>
               <Shield size={13} />
-              <span><strong>Deterministic Rule Engine Verification:</strong> Không gọi Gemini Live trong các fixture này để bảo đảm tính tất định, độ trễ thấp và an toàn đánh giá.</span>
+              <span><strong>Bộ quy tắc xác định PASS/FAIL.</strong> Gemini chỉ rà soát bổ sung trên tình huống tổng hợp; khi không dùng được, hệ thống giữ kết quả kiểm tra sẵn có.</span>
             </div>
           </div>
 
@@ -315,9 +313,8 @@ export default function JudgeModePage({ onNavigateTab }) {
               }}>
                 {verifyResults.passed} / {verifyResults.total} PASSED
               </span>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                Mã chạy: {verifyResults.runId}
-              </span>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Mã chạy: {verifyResults.runId}</span>
+              <span style={{ fontSize: '0.75rem', color: verifyResults.aiReview?.mode === 'GEMINI_LIVE' ? '#34d399' : '#f59e0b' }}>{verifyResults.aiReview?.mode === 'GEMINI_LIVE' ? 'Gemini đang hoạt động' : 'Đang dùng kết quả dự phòng'}</span>
             </div>
           )}
         </div>
@@ -333,6 +330,7 @@ export default function JudgeModePage({ onNavigateTab }) {
                   <th style={{ padding: '10px 12px' }}>Quyết Định Thực Tế</th>
                   <th style={{ padding: '10px 12px' }}>Lý Do Leo Thang</th>
                   <th style={{ padding: '10px 12px' }}>Quy Tắc Khớp</th>
+                  <th style={{ padding: '10px 12px' }}>Gemini rà soát</th>
                   <th style={{ padding: '10px 12px' }}>Thời Gian</th>
                 </tr>
               </thead>
@@ -383,6 +381,11 @@ export default function JudgeModePage({ onNavigateTab }) {
                     </td>
                     <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: '0.74rem' }}>
                       <code>{r.ruleMatched}</code>
+                    </td>
+                    <td style={{ padding: '10px 12px', color: '#cbd5e1', fontSize: '0.74rem', minWidth: '220px' }}>
+                      {r.geminiReview ? (
+                        <><strong style={{ color: r.geminiReview.assessment === 'CONSISTENT' ? '#34d399' : '#f59e0b' }}>{r.geminiReview.assessment === 'CONSISTENT' ? 'Phù hợp' : 'Cần xem lại'}</strong><div>{r.geminiReview.rationale}</div></>
+                      ) : (verifyResults.aiReview?.mode === 'GEMINI_LIVE' ? 'Không có nhận xét' : 'Chưa gọi được Gemini')}
                     </td>
                     <td style={{ padding: '10px 12px', color: '#94a3b8' }}>
                       {r.durationMs}ms

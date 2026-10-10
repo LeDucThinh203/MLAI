@@ -554,7 +554,7 @@ def run_verify_harness() -> Dict[str, Any]:
     return {
         'runId': run_id,
         'timestamp': timestamp,
-        'disclaimer': 'Deterministic Rule Engine Verification - Không gọi Gemini Live trong các fixture này.',
+        'disclaimer': 'PASS/FAIL do bộ quy tắc xác định; Gemini chỉ rà soát bổ sung khi API khả dụng.',
         'verificationType': 'DETERMINISTIC_RULE_ENGINE',
         'total': len(HARNESS_CASES),
         'passed': passed_count,
