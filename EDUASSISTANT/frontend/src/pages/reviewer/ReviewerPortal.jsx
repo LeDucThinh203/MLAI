@@ -17,12 +17,7 @@ import PaginationControls from '../../components/common/PaginationControls';
 import { openSafeWindow, safeImageUrl } from '../../utils/security';
 
 const CATEGORY_LABELS = {
-  MILITARY_SERVICE_CONFIRMATION: 'Cấp giấy xác nhận sinh viên tạm hoãn NVQS',
-  TUITION_DISCOUNT: 'Miễn, giảm học phí',
-  ACADEMIC_SCHOLARSHIP: 'Học bổng',
-  COMMUNITY_SERVICE: 'Hoạt động cộng đồng',
-  EMERGENCY_AID: 'Hỗ trợ khó khăn đột xuất',
-  GRADE_APPEAL: 'Phúc khảo điểm'
+  MILITARY_SERVICE_CONFIRMATION: 'Cấp giấy xác nhận sinh viên tạm hoãn NVQS'
 };
 const PRIORITY_LABELS = { URGENT: 'Khẩn cấp', HIGH: 'Cao', MEDIUM: 'Trung bình', LOW: 'Thấp' };
 const ESCALATION_LABELS = {
@@ -460,33 +455,19 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   <option value="Văn phòng Đoàn - Hội Sinh viên">Văn phòng Đoàn - Hội Sinh viên</option>
                 </select>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px' }}>
                   <select
                     className="form-input"
                     style={{ width: '100%', padding: '5px 8px', fontSize: '0.78rem' }}
                     value={statusFilter}
                     onChange={e => setStatusFilter(e.target.value)}
                   >
-                    <option value="ALL">📋 Trạng thái</option>
+                    <option value="ALL">📋 Tất cả trạng thái xử lý</option>
                     <option value="SUBMITTED">⏳ Chờ duyệt</option>
                     <option value="UNDER_REVIEW">⚠️ Đang xử lý</option>
                     <option value="REQUIRES_SUPPLEMENT">🔄 Cần bổ sung</option>
                     <option value="APPROVED">✅ Đã duyệt</option>
                     <option value="REJECTED">❌ Đã từ chối</option>
-                  </select>
-
-                  <select
-                    className="form-input"
-                    style={{ width: '100%', padding: '5px 8px', fontSize: '0.78rem' }}
-                    value={categoryFilter}
-                    onChange={e => setCategoryFilter(e.target.value)}
-                  >
-                    <option value="ALL">🏷️ Danh mục</option>
-                    <option value="MILITARY_SERVICE_CONFIRMATION">🎖️ Hoãn NVQS</option>
-                    <option value="TUITION_DISCOUNT">🎓 Giảm học phí</option>
-                    <option value="ACADEMIC_SCHOLARSHIP">🏆 Học bổng</option>
-                    <option value="COMMUNITY_SERVICE">🎖️ Mùa Hè Xanh</option>
-                    <option value="GRADE_APPEAL">📝 Phúc khảo</option>
                   </select>
                 </div>
 
@@ -673,24 +654,28 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       fontWeight: 700,
                       padding: '1px 6px',
                       borderRadius: '4px',
-                      background: (selectedCase.institutionalFacts?.academicStatus || 'ACTIVE') === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                      color: (selectedCase.institutionalFacts?.academicStatus || 'ACTIVE') === 'ACTIVE' ? '#34d399' : '#f87171'
+                      background: selectedCase.institutionalFacts?.academicStatus === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                      color: selectedCase.institutionalFacts?.academicStatus === 'ACTIVE' ? '#34d399' : '#f87171'
                     }}>
-                      {selectedCase.institutionalFacts?.academicStatus || 'ACTIVE'}
+                      {selectedCase.institutionalFacts?.academicStatus || 'Chưa xác minh'}
                     </span>
                   </div>
                   <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>
-                    <span>Khóa học: </span><strong style={{ color: '#cbd5e1' }}>{selectedCase.institutionalFacts?.courseStartDate || '09/2022'} → {selectedCase.institutionalFacts?.courseEndDate || '06/2026'}</strong>
-                    <span style={{ color: '#38bdf8', marginLeft: '6px' }}>(HK: Đang kích hoạt)</span>
+                    <span>Khóa học: </span><strong style={{ color: '#cbd5e1' }}>{selectedCase.institutionalFacts?.courseStartDate ? `${selectedCase.institutionalFacts.courseStartDate} → ${selectedCase.institutionalFacts.courseEndDate || 'Chưa rõ'}` : 'Chưa có thông tin'}</strong>
+                    {selectedCase.institutionalFacts?.currentTermActive !== undefined && (
+                      <span style={{ color: selectedCase.institutionalFacts.currentTermActive ? '#38bdf8' : '#f87171', marginLeft: '6px' }}>
+                        (HK: {selectedCase.institutionalFacts.currentTermActive ? 'Đang kích hoạt' : 'Chưa kích hoạt'})
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.76rem' }}>
                     <span style={{ color: 'var(--text-sub)' }}>Hộ khẩu thường trú gốc: </span>
                     <span style={{ color: '#f8fafc', fontWeight: 600 }}>
-                      {selectedCase.institutionalFacts?.registeredPermanentAddress || 'Đang xác minh'}
+                      {selectedCase.institutionalFacts?.registeredPermanentAddress || 'Chưa có trong CSDL'}
                     </span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                    <span>Khoa/Viện: </span><strong>{selectedCase.institutionalFacts?.faculty || 'Công nghệ Thông tin'}</strong>
+                    <span>Khoa/Viện: </span><strong>{selectedCase.institutionalFacts?.faculty || 'Chưa xác định'}</strong>
                   </div>
                 </div>
 
@@ -1051,62 +1036,72 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     onChange={e => setFeedbackNote(e.target.value)}
                     style={{ fontSize: '0.74rem', padding: '6px 8px', marginBottom: '8px' }}
                   />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                    <button
-                      type="button"
-                      disabled={submittingFeedback}
-                      onClick={() => handleReviewerFeedback('CORRECT')}
-                      style={{
-                        background: '#1e293b',
-                        color: '#34d399',
-                        border: '1px solid #34d39940',
-                        borderRadius: '4px',
-                        padding: '6px 4px',
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                      title="Quyết định hệ thống hoàn toàn chính xác"
-                    >
-                      ✓ Đúng Chuẩn
-                    </button>
-                    <button
-                      type="button"
-                      disabled={submittingFeedback}
-                      onClick={() => handleReviewerFeedback('MISSED_ESCALATION')}
-                      style={{
-                        background: '#1e293b',
-                        color: '#f97316',
-                        border: '1px solid #f9731640',
-                        borderRadius: '4px',
-                        padding: '6px 4px',
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                      title="Đáng lẽ phải leo thang người duyệt nhưng hệ thống tự duyệt (+0.02 threshold)"
-                    >
-                      ▲ Sót Leo Thang
-                    </button>
-                    <button
-                      type="button"
-                      disabled={submittingFeedback}
-                      onClick={() => handleReviewerFeedback('UNNECESSARY_ESCALATION')}
-                      style={{
-                        background: '#1e293b',
-                        color: '#38bdf8',
-                        border: '1px solid #38bdf840',
-                        borderRadius: '4px',
-                        padding: '6px 4px',
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                      title="Đáng lẽ duyệt tự động được nhưng hệ thống lại leo thang thừa (-0.02 threshold)"
-                    >
-                      ▼ Leo Thang Thừa
-                    </button>
-                  </div>
+                  {(() => {
+                    const isAutoApprove = selectedCase.ruleEngine?.decision === 'AUTO_APPROVE' || selectedCase.status === 'APPROVED';
+                    const canMissed = isAutoApprove;
+                    const canUnnecessary = !isAutoApprove;
+
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                        <button
+                          type="button"
+                          disabled={submittingFeedback}
+                          onClick={() => handleReviewerFeedback('CORRECT')}
+                          style={{
+                            background: '#1e293b',
+                            color: '#34d399',
+                            border: '1px solid #34d39940',
+                            borderRadius: '4px',
+                            padding: '6px 4px',
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            cursor: submittingFeedback ? 'not-allowed' : 'pointer'
+                          }}
+                          title="Quyết định hệ thống hoàn toàn chính xác"
+                        >
+                          ✓ Đúng Chuẩn
+                        </button>
+                        <button
+                          type="button"
+                          disabled={submittingFeedback || !canMissed}
+                          onClick={() => handleReviewerFeedback('MISSED_ESCALATION')}
+                          style={{
+                            background: '#1e293b',
+                            color: canMissed ? '#f97316' : '#64748b',
+                            border: canMissed ? '1px solid #f9731640' : '1px solid #334155',
+                            borderRadius: '4px',
+                            padding: '6px 4px',
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            cursor: canMissed && !submittingFeedback ? 'pointer' : 'not-allowed',
+                            opacity: canMissed ? 1 : 0.4
+                          }}
+                          title={canMissed ? "Đáng lẽ phải leo thang người duyệt nhưng hệ thống tự duyệt (+0.02 threshold)" : "Chỉ áp dụng cho hồ sơ hệ thống tự duyệt (AUTO_APPROVE)"}
+                        >
+                          ▲ Sót Leo Thang
+                        </button>
+                        <button
+                          type="button"
+                          disabled={submittingFeedback || !canUnnecessary}
+                          onClick={() => handleReviewerFeedback('UNNECESSARY_ESCALATION')}
+                          style={{
+                            background: '#1e293b',
+                            color: canUnnecessary ? '#38bdf8' : '#64748b',
+                            border: canUnnecessary ? '1px solid #38bdf840' : '1px solid #334155',
+                            borderRadius: '4px',
+                            padding: '6px 4px',
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            cursor: canUnnecessary && !submittingFeedback ? 'pointer' : 'not-allowed',
+                            opacity: canUnnecessary ? 1 : 0.4
+                          }}
+                          title={canUnnecessary ? "Đáng lẽ duyệt tự động được nhưng hệ thống lại leo thang thừa (-0.02 threshold)" : "Chỉ áp dụng cho hồ sơ hệ thống leo thang (ESCALATE_TO_HUMAN)"}
+                        >
+                          ▼ Leo Thang Thừa
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </details>
               </div>
 

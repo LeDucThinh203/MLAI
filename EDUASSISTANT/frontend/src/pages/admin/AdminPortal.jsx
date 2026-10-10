@@ -15,12 +15,7 @@ import AnalyticsCharts from '../../components/admin/AnalyticsCharts';
 import { openSafeWindow } from '../../utils/security';
 
 const CATEGORY_LABELS = {
-  MILITARY_SERVICE_CONFIRMATION: 'Cấp giấy xác nhận sinh viên tạm hoãn NVQS',
-  TUITION_DISCOUNT: 'Miễn, giảm học phí',
-  ACADEMIC_SCHOLARSHIP: 'Học bổng',
-  COMMUNITY_SERVICE: 'Hoạt động cộng đồng',
-  EMERGENCY_AID: 'Hỗ trợ khó khăn đột xuất',
-  GRADE_APPEAL: 'Phúc khảo điểm'
+  MILITARY_SERVICE_CONFIRMATION: 'Cấp giấy xác nhận sinh viên tạm hoãn NVQS'
 };
 
 const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
@@ -377,17 +372,18 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             </div>
 
             {/* 2. Cơ cấu theo Danh mục hồ sơ */}
+            {/* 2. Chỉ số Điều Phối & Ngưỡng Thích Ứng NVQS */}
             <div className="card-panel" style={{ padding: '24px' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <SlidersHorizontal size={18} color="#818cf8" /> Cơ Cấu Theo Danh Mục
+                <SlidersHorizontal size={18} color="#818cf8" /> Hiệu Suất Escalation Referee (NVQS)
               </h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {[
-                  { label: '🎓 Miễn Giảm Học Phí', count: stats.categoryBreakdown?.TUITION_DISCOUNT || 0, color: '#38bdf8' },
-                  { label: '🏆 Học Bổng Khuyến Khích', count: stats.categoryBreakdown?.ACADEMIC_SCHOLARSHIP || 0, color: '#fbbf24' },
-                  { label: '🎖️ Điểm Rèn Luyện / MHX', count: stats.categoryBreakdown?.COMMUNITY_SERVICE || 0, color: '#818cf8' },
-                  { label: '🆘 Hỗ Trợ Khó Khăn Đột Xuất', count: stats.categoryBreakdown?.EMERGENCY_AID || 0, color: '#f43f5e' }
+                  { label: '⚡ Tự Động Phê Duyệt (Auto Approved)', count: stats.autoApprovedCases || 0, color: '#10b981' },
+                  { label: '🚨 Chuyển Cán Bộ Thẩm Định (Escalated)', count: stats.escalatedCases || 0, color: '#f59e0b' },
+                  { label: '🛡️ Can Thiệp Đặc Cách (Human Overrides)', count: stats.totalHumanOverrides || 0, color: '#8b5cf6' },
+                  { label: '⛔ Hồ Sơ Tạm Dừng Xử Lý (Stopped)', count: stats.stoppedCases || 0, color: '#ef4444' }
                 ].map((item, idx) => {
                   const pct = stats.totalCases > 0 ? Math.round((item.count / stats.totalCases) * 100) : 0;
                   return (
@@ -404,12 +400,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 })}
               </div>
 
-              {/* Thông số ưu tiên */}
+              {/* Ngưỡng tin cậy thích ứng */}
               <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <span>Độ ưu tiên:</span>
-                <span>Khẩn cấp: <strong style={{ color: '#f43f5e' }}>{stats.priorityBreakdown?.URGENT || 0}</strong></span>
-                <span>Cao: <strong style={{ color: '#fbbf24' }}>{stats.priorityBreakdown?.HIGH || 0}</strong></span>
-                <span>Trung bình: <strong style={{ color: '#38bdf8' }}>{stats.priorityBreakdown?.MEDIUM || 0}</strong></span>
+                <span>Ngưỡng tin cậy thích ứng: <strong style={{ color: '#818cf8' }}>{(stats.currentThreshold !== undefined ? stats.currentThreshold : 0.75)}</strong></span>
+                <span>Chờ duyệt: <strong style={{ color: '#38bdf8' }}>{stats.pendingCases || 0}</strong></span>
               </div>
             </div>
 
@@ -420,18 +414,18 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
               <div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', color: '#818cf8' }}>
-                  <Cpu size={20} color="#818cf8" /> Phân tích các hồ sơ cần xem xét thêm
+                  <Cpu size={20} color="#818cf8" /> Phân Tích 5 Nguyên Nhân Leo Thang Thẩm Định NVQS
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '2px' }}>
-                  Hệ thống kiểm tra thông tin hồ sơ và minh chứng để xác định hồ sơ có thể xử lý ngay hoặc cần cán bộ xem xét.
+                  Hệ thống phân tách rành mạch 3 tầng dữ liệu và kích hoạt chuyển người duyệt chính xác khi có nghi vấn hoặc vượt thẩm quyền.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <span style={{ fontSize: '0.78rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                  ⚡ Có thể xử lý tự động: {stats.autoApprovedCases || 0} hồ sơ
+                  ⚡ Tự động phê duyệt: {stats.autoApprovedCases || 0}
                 </span>
                 <span style={{ fontSize: '0.78rem', background: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, border: '1px solid rgba(249, 115, 22, 0.3)' }}>
-                  🚨 Cần cán bộ xem xét: {stats.escalatedCases || 0} hồ sơ
+                  🚨 Cần chuyên viên: {stats.escalatedCases || 0}
                 </span>
               </div>
             </div>
@@ -440,42 +434,42 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
               <div style={{ background: '#090d16', borderLeft: '4px solid #ef4444', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#f87171', fontWeight: 700 }}>🔒 Thông tin sinh viên chưa khớp</span>
+                  <span style={{ fontSize: '0.76rem', color: '#f87171', fontWeight: 700 }}>🔒 OWNERSHIP_UNCLEAR</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f87171' }}>{stats.escalationReasonsBreakdown?.OWNERSHIP_UNCLEAR || 0}</span>
                 </div>
-                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>MSSV hoặc họ tên trên minh chứng không khớp tài khoản</p>
+                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Nghi vấn quyền sở hữu: MSSV hoặc họ tên không khớp hồ sơ gốc</p>
               </div>
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #f97316', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#fb923c', fontWeight: 700 }}>🚨 Thiếu hoặc khó đọc minh chứng</span>
+                  <span style={{ fontSize: '0.76rem', color: '#fb923c', fontWeight: 700 }}>🚨 FACT_UNKNOWN</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fb923c' }}>{stats.escalationReasonsBreakdown?.FACT_UNKNOWN || 0}</span>
                 </div>
-                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Chưa có tệp minh chứng hoặc tệp quá mờ để đọc rõ thông tin</p>
+                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Thiếu dữ kiện xác thực / Địa chỉ chưa đủ thành phần bắt buộc</p>
               </div>
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #eab308', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#facc15', fontWeight: 700 }}>⚠️ Thông tin kê khai chưa khớp</span>
+                  <span style={{ fontSize: '0.76rem', color: '#facc15', fontWeight: 700 }}>⚠️ DATA_CONFLICT</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#facc15' }}>{stats.escalationReasonsBreakdown?.DATA_CONFLICT || 0}</span>
                 </div>
-                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Thông tin sinh viên kê khai khác với thông tin trên minh chứng</p>
+                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Xung đột dữ liệu: Chọn tạm trú hoặc khác thường trú lưu trữ</p>
               </div>
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #8b5cf6', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#c084fc', fontWeight: 700 }}>👑 Cần hội đồng xem xét</span>
+                  <span style={{ fontSize: '0.76rem', color: '#c084fc', fontWeight: 700 }}>👑 AUTHORITY_REQUIRED</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#c084fc' }}>{stats.escalationReasonsBreakdown?.AUTHORITY_REQUIRED || 0}</span>
                 </div>
-                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Hồ sơ cần quyết định từ cấp có thẩm quyền hoặc hội đồng</p>
+                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Vượt thẩm quyền: Sinh viên đình chỉ, bảo lưu, thôi học hoặc thiếu TKB</p>
               </div>
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #06b6d4', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#22d3ee', fontWeight: 700 }}>📋 Yêu cầu ngoài quy định</span>
+                  <span style={{ fontSize: '0.76rem', color: '#22d3ee', fontWeight: 700 }}>📋 POLICY_OUT_OF_SCOPE</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#22d3ee' }}>{stats.escalationReasonsBreakdown?.POLICY_OUT_OF_SCOPE || 0}</span>
                 </div>
-                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Yêu cầu cần được xem xét riêng vì chưa thuộc quy định hiện hành</p>
+                <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Ngoài phạm vi chính sách: Có yêu cầu cứu xét đặc cách cá biệt</p>
               </div>
             </div>
           </div>

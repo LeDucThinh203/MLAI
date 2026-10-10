@@ -16,24 +16,24 @@ const PORTAL = {
 const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
   const { user, token, logout } = useAuth();
   const location = useLocation();
-  const [aiMode, setAiMode] = useState('mock');
+  const [aiStatus, setAiStatus] = useState({ isConfigured: true, displayLabel: 'Gemini Live' });
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const portal = PORTAL[user?.role] || { title: 'Hệ thống quản lý hồ sơ', subtitle: 'Trường đại học', icon: Shield, tabs: [] };
   const PortalIcon = portal.icon;
 
   useEffect(() => {
     if (!token) return;
-    axios.get(`${API_BASE}/system/ai-status`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.data?.success && setAiMode(res.data.data.currentMode))
+    axios.get(`${API_BASE}/system/ai-status`, { withCredentials: true })
+      .then(res => {
+        if (res.data?.success && res.data.data) {
+          setAiStatus({
+            isConfigured: res.data.data.isConfigured,
+            displayLabel: res.data.data.displayLabel || (res.data.data.isConfigured ? 'Gemini Live' : 'AI unavailable – Safe Human Review')
+          });
+        }
+      })
       .catch(() => undefined);
   }, [token]);
-
-  const changeAiMode = async (mode) => {
-    try {
-      const res = await axios.post(`${API_BASE}/system/ai-mode`, { mode }, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.data?.success) setAiMode(mode);
-    } catch { /* keep current mode */ }
-  };
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -41,8 +41,6 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
     try {
       await logout();
     } finally {
-      // AppHeader remains mounted on the guest screen. Reset this local state
-      // so a subsequent login never inherits the previous spinner.
       setIsLoggingOut(false);
     }
   };
@@ -64,7 +62,27 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
           {guestLinks.map(([to, label]) => <Link key={to} className={location.pathname === to ? 'is-active' : ''} to={to}>{label}</Link>)}
         </nav>}
         {user && <div className="header-actions">
-          {user.role !== 'STUDENT' && <label className="ai-status" title="Cách trợ lý AI hỗ trợ xử lý"><span className={`status-dot status-dot--${aiMode}`} /><span>Trợ lý AI</span><select value={aiMode} onChange={e => changeAiMode(e.target.value)} aria-label="Cách trợ lý AI hỗ trợ"><option value="mock">Dữ liệu minh họa</option><option value="cache">Dùng kết quả đã có</option><option value="live">Xử lý trực tiếp</option></select></label>}
+          {user.role !== 'STUDENT' && (
+            <div
+              className="ai-status"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '20px', background: 'rgba(15, 23, 42, 0.05)', border: '1px solid rgba(148, 163, 184, 0.2)' }}
+              title={aiStatus.displayLabel}
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: aiStatus.isConfigured ? '#10b981' : '#f59e0b',
+                  boxShadow: aiStatus.isConfigured ? '0 0 8px rgba(16, 185, 129, 0.6)' : 'none'
+                }}
+              />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>
+                {aiStatus.displayLabel}
+              </span>
+            </div>
+          )}
           <NotificationBell onOpenCase={onOpenCase} />
           <button className="profile-summary" onClick={() => setActiveTab('account_settings')} title="Mở thông tin tài khoản"><img src={safeImageUrl(user.avatar, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150')} alt="" /><span><strong>{user.fullName || user.username}</strong><small>{roleLabel}</small></span></button>
           <button className="header-icon-button" onClick={() => setActiveTab('account_settings')} title="Cài đặt tài khoản"><Settings size={17} /><span>Cài đặt</span></button>

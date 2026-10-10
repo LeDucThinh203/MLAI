@@ -272,6 +272,21 @@ export default function JudgeModePage({ onNavigateTab }) {
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>
               Được thiết kế riêng cho Ban Giám Khảo để đánh giá tính chuẩn xác của 5 nguyên nhân leo thang trong vài giây.
             </p>
+            <div style={{
+              marginTop: '8px',
+              padding: '6px 10px',
+              background: 'rgba(56, 189, 248, 0.08)',
+              border: '1px solid rgba(56, 189, 248, 0.25)',
+              borderRadius: '6px',
+              fontSize: '0.74rem',
+              color: '#38bdf8',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <Shield size={13} />
+              <span><strong>Deterministic Rule Engine Verification:</strong> Không gọi Gemini Live trong các fixture này để bảo đảm tính tất định, độ trễ thấp và an toàn đánh giá.</span>
+            </div>
           </div>
 
           {verifyResults && (
