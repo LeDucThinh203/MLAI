@@ -612,6 +612,45 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .case-discussion__item--student::before { background: #10b981; }
 .case-discussion__item p { font-size: .88rem !important; line-height: 1.55 !important; }
 
+/* Student requests: clear hierarchy and a calm administrative presentation. */
+.student-cases-page { max-width: 1040px; margin: 0 auto; }
+.student-cases-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid #d8e1ec; }
+.student-cases-header h2 { margin: 0 0 5px; color: #172b4d !important; font-size: 1.35rem; }
+.student-cases-header p { margin: 0; color: #52677f; font-size: .9rem; }
+.student-cases-refresh { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; }
+.student-case-list { display: grid; gap: 16px; }
+.student-case { padding: 20px 22px; background: #fff !important; border: 1px solid #d8e1ec !important; border-left: 4px solid #9aafc4 !important; border-radius: 10px; box-shadow: 0 2px 8px rgba(25,55,89,.06); }
+.student-case--highlighted { border-color: #4b83b5 !important; box-shadow: 0 0 0 3px rgba(21,90,147,.12) !important; }
+.student-case__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-width: 0; }
+.student-case__id { color: #52677f; font-size: .76rem; font-weight: 700; letter-spacing: .02em; }
+.student-case__date { color: #52677f; font-size: .8rem; white-space: nowrap; }
+.student-case__department { display: inline-flex; align-items: center; gap: 5px; color: #52677f; font-size: .78rem; }
+.student-case__title { margin: 14px 0 12px; color: #172b4d !important; font-size: 1.05rem; line-height: 1.4; }
+.student-case__status { display: inline-flex; align-items: center; padding: 4px 10px; border: 1px solid; border-radius: 999px; font-size: .76rem; line-height: 1.25; font-weight: 700; }
+.student-case__status--submitted, .student-case__status--review { color: #805614; background: #fff8e8; border-color: #e9d19a; }
+.student-case__status--approved { color: #23734d; background: #eff9f2; border-color: #add4bb; }
+.student-case__status--rejected { color: #9d3341; background: #fff4f4; border-color: #eabfc5; }
+.student-case__status--supplement { color: #805614; background: #fff8e8; border-color: #e9d19a; }
+.student-case__summary { padding: 14px 16px; margin: 0 0 14px; background: #f5f8fb; border: 1px solid #e1e8ef; border-radius: 8px; }
+.student-case__summary > span { color: #52677f; font-size: .76rem; font-weight: 700; }
+.student-case__summary p { margin: 5px 0 0; color: #233b5c; font-size: .9rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.student-case [style*="rgba(5, 150, 105"] { color: #23734d !important; background: #eff9f2 !important; border-color: #add4bb !important; }
+.student-case [style*="rgba(245, 158, 11"] { color: #704b12 !important; background: #fff8e8 !important; border-color: #e9d19a !important; }
+.student-case [style*="color: '#f8fafc'"] { color: #233b5c !important; }
+.case-discussion--student { background: #fff !important; border: 1px solid #d8e1ec !important; box-shadow: none !important; }
+.case-discussion--student h4 { color: #294866 !important; }
+.case-discussion--student .case-discussion__item { background: #f8fafc !important; border-color: #e1e8ef !important; }
+.case-discussion--student .case-discussion__item span { color: #294866 !important; }
+.case-discussion--student .case-discussion__item p { color: #233b5c !important; }
+@media (max-width: 640px) {
+  .student-cases-page { padding: 18px !important; }
+  .student-cases-header { align-items: stretch; flex-direction: column; }
+  .student-cases-refresh { align-self: flex-start; }
+  .student-case { padding: 16px !important; }
+  .student-case__meta { align-items: flex-start; flex-direction: column; }
+  .student-case__date { white-space: normal; }
+}
+
 @media (max-width: 760px) {
   .reviewer-case-detail { padding: 16px !important; }
   .reviewer-case-detail__summary { grid-template-columns: 1fr !important; }

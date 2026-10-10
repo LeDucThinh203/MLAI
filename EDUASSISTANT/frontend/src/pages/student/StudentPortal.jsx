@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   PlusCircle, RefreshCw, Paperclip, UploadCloud, Sparkles,
-  CheckCircle2, AlertTriangle, Printer, Send, Building2, AlertCircle, QrCode,
+  CheckCircle2, Printer, Send, Building2, AlertCircle, QrCode,
   MapPin, Shield, User, FileText, Check, AlertOctagon
 } from 'lucide-react';
 import { API_BASE, SERVER_BASE } from '../../api/client';
@@ -12,14 +12,6 @@ import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
 import { openSafeWindow, safeImageUrl } from '../../utils/security';
-
-const ESCALATION_LABELS = {
-  OWNERSHIP_UNCLEAR: 'Nghi vấn quyền sở hữu / MSSV không khớp',
-  FACT_UNKNOWN: 'Thiếu dữ kiện xác thực / Địa chỉ chưa đủ thành phần',
-  DATA_CONFLICT: 'Mâu thuẫn dữ liệu kê khai và hồ sơ lưu trữ',
-  AUTHORITY_REQUIRED: 'Cần chuyên viên Phòng Đào tạo xác minh',
-  POLICY_OUT_OF_SCOPE: 'Yêu cầu ngoài quy chế tự động chuẩn'
-};
 
 const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) => {
   const { token, user } = useAuth();
@@ -254,16 +246,18 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
   const renderStatusBadge = (status) => {
     switch (status) {
       case 'SUBMITTED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8' }}>Đã gửi (Chờ xử lý)</span>;
+        return <span className="student-case__status student-case__status--submitted">Đã tiếp nhận</span>;
+      case 'RESUBMITTED':
+        return <span className="student-case__status student-case__status--submitted">Đã gửi thông tin bổ sung</span>;
       case 'UNDER_REVIEW':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(217, 119, 6, 0.15)', color: '#fbbf24' }}>Đang thẩm định (HITL)</span>;
+        return <span className="student-case__status student-case__status--review">Đang được xem xét</span>;
       case 'APPROVED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, background: 'rgba(5, 150, 105, 0.2)', color: '#34d399', border: '1px solid rgba(5, 150, 105, 0.3)' }}>✅ Đã cấp Giấy xác nhận</span>;
+        return <span className="student-case__status student-case__status--approved">Đã xử lý</span>;
       case 'REJECTED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(225, 29, 72, 0.15)', color: '#f87171' }}>Đã từ chối</span>;
+        return <span className="student-case__status student-case__status--rejected">Không được chấp thuận</span>;
       case 'REQUIRES_SUPPLEMENT':
       case 'INFO_REQUESTED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)' }}>Cần bổ sung thông tin</span>;
+        return <span className="student-case__status student-case__status--supplement">Cần bổ sung thông tin</span>;
       default:
         return <span>{status}</span>;
     }
@@ -562,17 +556,13 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
 
       {/* TAB 2: DANH SÁCH YÊU CẦU CỦA SINH VIÊN */}
       {activeTab === 'student_cases' && (
-        <div className="card-panel" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+        <div className="card-panel student-cases-page" style={{ padding: '28px' }}>
+          <div className="student-cases-header">
             <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc' }}>
-              Yêu cầu của tôi
-              </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                Xem tình trạng yêu cầu. Nếu cần bổ sung thông tin, nhà trường sẽ báo tại đây.
-              </p>
+              <h2>Yêu cầu của tôi</h2>
+              <p>Theo dõi tình trạng xử lý và trao đổi với nhà trường về các yêu cầu bạn đã gửi.</p>
             </div>
-            <button onClick={fetchStudentData} className="btn-secondary">
+            <button onClick={fetchStudentData} className="btn-secondary student-cases-refresh">
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               Làm mới
             </button>
@@ -584,7 +574,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="student-case-list">
             {myCases.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
                 <FileText size={40} style={{ opacity: 0.4, marginBottom: '10px' }} />
@@ -602,75 +592,32 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                 const isApproved = c.status === 'APPROVED';
                 const isNeedingSupplement = c.status === 'REQUIRES_SUPPLEMENT' || c.status === 'INFO_REQUESTED';
                 const isSupplementOpen = supplementingCaseId === c.id;
-                const esc = c.escalation || (c.aiExtraction?.escalation) || null;
-                const ruleEng = c.ruleEngine || (c.aiExtraction?.ruleEngine) || null;
-                const isAutoApproved = ruleEng?.decision === 'AUTO_APPROVE';
 
                 return (
                   <div
                     id={`student-case-${c.id}`}
                     key={c.id}
-                    style={{
-                      background: '#0f172a',
-                      border: `1px solid ${highlightedCaseId === c.id ? '#60a5fa' : (isApproved ? 'rgba(5, 150, 105, 0.4)' : (isNeedingSupplement ? 'rgba(245, 158, 11, 0.5)' : 'var(--border-color)'))}`,
-                      borderRadius: '10px',
-                      padding: '18px',
-                      boxShadow: highlightedCaseId === c.id ? '0 0 0 4px rgba(96, 165, 250, 0.16)' : 'none'
-                    }}
+                    className={`student-case ${highlightedCaseId === c.id ? 'student-case--highlighted' : ''}`}
                   >
                     {/* CASE HEADER */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: '#818cf8', fontWeight: 800 }}>{c.id}</span>
+                      <div className="student-case__meta">
+                <span className="student-case__id">Mã yêu cầu: {c.id}</span>
                         {renderStatusBadge(c.status)}
-                        {isAutoApproved && (
-                          <span style={{ fontSize: '0.72rem', background: 'rgba(5, 150, 105, 0.15)', color: '#34d399', border: '1px solid rgba(5, 150, 105, 0.3)', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
-                            ⚡ Tự động phê chuẩn
-                          </span>
-                        )}
-                        <span style={{ fontSize: '0.72rem', background: '#334155', color: '#93c5fd', padding: '2px 8px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Building2 size={11} /> {c.assignedDepartment || 'Phòng Quản lý Đào tạo'}
-                        </span>
+
+                <span className="student-case__department"><Building2 size={14} /> Đơn vị tiếp nhận: {c.assignedDepartment || 'Phòng Quản lý Đào tạo'}</span>
                       </div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)' }}>
-                        Nộp ngày: {new Date(c.createdAt).toLocaleDateString('vi-VN')}
-                      </span>
+              <span className="student-case__date">Ngày gửi: {new Date(c.createdAt).toLocaleDateString('vi-VN')}</span>
                     </div>
 
-                    <h3 style={{ fontSize: '1.02rem', fontWeight: 800, color: '#f8fafc', marginBottom: '8px' }}>
+                    <h3 className="student-case__title">
                       {c.title}
                     </h3>
 
-                    {/* ĐỊA CHỈ & DỮ LIỆU ĐỐI CHIẾU */}
-                    <div style={{ background: '#1e293b', borderRadius: '8px', padding: '12px', marginBottom: '12px', fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <div>
-                        <span style={{ color: '#94a3b8' }}>📍 Địa chỉ thường trú đã khai: </span>
-                        <strong style={{ color: '#f8fafc' }}>{c.studentClaim?.rawAddress || c.description}</strong>
-                      </div>
-                      {c.aiExtraction?.normalizedAddress && (
-                        <div>
-                          <span style={{ color: '#94a3b8' }}>✨ Chuẩn hóa bởi hệ thống: </span>
-                          <span style={{ color: '#38bdf8' }}>{c.aiExtraction.normalizedAddress}</span>
-                        </div>
-                      )}
+                    <div className="student-case__summary">
+                      <span>Nội dung bạn đã gửi</span>
+                      <p>{c.description || c.studentClaim?.rawAddress || 'Chưa có nội dung mô tả.'}</p>
                     </div>
-
-                    {/* NẾU LEO THANG XÉT DUYỆT */}
-                    {esc && (
-                      <div style={{
-                        background: 'rgba(239, 68, 68, 0.08)',
-                        border: '1px solid rgba(239, 68, 68, 0.25)',
-                        borderRadius: '8px',
-                        padding: '10px 14px',
-                        marginBottom: '12px',
-                        fontSize: '0.8rem'
-                      }}>
-                        <div style={{ color: '#f87171', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <AlertTriangle size={14} /> Nhà trường cần xem xét thêm ({ESCALATION_LABELS[esc.reason] || esc.reason})
-                        </div>
-                        <p style={{ color: '#cbd5e1', margin: 0 }}>{esc.explanation}</p>
-                      </div>
-                    )}
 
                     {/* NẾU ĐÃ APPROVED -> CUNG CẤP NÚT IN VÀ TRA CỨU QR */}
                     {isApproved && (
@@ -767,7 +714,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
 
                     {/* DISCUSSION & AUDIT TRAIL */}
                     <div style={{ borderTop: '1px solid rgba(148, 163, 184, 0.15)', paddingTop: '12px', marginTop: '8px' }}>
-                      <CaseDiscussion caseId={c.id} currentStatus={c.status} />
+                      <CaseDiscussion caseId={c.id} currentStatus={c.status} studentView />
                     </div>
                   </div>
                 );

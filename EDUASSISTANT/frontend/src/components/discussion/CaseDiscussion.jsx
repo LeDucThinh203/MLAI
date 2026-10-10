@@ -3,7 +3,7 @@ import axios from 'axios';
 import { MessageCircle, RefreshCw, Send } from 'lucide-react';
 import { API_BASE, SERVER_BASE } from '../../api/client';
 
-export const CaseDiscussion = ({ caseId }) => {
+export const CaseDiscussion = ({ caseId, studentView = false }) => {
   const [comments, setComments] = useState([]);
   const [inputContent, setInputContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -80,7 +80,7 @@ export const CaseDiscussion = ({ caseId }) => {
   };
 
   return (
-    <div className="case-discussion" style={{
+    <div className={`case-discussion ${studentView ? 'case-discussion--student' : ''}`} style={{
       background: '#070b19',
       border: '1px solid #1e293b',
       borderRadius: '10px',
@@ -91,7 +91,7 @@ export const CaseDiscussion = ({ caseId }) => {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: '#93c5fd', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-          <MessageCircle size={15} color="#38bdf8" /> Kênh Trao Đổi & Bình Luận ({comments.length})
+          <MessageCircle size={15} color="#38bdf8" /> {studentView ? 'Trao đổi với nhà trường' : 'Trao đổi hồ sơ'} ({comments.length})
         </h4>
         <button
           type="button"
@@ -144,7 +144,7 @@ export const CaseDiscussion = ({ caseId }) => {
                       color: isStaff ? '#93c5fd' : '#6ee7b7',
                       fontWeight: 600
                     }}>
-                      {cmt.authorRole === 'ADMIN' ? '🛡️ Admin' : (cmt.authorRole === 'REVIEWER' ? '🔍 Cán Bộ' : '🎓 Sinh Viên')}
+                      {cmt.authorRole === 'ADMIN' ? (studentView ? 'Nhà trường' : 'Quản trị viên') : (cmt.authorRole === 'REVIEWER' ? (studentView ? 'Cán bộ phụ trách' : 'Cán bộ') : 'Sinh viên')}
                     </span>
                   </div>
                   <span style={{ fontSize: '0.68rem', color: 'var(--text-sub)' }}>
@@ -170,7 +170,7 @@ export const CaseDiscussion = ({ caseId }) => {
           type="text"
           value={inputContent}
           onChange={e => setInputContent(e.target.value)}
-          placeholder="Nhập câu hỏi hoặc giải trình thêm..."
+          placeholder={studentView ? 'Nhập câu hỏi hoặc thông tin bạn muốn bổ sung...' : 'Nhập câu hỏi hoặc giải trình thêm...'}
           className="form-input"
           style={{ flex: 1, padding: '7px 10px', fontSize: '0.78rem' }}
         />
@@ -181,7 +181,7 @@ export const CaseDiscussion = ({ caseId }) => {
           style={{ padding: '7px 12px', fontSize: '0.78rem', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
         >
           {sending ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}
-          <span>Gửi</span>
+          <span>{studentView ? 'Gửi tin nhắn' : 'Gửi'}</span>
         </button>
       </form>
     </div>
