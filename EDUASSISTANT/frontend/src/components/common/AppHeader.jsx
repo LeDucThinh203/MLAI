@@ -8,7 +8,7 @@ import NotificationBell from '../notifications/NotificationBell';
 import { safeImageUrl } from '../../utils/security';
 
 const PORTAL = {
-  STUDENT: { title: 'Cổng sinh viên', subtitle: 'Dịch vụ học vụ trực tuyến', icon: GraduationCap, tabs: [['student_submit', 'Nộp hồ sơ', PlusCircle], ['student_cases', 'Hồ sơ của tôi', FileText], ['student_history', 'Lịch sử', History]] },
+  STUDENT: { title: 'Trang sinh viên', subtitle: 'Nộp và theo dõi yêu cầu', icon: GraduationCap, tabs: [['student_submit', 'Nộp yêu cầu', PlusCircle], ['student_cases', 'Yêu cầu của tôi', FileText], ['student_history', 'Hoạt động gần đây', History]] },
   REVIEWER: { title: 'Cổng thẩm định hồ sơ', subtitle: 'Ban giám sát và xét duyệt', icon: UserCheck, tabs: [['reviewer_queue', 'Hàng đợi', Inbox], ['reviewer_audit', 'Nhật ký', History]] },
   ADMIN: { title: 'Cổng quản trị', subtitle: 'Điều hành hệ thống học vụ', icon: Shield, tabs: [['admin_overview', 'Tổng quan', BarChart3], ['admin_users', 'Tài khoản', Users], ['reviewer_queue', 'Thẩm định', Inbox], ['reviewer_audit', 'Nhật ký', History]] }
 };
@@ -88,7 +88,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
           <NotificationBell onOpenCase={onOpenCase} />
           <button className="profile-summary" onClick={() => setActiveTab('account_settings')} title="Mở thông tin tài khoản"><img src={safeImageUrl(user.avatar, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150')} alt="" /><span><strong>{user.fullName || user.username}</strong><small>{roleLabel}</small></span></button>
           <button className="header-icon-button" onClick={() => setActiveTab('account_settings')} title="Cài đặt tài khoản"><Settings size={17} /><span>Cài đặt</span></button>
-          <button className={`two-factor-button ${user.twoFactorEnabled ? 'is-enabled' : ''}`} onClick={onOpen2FAModal}><ShieldAlert size={16} /><span>{user.twoFactorEnabled ? '2FA đã bật' : 'Bật 2FA'}</span></button>
+          <button className={`two-factor-button ${user.twoFactorEnabled ? 'is-enabled' : ''}`} onClick={onOpen2FAModal}><ShieldAlert size={16} /><span>{user.twoFactorEnabled ? 'Đã bật xác thực 2 bước' : 'Bật xác thực 2 bước'}</span></button>
           <button type="button" className="logout-button" onClick={handleLogout} disabled={isLoggingOut} aria-busy={isLoggingOut}>
             {isLoggingOut ? <LoaderCircle className="animate-spin" size={16} /> : <LogOut size={16} />}
             <span>{isLoggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}</span>

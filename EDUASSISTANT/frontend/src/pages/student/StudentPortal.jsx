@@ -297,48 +297,48 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
         <div className="card-panel" style={{ padding: '28px', maxWidth: '880px', margin: '0 auto', width: '100%' }}>
           <div style={{ marginBottom: '20px' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '20px', padding: '4px 12px', fontSize: '0.78rem', color: '#38bdf8', fontWeight: 700, marginBottom: '8px' }}>
-              <Shield size={14} /> Dịch vụ học vụ trực tuyến • Quy trình chuẩn 2026
+              <Shield size={14} /> Nộp giấy tờ trực tuyến
             </div>
             <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.3, margin: '4px 0' }}>
-              YÊU CẦU CẤP GIẤY XÁC NHẬN SINH VIÊN
+              Xin giấy xác nhận sinh viên
             </h1>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#94a3b8', margin: 0 }}>
-              PHỤC VỤ THỦ TỤC TẠM HOÃN GỌI NHẬP NGŨ (NVQS)
+              Phục vụ hồ sơ nghĩa vụ quân sự
             </h2>
-            <div role="note" style={{ padding: '12px', border: '1px solid #f59e0b', borderRadius: '8px', color: '#fcd34d', background: 'rgba(120,53,15,.25)', fontSize: '0.84rem' }}>INTERNAL DEMO ONLY: This prototype records a workflow request. It does not issue an official certificate or decide military-service deferment eligibility. Verify requirements with your institution. The permanent-address check is an internal demo rule.</div>
+            <div role="note" style={{ padding: '12px', border: '1px solid #f59e0b', borderRadius: '8px', color: '#fcd34d', background: 'rgba(120,53,15,.25)', fontSize: '0.84rem' }}>Đây là bản dùng thử. Hệ thống chỉ ghi nhận và theo dõi yêu cầu, không cấp giấy xác nhận chính thức và không quyết định bạn có được tạm hoãn nghĩa vụ quân sự hay không. Vui lòng hỏi nhà trường và cơ quan có thẩm quyền về thủ tục. Việc đối chiếu địa chỉ ở đây chỉ áp dụng cho bản dùng thử.</div>
           </div>
 
           <form onSubmit={handleSubmitCase} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Student-facing copy of the canonical SIS row. */}
             <div style={{ background: '#0f172a', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: '10px', padding: '16px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#38bdf8', fontWeight: 700, fontSize: '0.86rem' }}>
-                <User size={16} /> SIS RECORD (SOURCE OF ACADEMIC FACTS)
+                <User size={16} /> Thông tin sinh viên nhà trường đang lưu
               </div>
-              {sisLoading ? <p>Loading SIS record...</p> : sisRecord ? <>
-                {sisRecord.source === 'INTERNAL_SIS_DEMO' && <p role="note" style={{ color: '#fbbf24', fontSize: '0.78rem' }}>DEMO SIS DATA - this record is synthetic and is not an official student record.</p>}
+              {sisLoading ? <p>Đang tải thông tin sinh viên...</p> : sisRecord ? <>
+                {sisRecord.source === 'INTERNAL_SIS_DEMO' && <p role="note" style={{ color: '#fbbf24', fontSize: '0.78rem' }}>Đây là thông tin mẫu để minh họa, không phải hồ sơ thật do nhà trường xác nhận.</p>}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', fontSize: '0.84rem' }}>
-                  <div><span>Student name</span><br /><strong>{sisRecord.fullName || 'Missing'}</strong></div>
-                  <div><span>Student code</span><br /><strong>{sisRecord.studentCode || 'Missing'}</strong></div>
-                  <div><span>Faculty</span><br /><strong>{sisRecord.faculty || 'Missing'}</strong></div>
-                  <div><span>Academic status</span><br /><strong>{sisRecord.academicStatus || 'UNKNOWN / MISSING'}</strong></div>
-                  <div><span>Course dates</span><br /><strong>{sisRecord.courseStartDate || 'Missing'} - {sisRecord.courseEndDate || 'Missing'}</strong></div>
-                  <div><span>Current term active</span><br /><strong>{sisRecord.currentTermActive === true ? 'Yes' : sisRecord.currentTermActive === false ? 'No' : 'Unknown'}</strong></div>
-                  <div><span>Current schedule</span><br /><strong>{sisRecord.hasCurrentSchedule === true ? 'Available' : sisRecord.hasCurrentSchedule === false ? 'Not available' : 'Unknown'}</strong></div>
-                  <div><span>Record status</span><br /><strong>{sisRecord.recordStatus || 'Unknown'}</strong></div>
-                  <div style={{ gridColumn: '1 / -1' }}><span>Registered permanent address on file</span><br /><strong>{sisRecord.registeredPermanentAddress || 'Missing'}</strong></div>
+                  <div><span>Họ và tên</span><br /><strong>{sisRecord.fullName || 'Chưa có thông tin'}</strong></div>
+                  <div><span>Mã sinh viên</span><br /><strong>{sisRecord.studentCode || 'Chưa có thông tin'}</strong></div>
+                  <div><span>Khoa</span><br /><strong>{sisRecord.faculty || 'Chưa có thông tin'}</strong></div>
+                  <div><span>Tình trạng học</span><br /><strong>{sisRecord.academicStatus === 'ACTIVE' ? 'Đang học' : sisRecord.academicStatus === 'SUSPENDED' ? 'Tạm dừng học' : sisRecord.academicStatus === 'WITHDRAWN' ? 'Đã thôi học' : sisRecord.academicStatus === 'GRADUATED' ? 'Đã tốt nghiệp' : sisRecord.academicStatus === 'LEAVE_OF_ABSENCE' ? 'Đang bảo lưu' : 'Chưa có thông tin'}</strong></div>
+                  <div><span>Thời gian học</span><br /><strong>{sisRecord.courseStartDate || 'Chưa có thông tin'} - {sisRecord.courseEndDate || 'Chưa có thông tin'}</strong></div>
+                  <div><span>Đang tham gia học kỳ hiện tại</span><br /><strong>{sisRecord.currentTermActive === true ? 'Rồi' : sisRecord.currentTermActive === false ? 'Chưa' : 'Chưa rõ'}</strong></div>
+                  <div><span>Đã có thời khóa biểu</span><br /><strong>{sisRecord.hasCurrentSchedule === true ? 'Rồi' : sisRecord.hasCurrentSchedule === false ? 'Chưa' : 'Chưa rõ'}</strong></div>
+                  <div><span>Tình trạng hồ sơ</span><br /><strong>{sisRecord.recordStatus === 'ACTIVE' ? 'Đang sử dụng' : sisRecord.recordStatus === 'SUSPENDED' ? 'Tạm khóa' : 'Chưa rõ'}</strong></div>
+                  <div style={{ gridColumn: '1 / -1' }}><span>Địa chỉ thường trú nhà trường đang lưu</span><br /><strong>{sisRecord.registeredPermanentAddress || 'Chưa có thông tin'}</strong></div>
                 </div>
-              </> : <p role="status">No SIS record is available. The account profile is not a substitute for an institutional record.</p>}
+              </> : <p role="status">Chưa có thông tin sinh viên do nhà trường cung cấp. Vui lòng liên hệ nhà trường để cập nhật.</p>}
             </div>
 
             {/* KHỐI 2: MỤC ĐÍCH YÊU CẦU (READ-ONLY) */}
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: '#e2e8f0' }}>
-                Mục đích xin cấp giấy xác nhận *
+                Bạn cần giấy xác nhận này để làm gì?
               </label>
               <input
                 type="text"
                 className="form-input"
-                value="Cấp Giấy xác nhận sinh viên phục vụ thủ tục tạm hoãn nghĩa vụ quân sự"
+                value="Xác nhận sinh viên để bổ sung vào hồ sơ nghĩa vụ quân sự"
                 readOnly
                 style={{ background: '#1e293b', color: '#cbd5e1', cursor: 'not-allowed' }}
               />
@@ -356,17 +356,17 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                 <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <MapPin size={16} /> THÔNG TIN ĐỊA CHỈ CƯ TRÚ (Khai báo gửi Ban CHQS)
+                  <MapPin size={16} /> Địa chỉ thường trú
                 </span>
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                  * Bắt buộc khai báo chính xác địa chỉ thường trú
+                  * Nhập địa chỉ thường trú nhà trường đang lưu
                 </span>
               </div>
 
               {/* LỰA CHỌN LOẠI ĐỊA CHỈ */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: '#cbd5e1' }}>
-                  Loại địa chỉ kê khai:
+                  Bạn muốn gửi loại địa chỉ nào?
                 </label>
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
@@ -377,7 +377,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                       checked={addressType === 'PERMANENT'}
                       onChange={() => setAddressType('PERMANENT')}
                     />
-                    <strong style={{ color: '#38bdf8' }}>Permanent address (internal prototype workflow)</strong>
+                    <strong style={{ color: '#38bdf8' }}>Thường trú</strong>
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
                     <input
@@ -387,18 +387,18 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                       checked={addressType === 'TEMPORARY'}
                       onChange={() => setAddressType('TEMPORARY')}
                     />
-                    <span style={{ color: '#fbbf24' }}>Temporary address (this prototype sends it for manual review)</span>
+                    <span style={{ color: '#fbbf24' }}>Tạm trú</span>
                   </label>
                 </div>
                 {addressType === 'TEMPORARY' && (
-                  <p style={{ fontSize: '0.76rem', color: '#fbbf24', marginTop: '6px' }}>This prototype routes temporary-address cases to staff review under its internal workflow rule.</p>
+                  <p style={{ fontSize: '0.76rem', color: '#fbbf24', marginTop: '6px' }}>Nếu bạn khai địa chỉ tạm trú, nhân viên sẽ kiểm tra yêu cầu của bạn.</p>
                 )}
               </div>
 
               {/* Ô NHẬP ĐỊA CHỈ TỰ DO */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: '#cbd5e1' }}>
-                  Address (house/street, ward/commune, province/city; district if available) *</label>
+                  Địa chỉ thường trú *</label>
                 <textarea
                   className="form-input"
                   rows={3}
@@ -409,7 +409,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                   style={{ fontSize: '0.9rem', lineHeight: 1.5 }}
                 />
                 <span style={{ fontSize: '0.74rem', color: '#94a3b8', display: 'block', marginTop: '4px' }}>
-                  💡 Hệ thống tự động nhận diện viết tắt (P, Q, TPHCM) và chuẩn hóa chữ hoa/thường.
+                  Ghi số nhà, tên đường hoặc thôn/ấp, phường/xã, tỉnh/thành phố. Nếu có quận/huyện, bạn có thể ghi thêm.
                 </span>
               </div>
 
@@ -426,9 +426,9 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Sparkles size={14} /> Chuẩn hóa cú pháp địa chỉ (AI Address Normalizer):
+                      <MapPin size={14} /> Kiểm tra địa chỉ:
                     </span>
-                    {normalizing && <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Đang phân tích...</span>}
+                    {normalizing && <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Đang kiểm tra địa chỉ...</span>}
                   </div>
 
                   {normalizedPreview ? (
@@ -449,13 +449,13 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                               if (f === 'street') return 'Tên đường/Thôn ấp';
                               if (f === 'houseNumber') return 'Số nhà';
                               return f;
-                            }).join(', ')}. Hãy ghi rõ để tránh bị cán bộ trả lại hồ sơ.
+                            }).join(', ')}. Bạn hãy bổ sung thông tin còn thiếu.
                           </span>
                         </div>
                       ) : (
                         <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', color: '#34d399', fontSize: '0.76rem' }}>
                           <Check size={14} />
-                          <span>Đầy đủ các cấp đơn vị hành chính (Số nhà, Tên đường, Phường/Xã, Tỉnh/Thành phố).</span>
+                          <span>Địa chỉ đã có số nhà hoặc tên đường, phường/xã và tỉnh/thành phố.</span>
                         </div>
                       )}
                     </div>
@@ -472,19 +472,19 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: '#cbd5e1' }}>
-                  Số điện thoại liên hệ
+                  Số điện thoại để nhà trường liên hệ
                 </label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="0912xxxxxx"
+                  placeholder="0912 345 678"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                 />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: '#cbd5e1' }}>
-                  Ghi chú thêm (Tùy chọn)
+                  Ghi chú (không bắt buộc)
                 </label>
                 <input
                   type="text"
@@ -499,7 +499,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
             {/* KHỐI 5: TÀI LIỆU MINH CHỨNG (TÙY CHỌN) */}
             <div>
               <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: '#cbd5e1' }}>
-                Tài liệu hỗ trợ kèm theo (Tùy chọn - không bắt buộc)
+                Giấy tờ liên quan (không bắt buộc)
               </label>
               <div style={{
                 border: '1px dashed rgba(148, 163, 184, 0.25)',
@@ -522,9 +522,9 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                   />
                   <label htmlFor="student-evidence-upload" className="btn-secondary" style={{ cursor: 'pointer', fontSize: '0.8rem', padding: '6px 12px' }}>
                     <UploadCloud size={14} />
-                    <span>{uploadingFile ? 'Đang tải tệp...' : 'Đính kèm ảnh CCCD / Hộ khẩu (nếu có)'}</span>
+                    <span>{uploadingFile ? 'Đang tải tệp...' : 'Chọn giấy tờ liên quan (nếu có)'}</span>
                   </label>
-                  <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>JPG, PNG, PDF (Tối đa 10MB)</span>
+                  <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>Ảnh JPG, PNG hoặc PDF (tối đa 10 MB)</span>
                 </div>
 
                 {uploadedEvidence.map((file, idx) => (
@@ -555,7 +555,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
               }}
             >
               <Send size={18} />
-              <span>{submitting ? 'Hệ thống đang thẩm định hồ sơ...' : 'GỬI YÊU CẦU CẤP GIẤY XÁC NHẬN NVQS'}</span>
+              <span>{submitting ? 'Đang gửi yêu cầu...' : 'Gửi yêu cầu'}</span>
             </button>
           </form>
         </div>
@@ -567,10 +567,10 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
             <div>
               <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f8fafc' }}>
-                Hồ Sơ Của Bạn ({myCases.length})
+              Yêu cầu của tôi
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                Theo dõi tiến độ duyệt và nhận Giấy xác nhận tạm hoãn NVQS có chữ ký số điện tử
+                Xem tình trạng yêu cầu. Nếu cần bổ sung thông tin, nhà trường sẽ báo tại đây.
               </p>
             </div>
             <button onClick={fetchStudentData} className="btn-secondary">
@@ -667,7 +667,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                         fontSize: '0.8rem'
                       }}>
                         <div style={{ color: '#f87171', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <AlertTriangle size={14} /> Chuyển chuyên viên xem xét ({ESCALATION_LABELS[esc.reason] || esc.reason})
+                          <AlertTriangle size={14} /> Nhà trường cần xem xét thêm ({ESCALATION_LABELS[esc.reason] || esc.reason})
                         </div>
                         <p style={{ color: '#cbd5e1', margin: 0 }}>{esc.explanation}</p>
                       </div>
@@ -689,7 +689,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 700, fontSize: '0.86rem' }}>
                           <CheckCircle2 size={18} />
-                          <span>Giấy xác nhận có mã xác thực toàn vẹn HMAC-SHA256 hợp lệ.</span>
+                          <span>Yêu cầu đã được xử lý trong hệ thống.</span>
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button
@@ -697,14 +697,14 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                             className="btn-primary"
                             style={{ background: '#059669', fontSize: '0.8rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                           >
-                            <Printer size={14} /> In Giấy Xác Nhận NVQS
+                            <Printer size={14} /> Xem kết quả yêu cầu
                           </button>
                           <button
                             onClick={() => openSafeWindow(`/verify/${c.id}`)}
                             className="btn-secondary"
                             style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                           >
-                            <QrCode size={14} /> Tra Cứu Mã Xác Thực
+                            <QrCode size={14} /> Xem thông tin xác nhận
                           </button>
                         </div>
                       </div>
@@ -721,7 +721,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fbbf24', fontWeight: 700, fontSize: '0.86rem' }}>
                           <AlertCircle size={16} />
-                          <span>Yêu cầu bổ sung thông tin từ chuyên viên:</span>
+                          <span>Nhà trường cần bạn bổ sung thông tin:</span>
                         </div>
                         <p style={{ fontSize: '0.84rem', color: '#f8fafc', marginTop: '4px' }}>
                           <em>"{c.reviewResult?.reason || 'Vui lòng bổ sung rõ số nhà, đường, phường/xã nơi thường trú.'}"</em>
@@ -733,7 +733,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                             className="btn-primary"
                             style={{ marginTop: '10px', background: '#d97706', fontSize: '0.8rem', padding: '6px 14px' }}
                           >
-                            <PlusCircle size={14} /> Bổ Sung Thông Tin & Gửi Duyệt Lại
+                            <PlusCircle size={14} /> Gửi thông tin bổ sung
                           </button>
                         ) : (
                           <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed rgba(245, 158, 11, 0.3)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -751,7 +751,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                                 className="btn-primary"
                                 style={{ background: '#059669', fontSize: '0.8rem', padding: '6px 14px' }}
                               >
-                                <Send size={14} /> Gửi Cập Nhật
+                                <Send size={14} /> Gửi bổ sung
                               </button>
                               <button
                                 onClick={() => setSupplementingCaseId(null)}
