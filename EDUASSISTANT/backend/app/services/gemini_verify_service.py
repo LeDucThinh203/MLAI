@@ -5,6 +5,7 @@ import os
 from typing import Any
 
 import httpx
+from app.services.openrouter_service import generate_json
 
 
 async def add_gemini_review(result: dict[str, Any]) -> dict[str, Any]:
@@ -14,14 +15,6 @@ async def add_gemini_review(result: dict[str, Any]) -> dict[str, Any]:
     comments on the synthetic outcomes; its response never changes a verdict.
     """
     api_key = os.environ.get('GEMINI_API_KEY', '').strip()
-    if len(api_key) < 10:
-        result['aiReview'] = {
-            'mode': 'DETERMINISTIC_FALLBACK',
-            'provider': None,
-            'message': 'Gemini chưa được cấu hình; đang hiển thị kết quả kiểm tra sẵn có.'
-        }
-        return result
-
     payload = [
         {
             'caseId': item.get('caseId'),
@@ -46,7 +39,7 @@ async def add_gemini_review(result: dict[str, Any]) -> dict[str, Any]:
         'Phải có đủ mỗi caseId đúng một lần.\nDữ liệu:\n' + json.dumps(payload, ensure_ascii=False)
     )
 
-    models = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']
+    models = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'] if len(api_key) >= 10 else []
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
             for model in models:
@@ -98,9 +91,29 @@ async def add_gemini_review(result: dict[str, Any]) -> dict[str, Any]:
     except Exception:
         pass
 
+    openrouter_data, openrouter_error = await generate_json(prompt, max_tokens=3000)
+    reviews = openrouter_data.get('results') if isinstance(openrouter_data, dict) else None
+    expected_ids = {str(item.get('caseId')) for item in payload}
+    normalized = {}
+    for review in reviews or []:
+        if not isinstance(review, dict):
+            continue
+        case_id = str(review.get('caseId', ''))
+        if (case_id in expected_ids and review.get('assessment') in ('CONSISTENT', 'REVIEW')
+                and isinstance(review.get('rationale'), str)):
+            normalized[case_id] = {'assessment': review['assessment'], 'rationale': review['rationale'][:500]}
+    if set(normalized) == expected_ids:
+        for item in result.get('results', []):
+            item['geminiReview'] = normalized.get(str(item.get('caseId')))
+        result['aiReview'] = {
+            'mode': 'OPENROUTER_LIVE', 'provider': 'OpenRouter',
+            'message': 'OpenRouter đã rà soát tình huống tổng hợp. Kết quả PASS/FAIL vẫn do bộ quy tắc xác định.'
+        }
+        return result
+
     result['aiReview'] = {
         'mode': 'DETERMINISTIC_FALLBACK',
         'provider': None,
-        'message': 'Không gọi được Gemini hoặc phản hồi không hợp lệ; đang hiển thị kết quả kiểm tra sẵn có.'
+        'message': 'Gemini và OpenRouter không trả được kết quả hợp lệ; đang hiển thị kết quả kiểm tra sẵn có.'
     }
     return result

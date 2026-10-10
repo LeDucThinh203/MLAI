@@ -62,10 +62,13 @@ def _benchmark_summary():
 @router.get('/api/judge/summary')
 async def get_judge_summary():
     """Return only public operational metadata; no credentials or user data."""
-    configured = len(os.environ.get('GEMINI_API_KEY', '').strip()) > 10
+    gemini_configured = len(os.environ.get('GEMINI_API_KEY', '').strip()) > 10
+    openrouter_configured = len(os.environ.get('OPENROUTER_API_KEY', '').strip()) > 10
+    configured = gemini_configured or openrouter_configured
     return api_response(200, True, 'Public judge summary loaded.', {
         'systemStatus': 'AVAILABLE',
-        'ai': {'configured': configured, 'status': 'CONFIGURED' if configured else 'NOT_CONFIGURED', 'model': 'gemini-3.8-flash'},
+        'ai': {'configured': configured, 'status': 'CONFIGURED' if configured else 'NOT_CONFIGURED',
+               'providers': {'gemini': gemini_configured, 'openrouter': openrouter_configured}},
         'adaptiveThreshold': get_confidence_threshold(),
         'benchmark': _benchmark_summary(),
         'verifyHarness': {'scenarioCount': len(HARNESS_CASES), 'type': 'DETERMINISTIC_RULE_ENGINE_VERIFICATION'},

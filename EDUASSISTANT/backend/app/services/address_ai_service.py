@@ -22,6 +22,7 @@ from typing import Dict, Any, List, Tuple, Optional
 import httpx
 
 from app.services.ai_service import get_ai_mode, sanitize_json_string
+from app.services.openrouter_service import generate_json
 
 
 def remove_vietnamese_tones(text: str) -> str:
@@ -238,6 +239,33 @@ async def normalize_student_address(
         return fallback_res
 
     # Nếu AI_MODE == 'live' và có API key hợp lệ
+    if mode == 'live' and len(api_key) <= 10:
+        prompt = (
+            'Chuan hoa cu phap dia chi Viet Nam, chi trich xuat du lieu co trong dau vao; '
+            'khong tu dien thanh phan con thieu va khong dua ra ket luan phap ly. '
+            'Tra ve JSON voi houseNumber, street, wardCommune, district, provinceCity, '
+            'normalizedAddress, missingFields, ambiguousFields, confidence. Dia chi: ' + raw_address
+        )
+        parsed, _ = await generate_json(prompt, max_tokens=1000)
+        if isinstance(parsed, dict):
+            confidence = parsed.get('confidence', 0)
+            required = ('houseNumber', 'street', 'wardCommune', 'district', 'provinceCity', 'normalizedAddress')
+            if (all(key in parsed for key in required)
+                    and all(parsed[key] is None or isinstance(parsed[key], str) for key in required[:-1])
+                    and isinstance(parsed['normalizedAddress'], str)
+                    and isinstance(parsed.get('missingFields'), list)
+                    and isinstance(parsed.get('ambiguousFields'), list)
+                    and isinstance(confidence, (int, float)) and not isinstance(confidence, bool)
+                    and math.isfinite(confidence) and 0 <= confidence <= 1):
+                return {
+                    **{key: parsed[key] for key in required},
+                    'missingFields': parsed['missingFields'], 'ambiguousFields': parsed['ambiguousFields'],
+                    'confidence': float(confidence), 'modeUsed': 'live', 'isLive': True,
+                    'isFallback': False, 'isSynthetic': False, 'provider': 'OpenRouter',
+                    'modelUsed': os.environ.get('OPENROUTER_MODEL', 'openrouter/free'),
+                    'durationMs': round((time.time() - start_time) * 1000, 2),
+                }
+
     if mode == 'live' and len(api_key) > 10:
         prompt_text = f"""Bạn là bộ chuẩn hóa địa chỉ hành chính Việt Nam (EDUASSISTANT Address Normalizer).
 Nhiệm vụ: Phân tích địa chỉ sinh viên tự khai dưới đây để phục vụ hồ sơ cấp Giấy xác nhận tạm hoãn NVQS:
@@ -327,6 +355,37 @@ Trả về DUY NHẤT một JSON hợp lệ:
                 }
         except Exception:
             is_fallback = True
+
+        # Gemini is primary. Try OpenRouter's free-model router before the
+        # deterministic parser; this only extracts address text and never decides policy.
+        if is_fallback or not raw_json_str:
+            openrouter_prompt = (
+                'Chuẩn hóa cú pháp địa chỉ Việt Nam, chỉ trích xuất dữ liệu có trong đầu vào; '
+                'không tự điền thành phần còn thiếu và không đưa ra kết luận pháp lý. '
+                'Trả về JSON với houseNumber, street, wardCommune, district, provinceCity, '
+                'normalizedAddress, missingFields, ambiguousFields, confidence. Địa chỉ: ' + raw_address
+            )
+            parsed, _ = await generate_json(openrouter_prompt, max_tokens=1000)
+            if isinstance(parsed, dict):
+                confidence = parsed.get('confidence', 0)
+                required = ('houseNumber', 'street', 'wardCommune', 'district', 'provinceCity', 'normalizedAddress')
+                if (all(key in parsed for key in required)
+                        and all(parsed[key] is None or isinstance(parsed[key], str) for key in required[:-1])
+                        and isinstance(parsed['normalizedAddress'], str)
+                        and isinstance(parsed.get('missingFields'), list)
+                        and isinstance(parsed.get('ambiguousFields'), list)
+                        and isinstance(confidence, (int, float)) and not isinstance(confidence, bool)
+                        and math.isfinite(confidence) and 0 <= confidence <= 1):
+                    return {
+                        **{key: parsed[key] for key in required},
+                        'missingFields': parsed['missingFields'],
+                        'ambiguousFields': parsed['ambiguousFields'],
+                        'confidence': float(confidence),
+                        'modeUsed': 'live', 'isLive': True, 'isFallback': False,
+                        'isSynthetic': False, 'provider': 'OpenRouter',
+                        'modelUsed': os.environ.get('OPENROUTER_MODEL', 'openrouter/free'),
+                        'durationMs': round((time.time() - start_time) * 1000, 2),
+                    }
 
     # Fallback deterministic
     det_res = deterministic_parse_address(raw_address)

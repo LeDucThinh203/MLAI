@@ -76,8 +76,7 @@ def run_benchmark(persist_results=True):
     for idx, c in enumerate(cases, start=1):
         t0 = time.time()
         
-        # The benchmark calls Gemini once for all 18 isolated synthetic inputs;
-        # when Gemini is unavailable, the prepared fixture data is the fallback.
+        # The benchmark tries Gemini, then OpenRouter, then prepared fixtures.
         ai_metadata = c.get('aiMetadata', {})
         fixture_ai_context = {
             'modeUsed': ai_metadata.get('modeUsed', 'mock'),
@@ -163,7 +162,7 @@ def run_benchmark(persist_results=True):
             'confidence': verdict.get('confidence'),
             'isCorrect': is_correct,
             'durationMs': duration_ms,
-            'aiModeUsed': ai_metadata.get('modeUsed'),
+            'aiModeUsed': f"{ai_metadata.get('provider', 'synthetic fixture')} live" if ai_metadata.get('isLive') else 'mock',
             'aiProvider': ai_run.get('provider'),
         })
 
@@ -178,13 +177,13 @@ def run_benchmark(persist_results=True):
     unnecessary_escalation_rate = round((unnecessary_escalate_count / should_auto_approve_count) * 100, 2) if should_auto_approve_count > 0 else 0.0
 
     summary = {
-        'benchmarkType': 'GEMINI_ASSISTED_END_TO_END_BENCHMARK',
+        'benchmarkType': 'GEMINI_OPENROUTER_ASSISTED_END_TO_END_BENCHMARK',
         'aiCallsPerformed': ai_run.get('apiCalls', 0) > 0,
         'aiMode': ai_run.get('mode'),
         'aiProvider': ai_run.get('provider'),
         'aiModel': ai_run.get('model'),
         'aiApiCalls': ai_run.get('apiCalls', 0),
-        'aiCasesProcessed': len(cases) if ai_run.get('mode') == 'GEMINI_LIVE' else 0,
+        'aiCasesProcessed': len(cases) if ai_run.get('mode') in ('GEMINI_LIVE', 'OPENROUTER_LIVE') else 0,
         'fallbackCases': len(cases) if ai_run.get('mode') == 'MOCK_FALLBACK' else 0,
         'aiFallbackReason': ai_run.get('fallbackReason'),
         'benchmarkRunId': f"BM-{int(datetime.now().timestamp())}",

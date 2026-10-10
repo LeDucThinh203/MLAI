@@ -16,6 +16,7 @@ import random
 from datetime import datetime
 import httpx
 from app.services.ai_service import sanitize_json_string, get_ai_mode
+from app.services.openrouter_service import generate_json
 
 DOCUMENT_PATTERNS = [
     {
@@ -182,6 +183,40 @@ Chỉ trả về JSON thuần túy, không thêm lời dẫn."""
                 }
         except Exception as err:
             print(f'⚠️ Gemini Vision live call fallback: {err}')
+
+    # Gemini is primary. If unavailable, let OpenRouter attempt vision OCR
+    # before synthesizing any demo values.
+    if ai_mode == 'live' and file_buffer:
+        ext = os.path.splitext(file_name)[1].lower()
+        mime_type = 'image/png' if ext == '.png' else ('application/pdf' if ext == '.pdf' else ('image/webp' if ext == '.webp' else 'image/jpeg'))
+        prompt = (
+            'Đọc tài liệu học vụ Việt Nam và trích xuất nội dung nhìn thấy. Không khẳng định tài liệu thật, '
+            'không kết luận pháp lý. Trả JSON gồm documentType, studentName, studentCode, issuingAuthority, '
+            'issueDate, certificateNumber, gpaOrScore, tamperRisk (LOW/MEDIUM/HIGH), suggestedCategory, '
+            'suggestedTitle, suggestedDescription, rawExtractedText. Không đoán phần không đọc được.'
+        )
+        image_data_url = f'data:{mime_type};base64,{base64.b64encode(file_buffer).decode("ascii")}'
+        parsed, _ = await generate_json(prompt, max_tokens=2500, image_data_url=image_data_url)
+        if isinstance(parsed, dict) and isinstance(parsed.get('rawExtractedText'), str):
+            data = {
+                **parsed,
+                'confidenceScore': 0.0, 'confidence': 0.0,
+                'modeUsed': 'live', 'provider': 'OpenRouter',
+                'isLive': True, 'isFallback': False, 'isSynthetic': False,
+                'extractedEntities': {
+                    'Họ và tên': parsed.get('studentName') or 'Chưa nhận dạng',
+                    'Mã số SV': parsed.get('studentCode') or 'Chưa nhận dạng',
+                    'Số hiệu văn bản': parsed.get('certificateNumber') or 'Chưa nhận dạng',
+                    'Cơ quan ban hành': parsed.get('issuingAuthority') or 'Chưa nhận dạng',
+                    'Dấu mộc & Chữ ký': 'Cần cán bộ kiểm tra',
+                    'Tình trạng tính toàn vẹn': 'Chưa được xác minh',
+                },
+            }
+            return {
+                'success': True, 'provider': 'OpenRouter', 'modeUsed': 'live',
+                'isLive': True, 'isFallback': False, 'isSynthetic': False,
+                'durationMs': round((time.time() - start_time) * 1000), 'data': data,
+            }
 
     # Intelligent Fallback / Mock / Cache
     matched_pattern = DOCUMENT_PATTERNS[0]

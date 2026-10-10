@@ -351,7 +351,7 @@ export default function JudgeModePage({ onNavigateTab }) {
                 {verifyResults.passed} / {verifyResults.total} PASSED
               </span>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Mã chạy: {verifyResults.runId}</span>
-              <span style={{ fontSize: '0.75rem', color: verifyResults.aiReview?.mode === 'GEMINI_LIVE' ? '#34d399' : '#f59e0b' }}>{verifyResults.aiReview?.mode === 'GEMINI_LIVE' ? 'Gemini đang hoạt động' : 'Đang dùng kết quả dự phòng'}</span>
+              <span style={{ fontSize: '0.75rem', color: ['GEMINI_LIVE', 'OPENROUTER_LIVE'].includes(verifyResults.aiReview?.mode) ? '#34d399' : '#f59e0b' }}>{verifyResults.aiReview?.mode === 'GEMINI_LIVE' ? 'Gemini đang hoạt động' : verifyResults.aiReview?.mode === 'OPENROUTER_LIVE' ? 'OpenRouter đang hoạt động' : 'Đang dùng kết quả dự phòng'}</span>
             </div>
           )}
         </div>
@@ -367,7 +367,7 @@ export default function JudgeModePage({ onNavigateTab }) {
                   <th style={{ padding: '10px 12px' }}>Quyết Định Thực Tế</th>
                   <th style={{ padding: '10px 12px' }}>Lý Do Leo Thang</th>
                   <th style={{ padding: '10px 12px' }}>Quy Tắc Khớp</th>
-                  <th style={{ padding: '10px 12px' }}>Gemini rà soát</th>
+                  <th style={{ padding: '10px 12px' }}>AI rà soát</th>
                   <th style={{ padding: '10px 12px' }}>Thời Gian</th>
                 </tr>
               </thead>
@@ -422,7 +422,7 @@ export default function JudgeModePage({ onNavigateTab }) {
                     <td style={{ padding: '10px 12px', color: '#cbd5e1', fontSize: '0.74rem', minWidth: '220px' }}>
                       {r.geminiReview ? (
                         <><strong style={{ color: r.geminiReview.assessment === 'CONSISTENT' ? '#34d399' : '#f59e0b' }}>{r.geminiReview.assessment === 'CONSISTENT' ? 'Phù hợp' : 'Cần xem lại'}</strong><div>{r.geminiReview.rationale}</div></>
-                      ) : (verifyResults.aiReview?.mode === 'GEMINI_LIVE' ? 'Không có nhận xét' : 'Chưa gọi được Gemini')}
+                      ) : (['GEMINI_LIVE', 'OPENROUTER_LIVE'].includes(verifyResults.aiReview?.mode) ? 'Không có nhận xét' : 'Chưa gọi được AI')}
                     </td>
                     <td style={{ padding: '10px 12px', color: '#94a3b8' }}>
                       {r.durationMs}ms
@@ -474,7 +474,7 @@ export default function JudgeModePage({ onNavigateTab }) {
 
         {metrics?.benchmark?.totalCases && <div style={{ margin: '0 0 16px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.20)', color: '#cbd5e1', fontSize: '0.78rem' }}>
           <strong style={{ color: '#38bdf8' }}>Kết quả đang hiển thị:</strong> {metrics.benchmark.totalCases} tình huống độc lập · Mã chạy {metrics.benchmark.benchmarkRunId || '—'} · Cập nhật {metrics.benchmark.timestamp ? new Date(metrics.benchmark.timestamp).toLocaleString('vi-VN') : '—'}.
-          {metrics.benchmark.aiMode && <div style={{ marginTop: '4px' }}>Nguồn phân tích: <strong>{metrics.benchmark.aiMode === 'GEMINI_LIVE' ? `Gemini live${metrics.benchmark.aiModel ? ` · ${metrics.benchmark.aiModel}` : ''}` : 'Dữ liệu mẫu dự phòng'}</strong> · Số ca dùng Gemini: {metrics.benchmark.aiCasesProcessed || 0} · Số ca dự phòng: {metrics.benchmark.fallbackCases || 0}</div>}
+          {metrics.benchmark.aiMode && <div style={{ marginTop: '4px' }}>Nguồn phân tích: <strong>{['GEMINI_LIVE', 'OPENROUTER_LIVE'].includes(metrics.benchmark.aiMode) ? `${metrics.benchmark.aiProvider || 'AI live'}${metrics.benchmark.aiModel ? ` · ${metrics.benchmark.aiModel}` : ''}` : 'Dữ liệu mẫu dự phòng'}</strong> · Số ca dùng AI: {metrics.benchmark.aiCasesProcessed || 0} · Số ca dự phòng: {metrics.benchmark.fallbackCases || 0}</div>}
         </div>}
 
         {benchmarkRunResults?.results && <div style={{ overflowX: 'auto', marginBottom: '16px' }}>
@@ -485,7 +485,7 @@ export default function JudgeModePage({ onNavigateTab }) {
             <tbody>{benchmarkRunResults.results.map((item) => <tr key={item.id} style={{ borderBottom: '1px solid #1e293b' }}>
               <td style={{ padding: '8px', color: item.isCorrect ? '#34d399' : '#ef4444', fontWeight: 700 }}>{item.isCorrect ? 'PASS' : 'FAIL'}</td>
               <td style={{ padding: '8px' }}>{item.name}<div style={{ color: '#64748b', fontSize: '0.7rem' }}>{item.id}</div></td>
-              <td style={{ padding: '8px' }}>{item.aiModeUsed === 'live' ? 'Gemini' : 'Dữ liệu mẫu'}</td>
+              <td style={{ padding: '8px' }}>{item.aiModeUsed?.endsWith(' live') ? item.aiModeUsed.replace(' live', '') : 'Dữ liệu mẫu'}</td>
               <td style={{ padding: '8px' }}>{item.expectedDecision}{item.expectedReason ? ` \u00b7 ${item.expectedReason}` : ''}</td>
               <td style={{ padding: '8px' }}>{item.actualDecision}{item.actualReason ? ` \u00b7 ${item.actualReason}` : ''}</td>
               <td style={{ padding: '8px' }}><code>{item.ruleMatched}</code></td>

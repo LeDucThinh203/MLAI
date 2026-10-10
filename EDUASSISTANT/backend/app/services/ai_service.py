@@ -16,6 +16,7 @@ import time
 from datetime import datetime, timezone
 import httpx
 from app.db.db import db_service
+from app.services.openrouter_service import generate_json
 
 current_ai_mode = os.environ.get('AI_MODE', 'live')
 
@@ -172,6 +173,36 @@ Chỉ trả về JSON hợp lệ. Không đưa ra kết luận pháp lý."""
     except Exception as live_err:
         fallback_occurred = True
         fallback_reason = str(live_err)
+        if current_ai_mode == 'live':
+            prompt = (
+                'Trích xuất thông tin hồ sơ học vụ từ nội dung sinh viên cung cấp. '
+                'Chỉ tóm tắt nội dung, không kết luận pháp lý và không quyết định duyệt hồ sơ. '
+                'Trả JSON gồm documentType, titleExtracted, aiAnalysis, confidence, policyRuleMatch. '
+                f"Tiêu đề: {case_data.get('title')}\nNội dung: {case_data.get('description')}\n"
+                f"Người nộp: {actor.get('name') or actor.get('username') or 'Sinh viên'}"
+            )
+            parsed, openrouter_error = await generate_json(prompt, max_tokens=1200)
+            if (isinstance(parsed, dict) and isinstance(parsed.get('aiAnalysis'), str)
+                    and isinstance(parsed.get('confidence'), (int, float))
+                    and not isinstance(parsed.get('confidence'), bool)
+                    and 0 <= parsed['confidence'] <= 1):
+                extracted_result = {
+                    **parsed,
+                    'provider': 'OpenRouter',
+                    'model': os.environ.get('OPENROUTER_MODEL', 'openrouter/free'),
+                    'isLive': True, 'isFallback': False, 'isSynthetic': False,
+                    'extractedAt': datetime.now(timezone.utc).isoformat(),
+                }
+                fallback_occurred = False
+                fallback_reason = ''
+                mode_used = 'live'
+                return {
+                    'success': True, 'modeUsed': mode_used, 'isLive': True,
+                    'isFallback': False, 'fallbackOccurred': False, 'fallbackReason': '',
+                    'provider': 'OpenRouter', 'durationMs': round((time.time() - start_time) * 1000),
+                    'data': extracted_result,
+                }
+            fallback_reason = f'{fallback_reason}; OpenRouter fallback failed: {openrouter_error or "invalid response"}'
         extracted_result = {
             **EXTRACTION_CACHE['MILITARY_SERVICE_CONFIRMATION'],
             'isLive': False,
