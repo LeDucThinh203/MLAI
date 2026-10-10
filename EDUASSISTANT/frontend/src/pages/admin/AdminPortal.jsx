@@ -48,6 +48,21 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const [sisViewingLoading, setSisViewingLoading] = useState(false);
   const [sisNoAvailableStudent, setSisNoAvailableStudent] = useState(false);
 
+  const closeSisModal = () => {
+    setEditingSis(null);
+    setViewingSis(null);
+    setSisNoAvailableStudent(false);
+  };
+
+  useEffect(() => {
+    if (!editingSis && !viewingSis && !sisNoAvailableStudent) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') closeSisModal();
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [editingSis, viewingSis, sisNoAvailableStudent]);
+
   // States tạo tài khoản cán bộ từ Admin
   const [newFullName, setNewFullName] = useState('');
   const [newStudentCode, setNewStudentCode] = useState('');
@@ -320,8 +335,8 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
           <PaginationControls page={sisPage} totalItems={sisTotal} pageSize={20} onPageChange={setSisPage} label="sinh viên SIS" />
         </div>
 
-        {editingSis && <div role="dialog" aria-modal="true" aria-labelledby="sis-update-title" style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <form onSubmit={e => { e.preventDefault(); saveSis(); }} className="card-panel" style={{ width: 'min(860px, 100%)', maxHeight: '90vh', overflowY: 'auto', padding: '28px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
+        {editingSis && <div role="dialog" aria-modal="true" aria-labelledby="sis-update-title" onClick={closeSisModal} style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <form onClick={e => e.stopPropagation()} onSubmit={e => { e.preventDefault(); saveSis(); }} className="card-panel" style={{ width: 'min(860px, 100%)', maxHeight: '90vh', overflowY: 'auto', padding: '28px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}><div><h3 id="sis-update-title" style={{ margin: 0 }}>{sisEditorMode === 'create' ? 'Thêm hồ sơ SIS' : 'Cập nhật hồ sơ SIS'}</h3><small style={{ color: 'var(--text-muted)' }}>SIS là nguồn facts được snapshot vào hồ sơ và đối chiếu bởi Rule Engine.</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setEditingSis(null)}><X size={18} /></button></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px 22px' }}>
               {sisEditorMode === 'create' && <label style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '7px', fontWeight: 700 }}>Tài khoản sinh viên<select style={{ width: '100%', boxSizing: 'border-box' }} value={editingSis.userId} onChange={e => { const student = availableStudents.find(item => item.id === e.target.value); setEditingSis({ ...editingSis, userId: e.target.value, studentCode: student?.studentCode || '', fullName: student?.fullName || '', faculty: student?.faculty || null, academicStatus: student?.academicStatus || 'UNKNOWN' }); }}><option value="">Chọn sinh viên</option>{availableStudents.map(student => <option key={student.id} value={student.id}>{student.studentCode || 'Chưa có MSSV'} — {student.fullName}</option>)}</select></label>}
@@ -338,8 +353,8 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}><button type="button" className="btn-secondary" onClick={() => setEditingSis(null)} disabled={sisSaving}>Hủy</button><button type="submit" className="btn-primary" disabled={sisSaving}>{sisSaving ? 'Đang lưu...' : sisEditorMode === 'create' ? 'Thêm hồ sơ' : 'Cập nhật'}</button></div>
           </form>
         </div>}
-        {viewingSis && <div role="dialog" aria-modal="true" aria-labelledby="sis-view-title" style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div className="card-panel" style={{ width: 'min(680px, 100%)', padding: '24px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
+        {viewingSis && <div role="dialog" aria-modal="true" aria-labelledby="sis-view-title" onClick={closeSisModal} style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} className="card-panel" style={{ width: 'min(680px, 100%)', padding: '24px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}><div><h3 id="sis-view-title" style={{ margin: 0 }}>Hồ sơ SIS: {viewingSis.fullName}</h3><small style={{ color: 'var(--text-muted)' }}>{viewingSis.studentCode || 'Chưa có MSSV'} · Nguồn: {viewingSis.source || 'INTERNAL_SIS_DEMO'}</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setViewingSis(null)}><X size={18} /></button></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '20px' }}>
               {[['Trạng thái học vụ', viewingSis.academicStatus || 'UNKNOWN'], ['Trạng thái bản ghi', viewingSis.recordStatus || 'ACTIVE'], ['Khoa / đơn vị', viewingSis.faculty || 'Chưa cập nhật'], ['Khóa học', `${viewingSis.courseStartDate || '—'} → ${viewingSis.courseEndDate || '—'}`], ['Học kỳ hoạt động', viewingSis.currentTermActive ? 'Có' : 'Không'], ['Thời khóa biểu', viewingSis.hasCurrentSchedule ? 'Có' : 'Không'], ['Địa chỉ thường trú', viewingSis.registeredPermanentAddress || 'Chưa cập nhật'], ['Cập nhật lần cuối', viewingSis.updatedAt || '—']].map(([label, value]) => <div key={label} style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '8px' }}><small style={{ color: 'var(--text-muted)', display: 'block' }}>{label}</small><strong style={{ fontSize: '0.88rem' }}>{value}</strong></div>)}
@@ -348,8 +363,8 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}><button type="button" className="btn-primary" onClick={() => { setViewingSis(null); setSisEditorMode('edit'); setEditingSis({ ...viewingSis, recordStatus: viewingSis.recordStatus || 'ACTIVE' }); }}>Cập nhật hồ sơ</button></div>
           </div>
         </div>}
-        {sisNoAvailableStudent && <div role="dialog" aria-modal="true" aria-labelledby="sis-no-student-title" style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div className="card-panel" style={{ width: 'min(520px, 100%)', padding: '26px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
+        {sisNoAvailableStudent && <div role="dialog" aria-modal="true" aria-labelledby="sis-no-student-title" onClick={closeSisModal} style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} className="card-panel" style={{ width: 'min(520px, 100%)', padding: '26px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
             <h3 id="sis-no-student-title" style={{ marginTop: 0 }}>Chưa có sinh viên để thêm SIS</h3>
             <p style={{ color: 'var(--text-muted)', lineHeight: 1.65 }}>Mỗi hồ sơ SIS phải gắn duy nhất với một tài khoản STUDENT để dữ liệu được snapshot chính xác khi sinh viên nộp hồ sơ NVQS. Hiện mọi tài khoản sinh viên đều đã có SIS.</p>
             <p style={{ color: 'var(--text-muted)', lineHeight: 1.65 }}>Hãy tạo tài khoản sinh viên mới tại mục <strong>Tài khoản</strong>, sau đó quay lại đây để lập hồ sơ SIS và điền các facts học vụ.</p>
