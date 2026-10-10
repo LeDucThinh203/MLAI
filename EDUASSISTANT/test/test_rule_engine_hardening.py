@@ -47,6 +47,20 @@ class RuleEngineHardeningTests(unittest.TestCase):
         case = self.case(); case['studentCode'] = case['studentClaim']['studentCode'] = 'SV2026-10'
         self.assertEqual(self.verdict(case)['escalationReason'], 'OWNERSHIP_UNCLEAR')
 
+    def test_name_substring_does_not_match(self):
+        case = self.case(); case['studentName'] = case['studentClaim']['fullName'] = 'Nguyen Van A'
+        self.student['fullName'] = case['institutionalFacts']['fullName'] = 'Nguyen Van Anh'
+        self.assertEqual(self.verdict(case)['escalationReason'], 'OWNERSHIP_UNCLEAR')
+
+    def test_name_case_and_whitespace_normalization_matches(self):
+        case = self.case(); case['studentName'] = case['studentClaim']['fullName'] = '  nguyen   van a  '
+        self.assertEqual(self.verdict(case)['decision'], 'AUTO_APPROVE')
+
+    def test_missing_authoritative_full_name_is_unclear(self):
+        self.student['fullName'] = None
+        case = self.case(); case['institutionalFacts']['fullName'] = None
+        self.assertEqual(self.verdict(case)['escalationReason'], 'OWNERSHIP_UNCLEAR')
+
     def test_missing_authoritative_student_code_is_unclear(self):
         self.student['studentCode'] = None
         case = self.case(); case['institutionalFacts']['studentCode'] = None

@@ -213,7 +213,9 @@ def evaluate_case(
     # Student codes are authoritative identifiers. Missing values and substring
     # matches must never establish ownership.
     code_match = bool(norm_req_code and norm_auth_code and norm_req_code == norm_auth_code)
-    name_match = not norm_req_name or not norm_auth_name or (norm_req_name == norm_auth_name) or (norm_req_name in norm_auth_name) or (norm_auth_name in norm_req_name)
+    # Names may differ only in harmless formatting. They are never matched by
+    # substring: "Nguyen Van A" must not match "Nguyen Van Anh".
+    name_match = bool(norm_req_name and norm_auth_name and norm_req_name == norm_auth_name)
 
     # Kiểm tra thêm nếu có OCR tài liệu tùy thân đính kèm
     if ocr_data and isinstance(ocr_data, dict):
@@ -540,7 +542,7 @@ def evaluate_case(
         'studentClaim': 'Đầy đủ & Hợp lệ',
         'institutionalFact': 'Khớp 100% hồ sơ đào tạo và địa chỉ thường trú',
         'match': True,
-        'note': 'Đủ điều kiện tự động phê duyệt cấp Giấy xác nhận tạm hoãn NVQS'
+        'note': 'Các dữ kiện bắt buộc của workflow nội bộ hiện không phát hiện mâu thuẫn trọng yếu.'
     })
 
     return {
@@ -549,7 +551,7 @@ def evaluate_case(
         'escalationReason': None,
         'escalationConfig': None,
         'ruleMatched': 'RULE_AUTO_PASSED_MILITARY_SERVICE_2026',
-        'explanation': 'Sinh viên đang học tập bình thường, có thời khóa biểu học kỳ, địa chỉ thường trú khớp với hồ sơ lưu trữ và đầy đủ các cấp đơn vị hành chính. Hệ thống tự động cấp Giấy xác nhận sinh viên phục vụ tạm hoãn NVQS.',
+        'explanation': 'Hồ sơ đáp ứng các điều kiện tự động xử lý của workflow nội bộ hiện được cấu hình. Hệ thống tạo Giấy xác nhận sinh viên; quyết định tạm hoãn NVQS thuộc cơ quan có thẩm quyền.',
         'discrepancies': discrepancies,
         'confidence': confidence_score,
         'thresholdUsed': current_threshold,
