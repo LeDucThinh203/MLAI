@@ -589,8 +589,8 @@ async def export_decision(case_id: str, request: Request, user: dict = Depends(g
     if user['role'] == 'STUDENT' and target_case['studentId'] != user['id']:
         return api_response(403, False, 'Bạn không có quyền truy cập quyết định này.', None, 'FORBIDDEN')
 
-    base_url = str(request.base_url).rstrip('/')
-    html_content = generate_decision_html(target_case, base_url)
+    public_frontend_url = os.environ.get('FRONTEND_URL', 'https://edu-sp.pages.dev').strip().rstrip('/')
+    html_content = generate_decision_html(target_case, public_frontend_url)
     return HTMLResponse(content=html_content)
 
 

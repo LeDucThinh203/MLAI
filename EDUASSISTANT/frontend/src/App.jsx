@@ -57,6 +57,7 @@ function MainApp() {
         <Routes>
           <Route path="/login" element={<AuthPage />} />
           <Route path="/verify" element={<PublicVerificationPage />} />
+          <Route path="/verify/:caseId" element={<PublicVerificationPage />} />
           <Route path="/judge" element={<JudgeModePage onNavigateTab={setActiveTab} />} />
           <Route
             path="/"

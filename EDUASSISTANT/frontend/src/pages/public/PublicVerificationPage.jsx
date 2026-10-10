@@ -1,26 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Award, AlertTriangle, CheckCircle2, Printer } from 'lucide-react';
+import { Award, AlertTriangle, CheckCircle2, Printer, QrCode, Search } from 'lucide-react';
 import { API_BASE } from '../../api/client';
 import PageSkeleton from '../../components/common/PageSkeleton';
 
 export const PublicVerificationPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { caseId: caseIdFromPath } = useParams();
   const searchParams = new URLSearchParams(location.search);
-  const caseId = searchParams.get('caseId');
+  const caseId = (searchParams.get('caseId') || caseIdFromPath || '').trim();
 
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [lookupId, setLookupId] = useState(caseId);
+  const [loading, setLoading] = useState(Boolean(caseId));
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    setLookupId(caseId);
+    setData(null);
+    setError(null);
     if (!caseId) {
-      setError('Thiếu mã hồ sơ cần xác thực.');
       setLoading(false);
       return;
     }
 
+    setLoading(true);
     axios.get(`${API_BASE}/cases/verify/${caseId}`)
       .then(res => {
         if (res.data?.success) setData(res.data.data);
@@ -31,6 +37,15 @@ export const PublicVerificationPage = () => {
       })
       .finally(() => setLoading(false));
   }, [caseId]);
+
+  const handleLookup = (event) => {
+    event.preventDefault();
+    const normalizedId = lookupId.trim();
+    if (!normalizedId) {
+      return;
+    }
+    navigate({ pathname: '/verify', search: `?caseId=${encodeURIComponent(normalizedId)}` });
+  };
 
   return (
     <div className="verification-page" style={{
@@ -66,6 +81,16 @@ export const PublicVerificationPage = () => {
           </p>
         </div>
 
+        {!loading && !data && <form onSubmit={handleLookup} style={{ padding: '20px', border: '1px solid rgba(56, 189, 248, 0.30)', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.72)', marginBottom: error ? '14px' : 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#e2e8f0', fontWeight: 700 }}><Search size={18} color="#38bdf8" /> Tra cứu bằng mã hồ sơ</div>
+          <p style={{ margin: '0 0 14px', color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.5 }}>Nhập mã ghi trên giấy xác nhận, ví dụ: <strong>CASE-2026-XXXX</strong>.</p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <input required value={lookupId} onChange={event => { setLookupId(event.target.value.toUpperCase()); setError(null); }} placeholder="Nhập mã hồ sơ" aria-label="Mã hồ sơ cần tra cứu" style={{ flex: '1 1 280px', minWidth: 0, padding: '11px 12px', borderRadius: '8px', border: '1px solid #334155', background: '#020617', color: '#fff', fontFamily: 'monospace' }} />
+            <button type="submit" className="btn-primary" style={{ padding: '10px 16px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px' }}><Search size={16} /> Tra cứu</button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', color: '#94a3b8', fontSize: '0.78rem' }}><QrCode size={17} color="#34d399" /> Bạn cũng có thể quét mã QR trên giấy xác nhận để tra cứu tự động.</div>
+        </form>}
+
         {loading ? (
           <PageSkeleton variant="verification" label="Đang xác minh hồ sơ" />
         ) : error ? (
@@ -74,7 +99,7 @@ export const PublicVerificationPage = () => {
             <h4 style={{ margin: '0 0 6px 0' }}>Không Thể Xác Thực</h4>
             <p style={{ fontSize: '0.85rem', margin: 0 }}>{error}</p>
           </div>
-        ) : (
+        ) : data ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Status Stamp */}
             <div style={{
@@ -145,7 +170,7 @@ export const PublicVerificationPage = () => {
               </button>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

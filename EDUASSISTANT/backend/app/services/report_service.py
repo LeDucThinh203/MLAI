@@ -12,6 +12,7 @@ Module tạo báo cáo xuất khẩu:
 import io
 import json
 import base64
+from urllib.parse import quote
 import qrcode
 from datetime import datetime
 
@@ -353,7 +354,7 @@ def generate_decision_html(case_data: dict, base_url: str = 'http://localhost:30
     year_str = str(now.year)
 
     # Sinh QR code Data URL
-    verification_url = f"{base_url}/verify/{case_id}"
+    verification_url = f"{base_url}/verify?caseId={quote(case_id, safe='')}"
     qr_img = qrcode.make(verification_url)
     qr_buffer = io.BytesIO()
     qr_img.save(qr_buffer, format='PNG')
