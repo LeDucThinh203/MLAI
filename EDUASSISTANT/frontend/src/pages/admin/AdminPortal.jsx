@@ -290,7 +290,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             <button type="button" className="btn-secondary" onClick={() => setSisPage(1)} disabled={sisLoading}>
               <RefreshCw size={15} className={sisLoading ? 'animate-spin' : ''} /> Làm mới
             </button>
-            <button type="button" className="btn-primary" onClick={() => window.location.assign('?tab=admin_users')}>
+            <button type="button" className="btn-primary" onClick={() => setSisNoAvailableStudent(true)}>
               Thêm hồ sơ SIS
             </button>
           </div>
@@ -365,9 +365,9 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
         </div>}
         {sisNoAvailableStudent && <div role="dialog" aria-modal="true" aria-labelledby="sis-no-student-title" onClick={closeSisModal} style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()} className="card-panel" style={{ width: 'min(520px, 100%)', padding: '26px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
-            <h3 id="sis-no-student-title" style={{ marginTop: 0 }}>Chưa có sinh viên để thêm SIS</h3>
-            <p style={{ color: 'var(--text-muted)', lineHeight: 1.65 }}>Mỗi hồ sơ SIS phải gắn duy nhất với một tài khoản STUDENT để dữ liệu được snapshot chính xác khi sinh viên nộp hồ sơ NVQS. Hiện mọi tài khoản sinh viên đều đã có SIS.</p>
-            <p style={{ color: 'var(--text-muted)', lineHeight: 1.65 }}>Hãy tạo tài khoản sinh viên mới tại mục <strong>Tài khoản</strong>, sau đó quay lại đây để lập hồ sơ SIS và điền các facts học vụ.</p>
+            <h3 id="sis-no-student-title" style={{ marginTop: 0 }}>Đăng ký tài khoản sinh viên trước</h3>
+            <p style={{ color: 'var(--text-muted)', lineHeight: 1.65 }}>Mỗi hồ sơ SIS phải gắn duy nhất với một tài khoản STUDENT để dữ liệu được snapshot chính xác khi sinh viên nộp hồ sơ NVQS.</p>
+            <p style={{ color: 'var(--text-muted)', lineHeight: 1.65 }}>Hãy tạo tài khoản sinh viên mới tại mục <strong>Tài khoản</strong>. Máy chủ sẽ tự động sinh một hồ sơ SIS rỗng, sau đó bạn quay lại đây để cập nhật các facts học vụ.</p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '22px' }}><button type="button" className="btn-secondary" onClick={() => setSisNoAvailableStudent(false)}>Đóng</button><button type="button" className="btn-primary" onClick={() => { window.location.assign('?tab=admin_users'); }}>Đến Tài khoản</button></div>
           </div>
         </div>}
