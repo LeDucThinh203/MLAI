@@ -18,6 +18,13 @@ const CATEGORY_LABELS = {
   MILITARY_SERVICE_CONFIRMATION: 'Cấp giấy xác nhận sinh viên tạm hoãn NVQS'
 };
 
+const SIS_FACULTIES = [
+  'Khoa Công Nghệ Thông Tin', 'Khoa Kinh Tế', 'Khoa Quản Trị Kinh Doanh',
+  'Khoa Tài Chính - Ngân Hàng', 'Khoa Kế Toán - Kiểm Toán', 'Khoa Điện - Điện Tử',
+  'Khoa Cơ Khí', 'Khoa Xây Dựng', 'Khoa Ngoại Ngữ', 'Khoa Luật',
+  'Khoa Khoa Học Cơ Bản', 'Khoa Du Lịch - Khách Sạn'
+];
+
 const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const { token } = useAuth();
   const [users, setUsers] = useState([]);
@@ -347,7 +354,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               <label style={{ display: 'flex', flexDirection: 'column', gap: '7px', fontWeight: 700 }}>Trạng thái bản ghi<select style={{ width: '100%', boxSizing: 'border-box' }} value={editingSis.recordStatus || 'ACTIVE'} onChange={e => setEditingSis({ ...editingSis, recordStatus: e.target.value })}><option value="ACTIVE">Hoạt động</option><option value="SUSPENDED">Tạm khóa</option></select></label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '7px', fontWeight: 700 }}>Ngày bắt đầu khóa<input type="date" style={{ width: '100%', boxSizing: 'border-box' }} value={editingSis.courseStartDate || ''} onChange={e => setEditingSis({ ...editingSis, courseStartDate: e.target.value || null })} /></label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '7px', fontWeight: 700 }}>Ngày kết thúc khóa<input type="date" style={{ width: '100%', boxSizing: 'border-box' }} value={editingSis.courseEndDate || ''} onChange={e => setEditingSis({ ...editingSis, courseEndDate: e.target.value || null })} /></label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '7px', fontWeight: 700 }}>Khoa / đơn vị<input style={{ width: '100%', boxSizing: 'border-box' }} value={editingSis.faculty || ''} onChange={e => setEditingSis({ ...editingSis, faculty: e.target.value || null })} /></label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '7px', fontWeight: 700 }}>Khoa / đơn vị<select style={{ width: '100%', boxSizing: 'border-box' }} value={editingSis.faculty || ''} onChange={e => setEditingSis({ ...editingSis, faculty: e.target.value || null })}><option value="">Chưa xác định</option>{editingSis.faculty && !SIS_FACULTIES.includes(editingSis.faculty) && <option value={editingSis.faculty}>{editingSis.faculty}</option>}{SIS_FACULTIES.map(faculty => <option key={faculty} value={faculty}>{faculty}</option>)}</select></label>
               <label style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '7px', fontWeight: 700 }}>Địa chỉ thường trú<textarea rows="3" style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', minHeight: '88px' }} value={editingSis.registeredPermanentAddress || ''} onChange={e => setEditingSis({ ...editingSis, registeredPermanentAddress: e.target.value || null })} /></label>
             </div>
             <div style={{ display: 'flex', gap: '14px 28px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', flexWrap: 'wrap' }}><label style={{ display: 'flex', gap: '8px', alignItems: 'center', fontWeight: 600 }}><input type="checkbox" checked={Boolean(editingSis.currentTermActive)} onChange={e => setEditingSis({ ...editingSis, currentTermActive: e.target.checked })} /> Có học kỳ đang hoạt động</label><label style={{ display: 'flex', gap: '8px', alignItems: 'center', fontWeight: 600 }}><input type="checkbox" checked={Boolean(editingSis.hasCurrentSchedule)} onChange={e => setEditingSis({ ...editingSis, hasCurrentSchedule: e.target.checked })} /> Có thời khóa biểu hiện tại</label></div>
