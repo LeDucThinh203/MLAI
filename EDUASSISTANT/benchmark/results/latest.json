@@ -1,7 +1,9 @@
 {
-  "benchmarkRunId": "BM-1791616930",
-  "timestamp": "2026-10-10T07:22:10.924658Z",
-  "executionTimeSec": 0.011,
+  "benchmarkType": "DETERMINISTIC_DECISION_BENCHMARK",
+  "aiCallsPerformed": false,
+  "benchmarkRunId": "BM-1791618888",
+  "timestamp": "2026-10-10T07:54:48.702794Z",
+  "executionTimeSec": 0.01,
   "metrics": {
     "totalCases": 18,
     "correctCases": 18,
@@ -28,7 +30,7 @@
       "ruleMatched": "RULE_AUTO_PASSED_MILITARY_SERVICE_2026",
       "confidence": 0.98,
       "isCorrect": true,
-      "durationMs": 0.25
+      "durationMs": 0.2
     },
     {
       "id": "BENCH-02-UPPERCASE-ONLY",
@@ -42,7 +44,7 @@
       "ruleMatched": "RULE_AUTO_PASSED_MILITARY_SERVICE_2026",
       "confidence": 0.96,
       "isCorrect": true,
-      "durationMs": 0.13
+      "durationMs": 0.11
     },
     {
       "id": "BENCH-03-LOWERCASE-ONLY",
@@ -56,7 +58,7 @@
       "ruleMatched": "RULE_AUTO_PASSED_MILITARY_SERVICE_2026",
       "confidence": 0.95,
       "isCorrect": true,
-      "durationMs": 0.11
+      "durationMs": 0.1
     },
     {
       "id": "BENCH-04-ABBREVIATION-P-Q-TP",
@@ -70,7 +72,7 @@
       "ruleMatched": "RULE_AUTO_PASSED_MILITARY_SERVICE_2026",
       "confidence": 0.96,
       "isCorrect": true,
-      "durationMs": 8.68
+      "durationMs": 6.79
     },
     {
       "id": "BENCH-05-ABBREVIATION-NO-DOT",
@@ -84,7 +86,7 @@
       "ruleMatched": "RULE_AUTO_PASSED_MILITARY_SERVICE_2026",
       "confidence": 0.94,
       "isCorrect": true,
-      "durationMs": 0.31
+      "durationMs": 0.33
     },
     {
       "id": "BENCH-06-MISSING-WARD",
@@ -98,7 +100,7 @@
       "ruleMatched": "RULE_FACT_01_INCOMPLETE_ADDRESS",
       "confidence": 0.6,
       "isCorrect": true,
-      "durationMs": 0.06
+      "durationMs": 0.07
     },
     {
       "id": "BENCH-07-MISSING-PROVINCE",
@@ -112,7 +114,7 @@
       "ruleMatched": "RULE_FACT_01_INCOMPLETE_ADDRESS",
       "confidence": 0.58,
       "isCorrect": true,
-      "durationMs": 0.05
+      "durationMs": 0.06
     },
     {
       "id": "BENCH-08-EMPTY-ADDRESS",
@@ -126,7 +128,7 @@
       "ruleMatched": "RULE_FACT_01_INCOMPLETE_ADDRESS",
       "confidence": 0.5,
       "isCorrect": true,
-      "durationMs": 0.14
+      "durationMs": 0.16
     },
     {
       "id": "BENCH-09-LOW-CONFIDENCE",
@@ -140,7 +142,7 @@
       "ruleMatched": "RULE_FACT_01_INCOMPLETE_ADDRESS",
       "confidence": 0.45,
       "isCorrect": true,
-      "durationMs": 0.05
+      "durationMs": 0.12
     },
     {
       "id": "BENCH-10-TEMPORARY-ADDRESS",
@@ -154,7 +156,7 @@
       "ruleMatched": "RULE_CONFLICT_01_TEMPORARY_ADDRESS_NOT_ALLOWED",
       "confidence": 0.95,
       "isCorrect": true,
-      "durationMs": 0.05
+      "durationMs": 0.07
     },
     {
       "id": "BENCH-11-CONFLICT-PROVINCE",
@@ -168,7 +170,7 @@
       "ruleMatched": "RULE_CONFLICT_02_PERMANENT_ADDRESS_MISMATCH",
       "confidence": 0.97,
       "isCorrect": true,
-      "durationMs": 0.26
+      "durationMs": 0.29
     },
     {
       "id": "BENCH-12-CONFLICT-DISTRICT",
@@ -182,7 +184,7 @@
       "ruleMatched": "RULE_CONFLICT_02_PERMANENT_ADDRESS_MISMATCH",
       "confidence": 0.96,
       "isCorrect": true,
-      "durationMs": 0.26
+      "durationMs": 0.28
     },
     {
       "id": "BENCH-13-CONFLICT-WARD",
@@ -196,7 +198,7 @@
       "ruleMatched": "RULE_CONFLICT_02_PERMANENT_ADDRESS_MISMATCH",
       "confidence": 0.96,
       "isCorrect": true,
-      "durationMs": 0.25
+      "durationMs": 0.4
     },
     {
       "id": "BENCH-14-ACADEMIC-SUSPENDED",
@@ -210,7 +212,7 @@
       "ruleMatched": "RULE_AUTH_01_ACADEMIC_STATUS_NEEDS_OFFICER",
       "confidence": 0.98,
       "isCorrect": true,
-      "durationMs": 0.05
+      "durationMs": 0.07
     },
     {
       "id": "BENCH-15-ACADEMIC-WITHDRAWN",
@@ -224,7 +226,7 @@
       "ruleMatched": "RULE_AUTH_01_ACADEMIC_STATUS_NEEDS_OFFICER",
       "confidence": 0.98,
       "isCorrect": true,
-      "durationMs": 0.04
+      "durationMs": 0.1
     },
     {
       "id": "BENCH-16-POLICY-EXCEPTION-EXTENSION",
@@ -238,7 +240,7 @@
       "ruleMatched": "RULE_POLICY_01_SPECIAL_EXCEPTION_REQUEST",
       "confidence": 0.98,
       "isCorrect": true,
-      "durationMs": 0.04
+      "durationMs": 0.05
     },
     {
       "id": "BENCH-17-OWNERSHIP-MSSV-MISMATCH",
@@ -252,7 +254,7 @@
       "ruleMatched": "RULE_SEC_01_OWNERSHIP_MISMATCH",
       "confidence": 0.98,
       "isCorrect": true,
-      "durationMs": 0.05
+      "durationMs": 0.06
     },
     {
       "id": "BENCH-18-FAILSAFE-FALLBACK-TRIGGERED",
@@ -266,7 +268,7 @@
       "ruleMatched": "RULE_FAILSAFE_NON_LIVE_AI",
       "confidence": 0.98,
       "isCorrect": true,
-      "durationMs": 0.08
+      "durationMs": 0.21
     }
   ]
 }

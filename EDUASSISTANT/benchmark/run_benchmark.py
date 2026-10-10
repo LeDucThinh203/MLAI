@@ -36,7 +36,6 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from app.services.rule_engine import evaluate_case
-from app.services.ai_service import set_ai_mode
 
 
 def run_benchmark():
@@ -75,9 +74,15 @@ def run_benchmark():
     for idx, c in enumerate(cases, start=1):
         t0 = time.time()
         
-        # Thiết lập tạm mode để phản ánh đúng provenance của case mà không đổi ngưỡng
-        case_ai_mode = c.get('aiMetadata', {}).get('modeUsed', 'live')
-        set_ai_mode(case_ai_mode)
+        # The benchmark provides explicit fixture provenance. It neither calls
+        # Gemini nor mutates process-global AI state.
+        fixture_ai_context = {
+            'modeUsed': c.get('aiMetadata', {}).get('modeUsed', 'live'),
+            'isLive': c.get('aiMetadata', {}).get('isLive', True),
+            'isFallback': c.get('aiMetadata', {}).get('fallbackOccurred', False),
+            'isSynthetic': False,
+            'source': 'SIMULATED_PROVENANCE_FOR_DETERMINISTIC_BENCHMARK'
+        }
 
         payload = {
             'id': c['id'],
@@ -99,7 +104,7 @@ def run_benchmark():
             ocr_data = c['ocr']
 
         student = c.get('student', {})
-        verdict = evaluate_case(payload, ocr_data, student)
+        verdict = evaluate_case(payload, ocr_data, student, ai_context=fixture_ai_context)
         duration_ms = round((time.time() - t0) * 1000, 2)
 
         actual_decision = verdict.get('decision')
@@ -162,6 +167,8 @@ def run_benchmark():
     unnecessary_escalation_rate = round((unnecessary_escalate_count / should_auto_approve_count) * 100, 2) if should_auto_approve_count > 0 else 0.0
 
     summary = {
+        'benchmarkType': 'DETERMINISTIC_DECISION_BENCHMARK',
+        'aiCallsPerformed': False,
         'benchmarkRunId': f"BM-{int(datetime.now().timestamp())}",
         'timestamp': datetime.utcnow().isoformat() + 'Z',
         'executionTimeSec': total_duration_sec,
