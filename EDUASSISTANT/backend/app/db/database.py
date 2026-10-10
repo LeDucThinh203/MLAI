@@ -421,8 +421,8 @@ CREATE TABLE IF NOT EXISTS sis_student_records (
             FROM users WHERE role='STUDENT' ON CONFLICT (userId) DO NOTHING""", (datetime.utcnow().isoformat()+'Z', datetime.utcnow().isoformat()+'Z'))
 
         # Existing production users may have been created before academic fields
-        # existed. Backfill only migration-owned SIS records from the bundled
-        # demo source, preserving every record an administrator has updated.
+        # existed. Backfill only missing facts from the bundled demo source;
+        # populated administrator values are never overwritten.
         seed_path = os.path.join(os.path.dirname(__file__), 'data.json')
         if os.path.exists(seed_path):
             for seeded_user in json.load(open(seed_path, encoding='utf-8')).get('users', []):
@@ -437,14 +437,14 @@ CREATE TABLE IF NOT EXISTS sis_student_records (
                 if not any(value is not None for value in facts[:-1]):
                     continue
                 q.execute('''UPDATE sis_student_records
-                    SET academicStatus = COALESCE(academicStatus, %s),
+                    SET academicStatus = CASE WHEN academicStatus IS NULL OR academicStatus = 'UNKNOWN' THEN %s ELSE academicStatus END,
                         courseStartDate = COALESCE(courseStartDate, %s),
                         courseEndDate = COALESCE(courseEndDate, %s),
                         currentTermActive = COALESCE(currentTermActive, %s),
                         hasCurrentSchedule = COALESCE(hasCurrentSchedule, %s),
                         registeredPermanentAddress = COALESCE(registeredPermanentAddress, %s),
                         faculty = COALESCE(faculty, %s)
-                    WHERE userId = %s AND updatedBy = 'SYSTEM_MIGRATION' ''', facts)
+                    WHERE userId = %s''', facts)
     print('[Database] Render PostgreSQL ready.')
 
 
