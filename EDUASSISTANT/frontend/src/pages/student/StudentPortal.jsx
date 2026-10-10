@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   PlusCircle, RefreshCw, Paperclip, UploadCloud, Sparkles,
-  CheckCircle2, Printer, Send, Building2, AlertCircle, QrCode,
+  CheckCircle2, AlertTriangle, Printer, Send, Building2, AlertCircle, QrCode,
   MapPin, Shield, User, FileText, Check, AlertOctagon
 } from 'lucide-react';
 import { API_BASE, SERVER_BASE } from '../../api/client';
@@ -288,7 +288,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
 
       {/* TAB 1: FORM NỘP ĐƠN NVQS */}
       {activeTab === 'student_submit' && (
-        <div className="card-panel" style={{ padding: '28px', maxWidth: '880px', margin: '0 auto', width: '100%' }}>
+        <div className="card-panel student-submit-page" style={{ padding: '28px', maxWidth: '1120px', margin: '0 auto', width: '100%' }}>
           <div style={{ marginBottom: '20px' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '20px', padding: '4px 12px', fontSize: '0.78rem', color: '#38bdf8', fontWeight: 700, marginBottom: '8px' }}>
               <Shield size={14} /> Nộp giấy tờ trực tuyến

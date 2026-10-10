@@ -613,7 +613,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .case-discussion__item p { font-size: .88rem !important; line-height: 1.55 !important; }
 
 /* Student requests: clear hierarchy and a calm administrative presentation. */
-.student-cases-page { max-width: 1040px; margin: 0 auto; }
+.student-cases-page { width: 100%; max-width: 1480px; margin: 0 auto; }
 .student-cases-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid #d8e1ec; }
 .student-cases-header h2 { margin: 0 0 5px; color: #172b4d !important; font-size: 1.35rem; }
 .student-cases-header p { margin: 0; color: #52677f; font-size: .9rem; }
