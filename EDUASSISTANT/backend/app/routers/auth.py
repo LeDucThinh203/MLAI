@@ -38,7 +38,7 @@ from app.db.db import db_service
 
 router = APIRouter(tags=["Authentication"])
 
-ACCESS_TOKEN_MAX_AGE = 8 * 60 * 60
+ACCESS_TOKEN_MAX_AGE = 15 * 60  # 15 minutes (Security hardening)
 REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60
 
 
@@ -175,7 +175,7 @@ async def login(req: LoginRequest):
         'studentCode': user.get('studentCode'),
         'department': user.get('department'),
         'mustChangePassword': bool(user.get('mustChangePassword')),
-        'exp': datetime.utcnow() + timedelta(hours=8)
+        'exp': datetime.utcnow() + timedelta(minutes=15)
     }
     access_token = jwt.encode(token_payload, JWT_SECRET, algorithm='HS256')
 
@@ -249,7 +249,7 @@ async def login_2fa_endpoint(req: Login2FARequest):
         'studentCode': user.get('studentCode'),
         'department': user.get('department'),
         'mustChangePassword': bool(user.get('mustChangePassword')),
-        'exp': datetime.utcnow() + timedelta(hours=8)
+        'exp': datetime.utcnow() + timedelta(minutes=15)
     }
     access_token = jwt.encode(token_payload, JWT_SECRET, algorithm='HS256')
 
@@ -305,7 +305,7 @@ async def register(req: RegisterRequest):
         'studentCode': user.get('studentCode'),
         'department': user.get('department'),
         'mustChangePassword': bool(user.get('mustChangePassword')),
-        'exp': datetime.utcnow() + timedelta(hours=8)
+        'exp': datetime.utcnow() + timedelta(minutes=15)
     }
     access_token = jwt.encode(token_payload, JWT_SECRET, algorithm='HS256')
 
@@ -365,7 +365,7 @@ async def refresh_token(request: Request, req: Optional[RefreshRequest] = None):
         'studentCode': user.get('studentCode'),
         'department': user.get('department'),
         'mustChangePassword': bool(user.get('mustChangePassword')),
-        'exp': datetime.utcnow() + timedelta(hours=8)
+        'exp': datetime.utcnow() + timedelta(minutes=15)
     }
     new_access_token = jwt.encode(token_payload, JWT_SECRET, algorithm='HS256')
 
@@ -506,5 +506,43 @@ async def enable_2fa(req: Enable2FARequest, user: dict = Depends(get_current_use
 
 @router.post("/api/auth/2fa/disable")
 async def disable_2fa(req: Optional[Enable2FARequest] = None, user: dict = Depends(get_current_user)):
+    user_db = await db_service.get_user_by_id(user['id'])
+    if not user_db:
+        return api_response(404, False, 'Không tìm thấy người dùng.', None, 'NOT_FOUND')
+
+    if not user_db.get('twoFactorEnabled'):
+        return api_response(200, True, 'Xác thực 2 bước hiện chưa được bật.')
+
+    # Require either a valid TOTP code or current account password
+    otp_code = (req.token if req else None) or (req.otpCode if req else None)
+    password = getattr(req, 'password', None) if req else None
+
+    verified = False
+    if otp_code and user_db.get('twoFactorSecret'):
+        totp = pyotp.TOTP(str(user_db['twoFactorSecret']).strip())
+        if totp.verify(str(otp_code).strip(), valid_window=1):
+            verified = True
+
+    if not verified and password and user_db.get('password'):
+        if bcrypt.checkpw(password.encode('utf-8'), user_db['password'].encode('utf-8')):
+            verified = True
+
+    if not verified:
+        await db_service.log_audit({
+            'action': 'AUTH_2FA_DISABLE_REJECTED',
+            'actor': {'id': user['id'], 'username': user['username'], 'role': user['role'], 'name': user['fullName']},
+            'input': {'userId': user['id']},
+            'result': 'FAILED',
+            'reason': 'Yêu cầu tắt 2FA bị từ chối do thiếu hoặc sai OTP / mật khẩu xác thực'
+        })
+        return api_response(400, False, 'Vui lòng cung cấp mã OTP 2FA hoặc mật khẩu tài khoản để xác nhận tắt 2FA.', None, 'AUTHENTICATION_REQUIRED')
+
     await db_service.set_2fa_status(user['id'], False)
-    return api_response(200, True, 'Đã tắt xác thực 2 bước.')
+    await db_service.log_audit({
+        'action': 'AUTH_2FA_DISABLED',
+        'actor': {'id': user['id'], 'username': user['username'], 'role': user['role'], 'name': user['fullName']},
+        'input': {'userId': user['id']},
+        'result': 'SUCCESS',
+        'reason': 'Người dùng đã xác thực và tắt 2FA an toàn'
+    })
+    return api_response(200, True, 'Đã tắt xác thực 2 bước an toàn.')

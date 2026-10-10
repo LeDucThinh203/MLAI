@@ -51,3 +51,4 @@ class Enable2FARequest(BaseModel):
     token: Optional[str] = None
     otpCode: Optional[str] = None
     secret: Optional[str] = None
+    password: Optional[str] = None
