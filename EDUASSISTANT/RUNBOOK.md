@@ -64,7 +64,7 @@ REFRESH_SECRET=<generate-a-different-random-secret-at-least-32-characters>
 SIGNATURE_KEY=<generate-a-random-secret-at-least-32-characters>
 ```
 
-Để bật AI live, đặt `AI_MODE=live`. Hệ thống lấy các model Gemini có hỗ trợ `generateContent`, thử tuần tự đến khi có phản hồi JSON hợp lệ; sau đó mới lấy danh sách model OpenRouter có giá đầu vào và đầu ra bằng 0, thử lần lượt. Chỉ khi không model nào trả dữ liệu hợp lệ thì mới dùng dữ liệu mẫu.
+Để bật AI live, đặt `AI_MODE=live`. Quy trình đọc minh chứng thử lần lượt các model Gemini; nếu không đọc được, OpenRouter dùng model thị giác miễn phí đã ghim `qwen/qwen3.8-27b:free`. Ảnh được gửi trực tiếp; PDF được chuyển tối đa 3 trang đầu thành ảnh trước khi gửi. Nếu cả hai dịch vụ đều không đọc được tài liệu, hệ thống báo chưa đọc được và không tạo nội dung OCR giả.
 
 ---
 
