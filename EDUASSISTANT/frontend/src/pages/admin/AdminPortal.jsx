@@ -25,6 +25,13 @@ const SIS_FACULTIES = [
   'Khoa Khoa Học Cơ Bản', 'Khoa Du Lịch - Khách Sạn'
 ];
 
+const ACADEMIC_STATUS_LABELS = {
+  ACTIVE: 'Đang học', SUSPENDED: 'Tạm dừng', WITHDRAWN: 'Đã thôi học',
+  GRADUATED: 'Đã tốt nghiệp', LEAVE_OF_ABSENCE: 'Bảo lưu', UNKNOWN: 'Chưa xác định'
+};
+
+const SIS_RECORD_STATUS_LABELS = { ACTIVE: 'Đang sử dụng', SUSPENDED: 'Tạm khóa' };
+
 const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const { token } = useAuth();
   const [users, setUsers] = useState([]);
@@ -317,7 +324,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               {!sisLoading && sisRecords.map((record, index) => <tr key={record.id} style={{ borderTop: '1px solid var(--border-color)' }}>
                 <td style={{ padding: '14px 12px', color: 'var(--text-muted)' }}>{(sisPage - 1) * 20 + index + 1}</td>
                 <td style={{ padding: '14px 12px' }}><strong>{record.fullName}</strong><br /><span style={{ color: 'var(--text-muted)' }}>{record.studentCode || 'Chưa có MSSV'}</span></td>
-                <td style={{ padding: '14px 12px' }}>{record.academicStatus || 'UNKNOWN'}<br /><small style={{ color: 'var(--text-muted)' }}>{record.recordStatus || 'ACTIVE'}</small></td>
+                <td style={{ padding: '14px 12px' }}><strong>{ACADEMIC_STATUS_LABELS[record.academicStatus] || 'Chưa xác định'}</strong><br /><small style={{ color: 'var(--text-muted)' }}>{SIS_RECORD_STATUS_LABELS[record.recordStatus] || 'Đang sử dụng'}</small></td>
                 <td style={{ padding: '14px 12px' }}>{record.faculty || 'Chưa cập nhật'}</td>
                 <td style={{ padding: '14px 12px' }}>{record.courseStartDate || '—'} <span style={{ color: 'var(--text-muted)' }}>→</span> {record.courseEndDate || '—'}</td>
                 <td style={{ padding: '14px 12px', textAlign: 'right' }}>
@@ -357,7 +364,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
           <div onClick={e => e.stopPropagation()} className="card-panel" style={{ width: 'min(680px, 100%)', padding: '24px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}><div><h3 id="sis-view-title" style={{ margin: 0 }}>Hồ sơ SIS: {viewingSis.fullName}</h3><small style={{ color: 'var(--text-muted)' }}>{viewingSis.studentCode || 'Chưa có MSSV'} · Nguồn: {viewingSis.source || 'INTERNAL_SIS_DEMO'}</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setViewingSis(null)}><X size={18} /></button></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '20px' }}>
-              {[['Trạng thái học vụ', viewingSis.academicStatus || 'UNKNOWN'], ['Trạng thái bản ghi', viewingSis.recordStatus || 'ACTIVE'], ['Khoa / đơn vị', viewingSis.faculty || 'Chưa cập nhật'], ['Khóa học', `${viewingSis.courseStartDate || '—'} → ${viewingSis.courseEndDate || '—'}`], ['Học kỳ hoạt động', viewingSis.currentTermActive ? 'Có' : 'Không'], ['Thời khóa biểu', viewingSis.hasCurrentSchedule ? 'Có' : 'Không'], ['Địa chỉ thường trú', viewingSis.registeredPermanentAddress || 'Chưa cập nhật'], ['Cập nhật lần cuối', viewingSis.updatedAt || '—']].map(([label, value]) => <div key={label} style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '8px' }}><small style={{ color: 'var(--text-muted)', display: 'block' }}>{label}</small><strong style={{ fontSize: '0.88rem' }}>{value}</strong></div>)}
+              {[['Trạng thái học vụ', ACADEMIC_STATUS_LABELS[viewingSis.academicStatus] || 'Chưa xác định'], ['Trạng thái bản ghi', SIS_RECORD_STATUS_LABELS[viewingSis.recordStatus] || 'Đang sử dụng'], ['Khoa / đơn vị', viewingSis.faculty || 'Chưa cập nhật'], ['Khóa học', `${viewingSis.courseStartDate || '—'} → ${viewingSis.courseEndDate || '—'}`], ['Học kỳ hoạt động', viewingSis.currentTermActive ? 'Có' : 'Không'], ['Thời khóa biểu', viewingSis.hasCurrentSchedule ? 'Có' : 'Không'], ['Địa chỉ thường trú', viewingSis.registeredPermanentAddress || 'Chưa cập nhật'], ['Cập nhật lần cuối', viewingSis.updatedAt || '—']].map(([label, value]) => <div key={label} style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '8px' }}><small style={{ color: 'var(--text-muted)', display: 'block' }}>{label}</small><strong style={{ fontSize: '0.88rem' }}>{value}</strong></div>)}
             </div>
             <div style={{ marginTop: '18px', padding: '12px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.10)', fontSize: '0.84rem' }}><strong>Vai trò trong thẩm định:</strong> SIS là dữ liệu xác thực do quản trị viên quản lý. Khi sinh viên nộp hồ sơ NVQS, hệ thống snapshot dữ liệu SIS hiện có vào hồ sơ để Rule Engine đối chiếu danh tính, học vụ, thời hạn khóa học và địa chỉ. AI chỉ hỗ trợ phân tích, không thay thế dữ liệu SIS.</div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}><button type="button" className="btn-primary" onClick={() => { setViewingSis(null); setSisEditorMode('edit'); setEditingSis({ ...viewingSis, recordStatus: viewingSis.recordStatus || 'ACTIVE' }); }}>Cập nhật hồ sơ</button></div>
