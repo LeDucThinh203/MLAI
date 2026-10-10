@@ -135,26 +135,6 @@ async def update_sis_record(record_id: str, req: SisUpdateRequest, user: dict = 
     updated = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
     return api_response(200, True, 'SIS record updated.', {'record': updated})
 
-
-@router.delete('/api/admin/sis/{record_id}')
-async def delete_sis_record(record_id: str, user: dict = Depends(require_roles('ADMIN'))):
-    """Remove only the internal SIS registry entry; the user account remains."""
-    record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
-    if not record:
-        return api_response(404, False, 'SIS record not found.', None, 'NOT_FOUND')
-
-    run_query('DELETE FROM sis_student_records WHERE id = ?', (record_id,))
-    await db_service.log_audit({
-        'action': 'ADMIN_SIS_RECORD_DELETED',
-        'actor': user,
-        'caseId': None,
-        'input': {'recordId': record_id, 'studentCode': record.get('studentCode'), 'fullName': record.get('fullName')},
-        'result': 'SUCCESS',
-        'reason': 'Admin removed an internal SIS registry record; the user account was retained.'
-    })
-    return api_response(200, True, 'SIS record deleted. The student account was not deleted.', {'recordId': record_id})
-
-
 @router.get("/api/admin/users")
 async def get_admin_users(user: dict = Depends(require_roles('ADMIN'))):
     cache_identity = {'view': 'directory'}
