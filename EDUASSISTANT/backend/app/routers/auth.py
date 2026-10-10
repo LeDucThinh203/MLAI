@@ -285,6 +285,10 @@ async def login_2fa_endpoint(req: Login2FARequest):
 
 @router.post("/api/register")
 async def register(req: RegisterRequest):
+    return api_response(403, False, 'Public registration is disabled. Student accounts are created by an administrator.', None, 'PUBLIC_REGISTRATION_DISABLED')
+
+    # Kept below temporarily for historical reference; this code is unreachable
+    # while account provisioning is restricted to the administrator workflow.
     username = req.username.strip() if req.username else ''
     password = req.password if req.password else ''
     if not username or not password or len(password) < 6:

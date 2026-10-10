@@ -218,7 +218,7 @@ const AuthPage = () => {
 
         {/* Tab switch giữa Đăng Nhập & Đăng Ký Sinh Viên */}
         <div className="auth-mode-tabs" style={{
-          display: 'grid',
+          display: 'none',
           gridTemplateColumns: '1fr 1fr',
           background: 'rgba(15, 23, 42, 0.8)',
           padding: '4px',
@@ -286,6 +286,10 @@ const AuthPage = () => {
             <span>{error}</span>
           </div>
         )}
+
+        {!twoFactorChallenge && <div style={{ marginBottom: '16px', padding: '10px 12px', borderRadius: '9px', background: 'rgba(2, 132, 199, 0.10)', border: '1px solid rgba(2, 132, 199, 0.22)', color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.5 }}>
+          Tài khoản sinh viên được quản trị viên cấp và hệ thống tự tạo hồ sơ SIS tương ứng. Vui lòng liên hệ quản trị viên nếu cần cấp tài khoản.
+        </div>}
 
         {/* 2FA OTP CHALLENGE MODAL */}
         {twoFactorChallenge && (

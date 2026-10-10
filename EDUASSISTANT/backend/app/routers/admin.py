@@ -183,6 +183,19 @@ async def admin_create_user(req: CreateAdminUserRequest, user: dict = Depends(re
         return api_response(409, False, 'Tên đăng nhập này đã được sử dụng.', None, 'USERNAME_EXISTS')
 
     created = await db_service.create_user(req.dict())
+    if created and created.get('role') == 'STUDENT':
+        now = datetime.utcnow().isoformat() + 'Z'
+        run_query('''INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,recordStatus,createdAt,updatedAt,updatedBy)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (userId) DO NOTHING''', (
+            f"SIS-{created['id']}", created['id'], created.get('studentCode'), created['fullName'], None,
+            None, None, False, False, None, created.get('department'), 'ADMIN_ACCOUNT_PROVISIONING',
+            'ACTIVE', now, now, user.get('id')
+        ))
+        await db_service.log_audit({
+            'action': 'ADMIN_SIS_RECORD_PROVISIONED', 'actor': user, 'caseId': None,
+            'input': {'userId': created['id'], 'recordId': f"SIS-{created['id']}", 'studentCode': created.get('studentCode')},
+            'result': 'SUCCESS', 'reason': 'A blank SIS record was provisioned automatically with the new student account.'
+        })
     clean_user = {k: v for k, v in (created or {}).items() if k != 'password'}
     return api_response(201, True, f"Tạo tài khoản {req.fullName} ({req.role}) thành công.", {'user': clean_user, **clean_user})
 
