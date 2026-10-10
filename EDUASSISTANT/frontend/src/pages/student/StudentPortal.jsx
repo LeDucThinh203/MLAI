@@ -692,7 +692,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 700, fontSize: '0.86rem' }}>
                           <CheckCircle2 size={18} />
-                          <span>Giấy xác nhận điện tử đã được ký số HMAC-SHA256 hợp lệ!</span>
+                          <span>Giấy xác nhận có mã xác thực toàn vẹn HMAC-SHA256 hợp lệ.</span>
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button

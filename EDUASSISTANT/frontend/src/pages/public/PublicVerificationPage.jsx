@@ -128,7 +128,7 @@ export const PublicVerificationPage = () => {
                 <div style={{ fontWeight: 600, color: '#60a5fa' }}>{data.reviewerName}</div>
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
-                <span style={{ color: 'var(--text-sub)' }}>Chữ ký số (HMAC-SHA256 Token):</span>
+                <span style={{ color: 'var(--text-sub)' }}>Mã xác thực toàn vẹn (HMAC-SHA256):</span>
                 <div style={{ wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.72rem', color: '#94a3b8', background: 'rgba(0,0,0,0.4)', padding: '6px 8px', borderRadius: '6px', marginTop: '4px' }}>
                   {data.digitalSignature}
                 </div>
