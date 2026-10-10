@@ -335,6 +335,23 @@ CREATE TABLE IF NOT EXISTS sis_student_records (
             if statement.strip():
                 q.execute(statement)
 
+        # Existing Render databases predate the academic/SIS fields.  CREATE
+        # TABLE IF NOT EXISTS does not evolve those tables, so add every field
+        # required by the one-time SIS seed before querying it below.
+        for statement in (
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS academicStatus VARCHAR(50)',
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS courseStartDate VARCHAR(50)',
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS courseEndDate VARCHAR(50)',
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS currentTermActive BOOLEAN DEFAULT TRUE',
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS hasCurrentSchedule BOOLEAN DEFAULT TRUE',
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS registeredPermanentAddress TEXT',
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS faculty VARCHAR(255)',
+            'ALTER TABLE sis_student_records ADD COLUMN IF NOT EXISTS source VARCHAR(100) NOT NULL DEFAULT \'INTERNAL_SIS_DEMO\'',
+            'ALTER TABLE sis_student_records ADD COLUMN IF NOT EXISTS recordStatus VARCHAR(50) NOT NULL DEFAULT \'ACTIVE\'',
+            'ALTER TABLE sis_student_records ADD COLUMN IF NOT EXISTS updatedBy VARCHAR(100)',
+        ):
+            q.execute(statement)
+
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_timestamp ON audits (timestamp DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_action_timestamp ON audits (action, timestamp DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_role_timestamp ON audits (actorRole, timestamp DESC)')
