@@ -12,8 +12,22 @@ from app.core.cache import get_json as get_cached_json, set_json as set_cached_j
 from app.schemas.admin import UpdateRoleRequest, CreateAdminUserRequest
 from app.db.database import get_all, get_one, run_query
 from app.services.policy_registry_service import POLICY_REGISTRY
+from pydantic import BaseModel
+from typing import Optional
 
 router = APIRouter(tags=["Admin"])
+
+class SisUpdateRequest(BaseModel):
+    studentCode: Optional[str] = None
+    fullName: str
+    academicStatus: Optional[str] = None
+    courseStartDate: Optional[str] = None
+    courseEndDate: Optional[str] = None
+    currentTermActive: Optional[bool] = None
+    hasCurrentSchedule: Optional[bool] = None
+    registeredPermanentAddress: Optional[str] = None
+    faculty: Optional[str] = None
+    recordStatus: Optional[str] = None
 
 
 @router.get('/api/admin/policies')
@@ -42,6 +56,32 @@ async def list_sis_records(search: str = '', academicStatus: str = '', faculty: 
 async def get_sis_record(record_id: str, user: dict = Depends(require_roles('ADMIN'))):
     record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
     return api_response(200 if record else 404, bool(record), 'SIS record loaded.' if record else 'SIS record not found.', {'record': record} if record else None)
+
+@router.put('/api/admin/sis/{record_id}')
+async def update_sis_record(record_id: str, req: SisUpdateRequest, user: dict = Depends(require_roles('ADMIN'))):
+    record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    if not record: return api_response(404, False, 'SIS record not found.', None, 'NOT_FOUND')
+    data = req.dict()
+    data['studentCode'] = data['studentCode'].strip().upper() if data.get('studentCode') else None
+    data['fullName'] = data['fullName'].strip()
+    if not data['fullName']: return api_response(400, False, 'Full name is required.', None, 'VALIDATION_ERROR')
+    if data.get('academicStatus') not in (None, 'ACTIVE','SUSPENDED','WITHDRAWN','GRADUATED','LEAVE_OF_ABSENCE','UNKNOWN'):
+        return api_response(400, False, 'Invalid academic status.', None, 'VALIDATION_ERROR')
+    try:
+        start = datetime.strptime(data['courseStartDate'], '%Y-%m-%d').date() if data.get('courseStartDate') else None
+        end = datetime.strptime(data['courseEndDate'], '%Y-%m-%d').date() if data.get('courseEndDate') else None
+    except ValueError: return api_response(400, False, 'Course dates must use YYYY-MM-DD.', None, 'VALIDATION_ERROR')
+    if start and end and start > end: return api_response(400, False, 'Course start must not be after course end.', None, 'VALIDATION_ERROR')
+    if data['studentCode']:
+        duplicate = get_one('SELECT id FROM sis_student_records WHERE studentCode = ? AND id <> ?', (data['studentCode'], record_id))
+        if duplicate: return api_response(409, False, 'Student code already exists.', None, 'DUPLICATE_STUDENT_CODE')
+    changed = {key: {'old': record.get(key), 'new': value} for key, value in data.items() if record.get(key) != value}
+    if changed:
+        values = [data[k] for k in data] + [datetime.utcnow().isoformat()+'Z', user.get('id'), record_id]
+        run_query('UPDATE sis_student_records SET studentCode=?, fullName=?, academicStatus=?, courseStartDate=?, courseEndDate=?, currentTermActive=?, hasCurrentSchedule=?, registeredPermanentAddress=?, faculty=?, recordStatus=?, updatedAt=?, updatedBy=? WHERE id=?', tuple(values))
+        await db_service.log_audit({'action':'ADMIN_SIS_RECORD_UPDATED','actor':user,'caseId':None,'input':{'recordId':record_id,'studentCode':data['studentCode'],'changedFields':changed},'result':'SUCCESS','reason':'Admin updated authoritative institutional SIS record.'})
+    updated = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    return api_response(200, True, 'SIS record updated.', {'record': updated})
 
 
 @router.get("/api/admin/users")

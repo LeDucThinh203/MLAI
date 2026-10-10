@@ -28,6 +28,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const [adminMessage, setAdminMessage] = useState(null);
   const [policies, setPolicies] = useState([]);
   const [sisRecords, setSisRecords] = useState([]);
+  const [sisSearch, setSisSearch] = useState('');
+  const [sisStatus, setSisStatus] = useState('');
+  const [sisPage, setSisPage] = useState(1);
+  const [editingSis, setEditingSis] = useState(null);
 
   // States tạo tài khoản cán bộ từ Admin
   const [newFullName, setNewFullName] = useState('');
@@ -65,14 +69,19 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
   useEffect(() => {
     if (!token || !['admin_policies', 'admin_sis'].includes(activeTab)) return;
-    const endpoint = activeTab === 'admin_policies' ? '/admin/policies' : '/admin/sis?pageSize=20';
+    const endpoint = activeTab === 'admin_policies' ? '/admin/policies' : `/admin/sis?pageSize=20&page=${sisPage}&search=${encodeURIComponent(sisSearch)}&academicStatus=${encodeURIComponent(sisStatus)}`;
     axios.get(`${API_BASE}${endpoint}`).then(res => {
       if (res.data?.success) {
         if (activeTab === 'admin_policies') setPolicies(res.data.data.policies || []);
         else setSisRecords(res.data.data.records || []);
       }
     }).catch(() => setAdminMessage({ type: 'error', text: 'Không thể tải dữ liệu quản trị.' }));
-  }, [token, activeTab]);
+  }, [token, activeTab, sisPage, sisSearch, sisStatus]);
+
+  const saveSis = async () => {
+    const res = await axios.put(`${API_BASE}/admin/sis/${editingSis.id}`, editingSis);
+    if (res.data?.success) { setEditingSis(null); setSisRecords(items => items.map(item => item.id === res.data.data.record.id ? res.data.data.record : item)); setAdminMessage({ type: 'success', text: 'Cập nhật SIS thành công.' }); }
+  };
 
   const handleAdminCreateUser = async (e) => {
     e.preventDefault();
@@ -168,7 +177,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
       {activeTab === 'admin_sis' && <section className="card-panel" style={{ padding: '24px' }}>
         <h2>SIS Registry <small style={{ color: 'var(--text-muted)' }}>Internal SIS Demo Store</small></h2><p>Layer 1 — Authoritative Institutional Facts. Đây không phải kết nối trực tiếp tới SIS của trường.</p>
-        {sisRecords.map(record => <div key={record.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}><strong>{record.studentCode || 'Thiếu MSSV'} — {record.fullName}</strong><br /><small>{record.academicStatus || 'UNKNOWN'} · {record.faculty || 'Chưa rõ'} · {record.courseStartDate || '—'} → {record.courseEndDate || '—'}</small></div>)}
+        <div style={{ display:'flex', gap:'8px', marginBottom:'12px' }}><input value={sisSearch} onChange={e=>{setSisSearch(e.target.value);setSisPage(1)}} placeholder="MSSV, họ tên, khoa, địa chỉ" /><select value={sisStatus} onChange={e=>{setSisStatus(e.target.value);setSisPage(1)}}><option value="">Tất cả trạng thái</option><option>ACTIVE</option><option>SUSPENDED</option><option>WITHDRAWN</option><option>UNKNOWN</option></select></div>
+        {sisRecords.map(record => <div key={record.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}><strong>{record.studentCode || 'Thiếu MSSV'} — {record.fullName}</strong><br /><small>{record.academicStatus || 'UNKNOWN'} · {record.faculty || 'Chưa rõ'} · {record.courseStartDate || '—'} → {record.courseEndDate || '—'}</small><button className="btn-secondary" onClick={()=>setEditingSis({...record})} style={{marginLeft:'12px'}}>Chỉnh sửa SIS</button></div>)}
+        <button disabled={sisPage===1} onClick={()=>setSisPage(p=>p-1)}>Trang trước</button> <button onClick={()=>setSisPage(p=>p+1)}>Trang sau</button>
+        {editingSis && <div className="modal-backdrop"><div className="card-panel" style={{padding:'24px', maxWidth:'560px'}}><h3>Chỉnh sửa SIS</h3>{['studentCode','fullName','courseStartDate','courseEndDate','faculty','registeredPermanentAddress'].map(key=><label key={key} style={{display:'block'}}>{key}<input value={editingSis[key] || ''} onChange={e=>setEditingSis({...editingSis,[key]:e.target.value || null})}/></label>)}<select value={editingSis.academicStatus || 'UNKNOWN'} onChange={e=>setEditingSis({...editingSis,academicStatus:e.target.value})}><option>ACTIVE</option><option>SUSPENDED</option><option>WITHDRAWN</option><option>GRADUATED</option><option>LEAVE_OF_ABSENCE</option><option>UNKNOWN</option></select><button onClick={()=>setEditingSis(null)}>Hủy</button><button onClick={saveSis}>Lưu thay đổi</button></div></div>}
       </section>}
 
       {/* 1. TỔNG QUAN QUẢN TRỊ & CƠ CẤU HỒ SƠ */}
