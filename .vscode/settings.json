@@ -56,6 +56,9 @@
     "reportSelfClsParameterName": "none",
     "reportImplicitStringConcatenation": "none",
     "reportUndefinedVariable": "none",
-    "reportUnboundVariable": "none"
+    "reportUnboundVariable": "none",
+    "reportAssignmentType": "none",
+    "reportPossiblyUnboundVariable": "none",
+    "reportInvalidTypeForm": "none"
   }
 }

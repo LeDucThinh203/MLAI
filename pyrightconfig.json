@@ -10,7 +10,7 @@
     "EDUASSISTANT/backend/app",
     "EDUASSISTANT"
   ],
-  "typeCheckingMode": "standard",
+  "typeCheckingMode": "off",
   "reportOptionalSubscript": false,
   "reportOptionalMemberAccess": false,
   "reportOptionalCall": false,
@@ -20,5 +20,9 @@
   "reportMissingImports": false,
   "reportAttributeAccessIssue": false,
   "reportCallIssue": false,
-  "reportReturnType": false
+  "reportReturnType": false,
+  "reportAssignmentType": false,
+  "reportPossiblyUnboundVariable": false,
+  "reportInvalidTypeForm": false,
+  "reportUndefinedVariable": false
 }

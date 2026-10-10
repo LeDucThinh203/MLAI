@@ -22,7 +22,7 @@
 * **Python**: Phiên bản `>= 3.10`
 * **Node.js**: Phiên bản `>= 18.x`
 * **NPM**: Phiên bản `>= 9.x`
-* **Hệ cơ sở dữ liệu**: Microsoft SQL Server 2022/2025 (Hỗ trợ SQLite WAL tự động dự phòng)
+* **Hệ cơ sở dữ liệu**: Render PostgreSQL (PostgreSQL 15/16 Managed Service)
 * **Cổng mạng (Ports)**:
   * Backend API: `3001`
   * Frontend Web: `5173`
@@ -137,8 +137,8 @@ python test/test_competition_features.py
    ```powershell
    Get-Process -Id (Get-NetTCPConnection -LocalPort 3001).OwningProcess | Stop-Process -Force
    ```
-2. **Khởi chạy không kết nối được SQL Server:**
-   Hệ thống tự động kích hoạt chế độ fallback SQLite WAL mode tại `backend/app/db/caseflow.sqlite`, đảm bảo hoạt động liên tục 100%.
+2. **Khởi chạy kiểm tra kết nối Render PostgreSQL:**
+   Đảm bảo cấu hình biến môi trường `DATABASE_URL=postgresql://...` chính xác từ Render Dashboard.
 3. **Build Frontend kiểm tra lỗi:**
    ```powershell
    cd EDUASSISTANT/frontend
