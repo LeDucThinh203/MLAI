@@ -27,7 +27,8 @@ async def get_system_ai_status(user: dict = Depends(get_current_user)):
     """Trả về trạng thái hoạt động thực tế của Gemini AI (Read-only cho Client)."""
     api_key = os.environ.get('GEMINI_API_KEY')
     is_configured = bool(api_key and len(api_key.strip()) > 10)
-    current_status = "OPERATIONAL_LIVE" if is_configured else "FALLBACK_SAFE_HUMAN"
+    # A configured key is not evidence that a live API call is available.
+    current_status = "CONFIGURED" if is_configured else "NOT_CONFIGURED"
     display_label = "Gemini Live" if is_configured else "AI unavailable – Safe Human Review"
 
     return api_response(200, True, 'Lấy trạng thái AI thành công.', {

@@ -16,7 +16,7 @@ const PORTAL = {
 const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
   const { user, token, logout } = useAuth();
   const location = useLocation();
-  const [aiStatus, setAiStatus] = useState({ isConfigured: true, displayLabel: 'Gemini Live' });
+  const [aiStatus, setAiStatus] = useState({ isConfigured: false, displayLabel: 'AI status unavailable' });
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const portal = PORTAL[user?.role] || { title: 'Hệ thống quản lý hồ sơ', subtitle: 'Trường đại học', icon: Shield, tabs: [] };
   const PortalIcon = portal.icon;

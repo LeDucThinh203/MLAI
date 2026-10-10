@@ -131,6 +131,50 @@ def get_threshold_history(limit: int = 50) -> List[Dict[str, Any]]:
     return list(reversed(_fallback_history[-limit:]))
 
 
+def _record_feedback_transaction(case_id: str, feedback_type: str, reviewer: str,
+                                 reviewer_id: Optional[str], note: Optional[str]) -> Dict[str, Any]:
+    """Persist one feedback decision and its history row in one PostgreSQL transaction.
+
+    The row lock serializes competing reviewers; a failed history insert rolls the
+    threshold update back with the transaction.
+    """
+    if not get_db_connection:
+        raise RuntimeError('PostgreSQL connection is unavailable')
+    now_iso = datetime.now(timezone.utc).isoformat()
+    record_id = 'HIST-' + secrets.token_hex(8)
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO escalation_policy_state
+                    (id, currentThreshold, minThreshold, maxThreshold, stepSize, updatedAt, updatedBy)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO NOTHING
+            """, (POLICY_ID, DEFAULT_THRESHOLD, MIN_THRESHOLD, MAX_THRESHOLD, STEP_SIZE, now_iso, 'SYSTEM_INIT'))
+            cur.execute("SELECT currentThreshold FROM escalation_policy_state WHERE id = %s FOR UPDATE", (POLICY_ID,))
+            row = cur.fetchone()
+            old = float(row['currentThreshold'])
+            delta = STEP_SIZE if feedback_type == 'MISSED_ESCALATION' else (-STEP_SIZE if feedback_type == 'UNNECESSARY_ESCALATION' else 0)
+            new = max(MIN_THRESHOLD, min(MAX_THRESHOLD, round(old + delta, 4)))
+            reason = note or {
+                'MISSED_ESCALATION': 'Missed escalation: tightened routing threshold by 0.02.',
+                'UNNECESSARY_ESCALATION': 'Unnecessary escalation: relaxed routing threshold by 0.02.',
+                'CORRECT': 'Correct system routing: threshold unchanged.'
+            }[feedback_type]
+            cur.execute("""
+                UPDATE escalation_policy_state
+                SET currentThreshold = %s, updatedAt = %s, updatedBy = %s
+                WHERE id = %s
+            """, (new, now_iso, reviewer, POLICY_ID))
+            cur.execute("""
+                INSERT INTO escalation_threshold_history
+                    (id, caseId, feedbackType, oldThreshold, newThreshold, reviewerId, reviewerName, note, createdAt)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (record_id, case_id, feedback_type, old, new, reviewer_id, reviewer, reason, now_iso))
+    return {'id': record_id, 'createdAt': now_iso, 'oldThreshold': round(old, 4),
+            'newThreshold': round(new, 4), 'caseId': case_id,
+            'feedbackType': feedback_type, 'reviewerName': reviewer, 'note': reason}
+
+
 def record_reviewer_feedback(
     case_id: str,
     feedback_type: str,
@@ -148,6 +192,17 @@ def record_reviewer_feedback(
     ft = (feedback_type or '').strip().upper()
     if ft not in ('CORRECT', 'MISSED_ESCALATION', 'UNNECESSARY_ESCALATION'):
         raise ValueError(f"Loại feedback không hợp lệ: {feedback_type}. Chỉ chấp nhận CORRECT, MISSED_ESCALATION, UNNECESSARY_ESCALATION.")
+
+    # In production, do not degrade a failed transaction into an in-memory
+    # success: callers must see the failure and no partial state is committed.
+    if os.environ.get('DATABASE_URL', '').strip():
+        record = _record_feedback_transaction(case_id, ft, reviewer, reviewer_id, note)
+        _fallback_threshold = record['newThreshold']
+        _fallback_history.append(record)
+        return {
+            'oldThreshold': record['oldThreshold'], 'newThreshold': record['newThreshold'],
+            'feedback': ft, 'caseId': case_id, 'record': record
+        }
 
     old_threshold = get_confidence_threshold()
     reason = note or ''
