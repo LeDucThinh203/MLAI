@@ -118,12 +118,12 @@ def _openrouter_image_pages(file_buffer: bytes, mime_type: str) -> list[str]:
     if mime_type.startswith('image/'):
         return [f'data:{mime_type};base64,{base64.b64encode(file_buffer).decode("ascii")}']
     try:
-        import fitz
-        document = fitz.open(stream=file_buffer, filetype='pdf')
+        import pymupdf
+        document = pymupdf.open(stream=file_buffer, filetype='pdf')
         pages = []
         for page_index in range(min(document.page_count, 3)):
             page = document.load_page(page_index)
-            pixmap = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5), alpha=False)
+            pixmap = page.get_pixmap(matrix=pymupdf.Matrix(1.5, 1.5), alpha=False)
             encoded = base64.b64encode(pixmap.tobytes('png')).decode('ascii')
             pages.append(f'data:image/png;base64,{encoded}')
         document.close()

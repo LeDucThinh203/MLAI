@@ -21,6 +21,7 @@ class RuleEngineHardeningTests(unittest.TestCase):
             'courseStartDate': (today - timedelta(days=30)).isoformat(),
             'courseEndDate': (today + timedelta(days=30)).isoformat(),
             'registeredPermanentAddress': '123 Le Loi, Ben Nghe, Quan 1, Ho Chi Minh',
+            'source': 'VERIFIED_INSTITUTIONAL_SIS',
         }
         self.ai_context = {'modeUsed': 'live', 'isLive': True, 'isFallback': False, 'isSynthetic': False}
 
@@ -43,6 +44,11 @@ class RuleEngineHardeningTests(unittest.TestCase):
     def test_exact_student_code_matches(self):
         self.assertEqual(self.verdict(self.case())['decision'], 'AUTO_APPROVE')
 
+    def test_missing_verified_sis_source_requires_human_review(self):
+        case = self.case(); case['institutionalFacts'].pop('source')
+        result = self.verdict(case)
+        self.assertEqual(result['escalationReason'], 'FACT_UNKNOWN')
+        self.assertEqual(result['ruleMatched'], 'RULE_FAILSAFE_UNVERIFIED_SIS')
     def test_student_code_substring_does_not_match(self):
         case = self.case(); case['studentCode'] = case['studentClaim']['studentCode'] = 'SV2026-10'
         self.assertEqual(self.verdict(case)['escalationReason'], 'OWNERSHIP_UNCLEAR')
