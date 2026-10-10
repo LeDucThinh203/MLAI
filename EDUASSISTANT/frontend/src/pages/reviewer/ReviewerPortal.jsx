@@ -17,6 +17,7 @@ import PaginationControls from '../../components/common/PaginationControls';
 import { openSafeWindow, safeImageUrl } from '../../utils/security';
 
 const CATEGORY_LABELS = {
+  MILITARY_SERVICE_CONFIRMATION: 'Cấp giấy xác nhận sinh viên tạm hoãn NVQS',
   TUITION_DISCOUNT: 'Miễn, giảm học phí',
   ACADEMIC_SCHOLARSHIP: 'Học bổng',
   COMMUNITY_SERVICE: 'Hoạt động cộng đồng',
@@ -25,12 +26,12 @@ const CATEGORY_LABELS = {
 };
 const PRIORITY_LABELS = { URGENT: 'Khẩn cấp', HIGH: 'Cao', MEDIUM: 'Trung bình', LOW: 'Thấp' };
 const ESCALATION_LABELS = {
-  OWNERSHIP_UNCLEAR: 'Thông tin sinh viên chưa khớp',
-  FACT_UNKNOWN: 'Thiếu hoặc khó đọc minh chứng',
-  DATA_CONFLICT: 'Thông tin kê khai chưa khớp',
-  AUTHORITY_REQUIRED: 'Cần hội đồng xem xét',
-  POLICY_OUT_OF_SCOPE: 'Yêu cầu ngoài quy định',
-  HUMAN_REVIEW: 'Cần cán bộ xem xét'
+  OWNERSHIP_UNCLEAR: 'Chủ quyền hồ sơ không rõ (MSSV/Người nộp)',
+  FACT_UNKNOWN: 'Thiếu thành phần địa chỉ bắt buộc / AI không chắc chắn',
+  DATA_CONFLICT: 'Xung đột dữ liệu (Tạm trú / Khác thường trú gốc)',
+  AUTHORITY_REQUIRED: 'Cần thẩm quyền xem xét (Trạng thái đào tạo)',
+  POLICY_OUT_OF_SCOPE: 'Ngoại lệ chính sách ngoài thẩm quyền',
+  HUMAN_REVIEW: 'Cần cán bộ thẩm định xem xét'
 };
 
 const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
@@ -453,9 +454,9 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   onChange={e => setDepartmentFilter(e.target.value)}
                 >
                   <option value="ALL">🏢 Tất cả phòng ban thụ lý</option>
-                  <option value="Phòng Kế hoạch - Tài chính">Phòng Kế hoạch - Tài chính</option>
+                  <option value="Phòng Quản lý Đào tạo">Phòng Quản lý Đào tạo (NVQS)</option>
                   <option value="Phòng Công tác Sinh viên">Phòng Công tác Sinh viên</option>
-                  <option value="Phòng Quản lý Đào tạo">Phòng Quản lý Đào tạo</option>
+                  <option value="Phòng Kế hoạch - Tài chính">Phòng Kế hoạch - Tài chính</option>
                   <option value="Văn phòng Đoàn - Hội Sinh viên">Văn phòng Đoàn - Hội Sinh viên</option>
                 </select>
 
@@ -481,6 +482,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     onChange={e => setCategoryFilter(e.target.value)}
                   >
                     <option value="ALL">🏷️ Danh mục</option>
+                    <option value="MILITARY_SERVICE_CONFIRMATION">🎖️ Hoãn NVQS</option>
                     <option value="TUITION_DISCOUNT">🎓 Giảm học phí</option>
                     <option value="ACADEMIC_SCHOLARSHIP">🏆 Học bổng</option>
                     <option value="COMMUNITY_SERVICE">🎖️ Mùa Hè Xanh</option>
@@ -623,26 +625,102 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 </div>
               </div>
 
-              <div className="reviewer-case-detail__summary" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#0f172a', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <div>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Sinh viên nộp:</span>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 600 }}>{selectedCase.studentName}</p>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '3px', fontSize: '0.74rem' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>MSSV: <strong style={{ color: '#38bdf8' }}>{selectedCase.studentCode || 'Chưa cập nhật'}</strong></span>
+              {/* 3 LỚP THỰC THỂ PHÂN TÍCH QUYẾT ĐỊNH NVQS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+                {/* LỚP A: STUDENT CLAIM */}
+                <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.68rem', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>LỚP A</span>
+                      <strong style={{ fontSize: '0.8rem', color: '#93c5fd' }}>Kê Khai Sinh Viên</strong>
+                    </div>
+                    <span style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      borderRadius: '4px',
+                      background: (selectedCase.studentClaim?.addressType || selectedCase.addressType) === 'PERMANENT' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                      color: (selectedCase.studentClaim?.addressType || selectedCase.addressType) === 'PERMANENT' ? '#34d399' : '#f87171'
+                    }}>
+                      {(selectedCase.studentClaim?.addressType || selectedCase.addressType) === 'PERMANENT' ? 'Thường trú' : 'Tạm trú (Cảnh báo)'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>
+                    <span>Sinh viên: </span><strong style={{ color: 'var(--text-main)' }}>{selectedCase.studentName}</strong> ({selectedCase.studentCode || 'N/A'})
+                  </div>
+                  <div style={{ fontSize: '0.76rem' }}>
+                    <span style={{ color: 'var(--text-sub)' }}>Địa chỉ nộp: </span>
+                    <span style={{ color: '#f8fafc', fontWeight: 600 }}>
+                      {selectedCase.studentClaim?.declaredAddress || selectedCase.rawAddress || selectedCase.studentClaim?.rawAddress || 'Chưa có thông tin'}
+                    </span>
+                  </div>
+                  {selectedCase.description && (
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '4px 6px', borderRadius: '4px' }}>
+                      "{selectedCase.description}"
+                    </div>
+                  )}
+                </div>
+
+                {/* LỚP B: AUTHORITATIVE INSTITUTIONAL FACTS */}
+                <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.68rem', background: '#10b981', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>LỚP B</span>
+                      <strong style={{ fontSize: '0.8rem', color: '#6ee7b7' }}>Dữ Liệu Gốc Nhà Trường</strong>
+                    </div>
+                    <span style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      borderRadius: '4px',
+                      background: (selectedCase.institutionalFacts?.academicStatus || 'ACTIVE') === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                      color: (selectedCase.institutionalFacts?.academicStatus || 'ACTIVE') === 'ACTIVE' ? '#34d399' : '#f87171'
+                    }}>
+                      {selectedCase.institutionalFacts?.academicStatus || 'ACTIVE'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>
+                    <span>Khóa học: </span><strong style={{ color: '#cbd5e1' }}>{selectedCase.institutionalFacts?.courseStartDate || '09/2022'} → {selectedCase.institutionalFacts?.courseEndDate || '06/2026'}</strong>
+                    <span style={{ color: '#38bdf8', marginLeft: '6px' }}>(HK: Đang kích hoạt)</span>
+                  </div>
+                  <div style={{ fontSize: '0.76rem' }}>
+                    <span style={{ color: 'var(--text-sub)' }}>Hộ khẩu thường trú gốc: </span>
+                    <span style={{ color: '#f8fafc', fontWeight: 600 }}>
+                      {selectedCase.institutionalFacts?.registeredPermanentAddress || 'Đang xác minh'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    <span>Khoa/Viện: </span><strong>{selectedCase.institutionalFacts?.faculty || 'Công nghệ Thông tin'}</strong>
                   </div>
                 </div>
-                <div>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Danh mục & Độ ưu tiên:</span>
-                  <p style={{ fontSize: '0.82rem', color: '#38bdf8', fontWeight: 600 }}>{CATEGORY_LABELS[selectedCase.category] || selectedCase.category}</p>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Ưu tiên: <strong>{PRIORITY_LABELS[selectedCase.priority] || 'Trung bình'}</strong></span>
-                </div>
-              </div>
 
-              <div className="reviewer-case-detail__statement">
-                <span style={{ fontSize: '0.76rem', color: 'var(--text-sub)', textTransform: 'uppercase', fontWeight: 700 }}>Nội dung giải trình của sinh viên:</span>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', background: '#0f172a', padding: '10px 12px', borderRadius: '8px', marginTop: '4px', lineHeight: '1.5', border: '1px solid var(--border-color)' }}>
-                  {selectedCase.description}
-                </p>
+                {/* LỚP C: AI-DERIVED FACTS */}
+                <div style={{ background: '#0f172a', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.68rem', background: '#9333ea', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>LỚP C</span>
+                      <strong style={{ fontSize: '0.8rem', color: '#d8b4fe' }}>Chuẩn Hóa AI</strong>
+                    </div>
+                    <span style={{ fontSize: '0.68rem', color: '#c084fc', background: 'rgba(192, 132, 252, 0.15)', padding: '1px 6px', borderRadius: '4px' }}>
+                      Độ tin cậy: {Math.round(((selectedCase.addressAnalysis?.confidence || selectedCase.ruleEngine?.confidence || 0.95)) * 100)}%
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>
+                    <span>Thành phần tách: </span>
+                    <span style={{ color: '#cbd5e1' }}>
+                      P: <strong style={{ color: selectedCase.addressAnalysis?.parsed?.ward ? '#38bdf8' : '#f87171' }}>{selectedCase.addressAnalysis?.parsed?.ward || '⚠️ THIẾU'}</strong> | 
+                      Q: <strong style={{ color: '#38bdf8' }}>{selectedCase.addressAnalysis?.parsed?.district || 'Chưa rõ'}</strong> | 
+                      Tỉnh: <strong style={{ color: selectedCase.addressAnalysis?.parsed?.province ? '#38bdf8' : '#f87171' }}>{selectedCase.addressAnalysis?.parsed?.province || '⚠️ THIẾU'}</strong>
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                    <span>Chuẩn hóa: </span>
+                    <span style={{ color: '#a78bfa' }}>{selectedCase.addressAnalysis?.normalized || 'Theo quy chuẩn hành chính'}</span>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Nguồn: {selectedCase.addressAnalysis?.source || 'deterministic_parser'} (AI Safety: Parse cú pháp, không khẳng định pháp lý)
+                  </div>
+                </div>
               </div>
 
               {/* ========================================================================= */}

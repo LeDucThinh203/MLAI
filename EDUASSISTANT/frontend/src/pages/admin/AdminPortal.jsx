@@ -15,6 +15,7 @@ import AnalyticsCharts from '../../components/admin/AnalyticsCharts';
 import { openSafeWindow } from '../../utils/security';
 
 const CATEGORY_LABELS = {
+  MILITARY_SERVICE_CONFIRMATION: 'Cấp giấy xác nhận sinh viên tạm hoãn NVQS',
   TUITION_DISCOUNT: 'Miễn, giảm học phí',
   ACADEMIC_SCHOLARSHIP: 'Học bổng',
   COMMUNITY_SERVICE: 'Hoạt động cộng đồng',

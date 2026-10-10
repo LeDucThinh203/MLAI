@@ -107,6 +107,9 @@ export default function JudgeModePage({ onNavigateTab }) {
             <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
               Team 1 — MLAI Hackathon 2026 | Track VNG – Option A: <strong>Escalation Referee & Human-in-the-Loop</strong>
             </p>
+            <p style={{ color: '#38bdf8', fontSize: '0.82rem', margin: '4px 0 0 0', fontWeight: 600 }}>
+              Use Case: Cấp giấy xác nhận sinh viên phục vụ tạm hoãn nghĩa vụ quân sự (<code>MILITARY_SERVICE_CONFIRMATION</code>)
+            </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -210,7 +213,7 @@ export default function JudgeModePage({ onNavigateTab }) {
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f8fafc' }}>Run Verify Harness</div>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Chạy kiểm chuẩn 6 ca nghiệp vụ</div>
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Chạy kiểm chuẩn 9 ca nghiệp vụ NVQS</div>
           </div>
         </button>
 
@@ -366,7 +369,7 @@ export default function JudgeModePage({ onNavigateTab }) {
             <Scale size={32} style={{ opacity: 0.35, marginBottom: '8px', color: '#38bdf8' }} />
             <p style={{ fontSize: '0.9rem', color: '#f8fafc', fontWeight: 600, margin: 0 }}>Chưa kích hoạt Verify Harness</p>
             <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '4px 0 16px 0' }}>
-              Bấm nút bên dưới để thực thi toàn bộ 6 kịch bản kiểm thử quy tắc độc lập in-memory.
+              Bấm nút bên dưới để thực thi toàn bộ 9 kịch bản kiểm thử quy tắc NVQS độc lập in-memory.
             </p>
             <button
               onClick={handleRunVerify}

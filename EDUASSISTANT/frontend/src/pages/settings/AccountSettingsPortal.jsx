@@ -755,7 +755,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
             </div>
 
             <p style={{ fontSize: '0.82rem', color: 'var(--text-sub)', lineHeight: 1.5, margin: '0 0 16px 0' }}>
-              Khi xóa tài khoản, toàn bộ dữ liệu phiên làm việc, quyền truy cập và thông tin đăng nhập của bạn sẽ bị xóa vĩnh viễn khỏi cơ sở dữ liệu SQLite và không thể phục hồi.
+              Khi xóa tài khoản, toàn bộ dữ liệu phiên làm việc, quyền truy cập và thông tin đăng nhập của bạn sẽ bị xóa vĩnh viễn khỏi cơ sở dữ liệu PostgreSQL và không thể phục hồi.
             </p>
 
             <button
