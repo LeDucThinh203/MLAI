@@ -34,6 +34,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const [sisTotal, setSisTotal] = useState(0);
   const [sisLoading, setSisLoading] = useState(false);
   const [sisSaving, setSisSaving] = useState(false);
+  const [deletingSisId, setDeletingSisId] = useState(null);
   const [editingSis, setEditingSis] = useState(null);
 
   // States tạo tài khoản cán bộ từ Admin
@@ -111,6 +112,25 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
       setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể cập nhật hồ sơ SIS.' });
     } finally {
       setSisSaving(false);
+    }
+  };
+
+  const deleteSis = async (record) => {
+    const label = `${record.fullName || 'sinh viên này'}${record.studentCode ? ` (${record.studentCode})` : ''}`;
+    if (!window.confirm(`Xóa bản ghi SIS của ${label}?\n\nTài khoản sinh viên sẽ không bị xóa.`)) return;
+    setDeletingSisId(record.id);
+    try {
+      const res = await axios.delete(`${API_BASE}/admin/sis/${record.id}`);
+      if (!res.data?.success) throw new Error(res.data?.message || 'Xóa bản ghi SIS thất bại.');
+      const remaining = sisRecords.filter(item => item.id !== record.id);
+      setSisRecords(remaining);
+      setSisTotal(total => Math.max(0, total - 1));
+      if (remaining.length === 0 && sisPage > 1) setSisPage(page => page - 1);
+      setAdminMessage({ type: 'success', text: 'Đã xóa bản ghi SIS. Tài khoản sinh viên được giữ nguyên.' });
+    } catch (err) {
+      setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể xóa bản ghi SIS.' });
+    } finally {
+      setDeletingSisId(null);
     }
   };
 
@@ -241,7 +261,14 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 <td style={{ padding: '14px 12px' }}>{record.academicStatus || 'UNKNOWN'}<br /><small style={{ color: 'var(--text-muted)' }}>{record.recordStatus || 'ACTIVE'}</small></td>
                 <td style={{ padding: '14px 12px' }}>{record.faculty || 'Chưa cập nhật'}</td>
                 <td style={{ padding: '14px 12px' }}>{record.courseStartDate || '—'} <span style={{ color: 'var(--text-muted)' }}>→</span> {record.courseEndDate || '—'}</td>
-                <td style={{ padding: '14px 12px', textAlign: 'right' }}><button type="button" className="btn-secondary" onClick={() => setEditingSis({ ...record, recordStatus: record.recordStatus || 'ACTIVE' })}>Cập nhật</button></td>
+                <td style={{ padding: '14px 12px', textAlign: 'right' }}>
+                  <div style={{ display: 'inline-flex', gap: '8px' }}>
+                    <button type="button" className="btn-secondary" onClick={() => setEditingSis({ ...record, recordStatus: record.recordStatus || 'ACTIVE' })}>Cập nhật</button>
+                    <button type="button" className="btn-secondary" disabled={deletingSisId === record.id} onClick={() => deleteSis(record)} style={{ color: '#dc2626', borderColor: 'rgba(220, 38, 38, 0.35)' }}>
+                      {deletingSisId === record.id ? 'Đang xóa...' : 'Xóa'}
+                    </button>
+                  </div>
+                </td>
               </tr>)}
             </tbody>
           </table>
