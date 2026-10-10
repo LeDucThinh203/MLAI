@@ -419,6 +419,32 @@ CREATE TABLE IF NOT EXISTS sis_student_records (
         q.execute("""INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,createdAt,updatedAt,updatedBy)
             SELECT 'SIS-' || id,id,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,%s,%s,'SYSTEM_MIGRATION'
             FROM users WHERE role='STUDENT' ON CONFLICT (userId) DO NOTHING""", (datetime.utcnow().isoformat()+'Z', datetime.utcnow().isoformat()+'Z'))
+
+        # Existing production users may have been created before academic fields
+        # existed. Backfill only migration-owned SIS records from the bundled
+        # demo source, preserving every record an administrator has updated.
+        seed_path = os.path.join(os.path.dirname(__file__), 'data.json')
+        if os.path.exists(seed_path):
+            for seeded_user in json.load(open(seed_path, encoding='utf-8')).get('users', []):
+                if seeded_user.get('role') != 'STUDENT':
+                    continue
+                facts = (
+                    seeded_user.get('academicStatus'), seeded_user.get('courseStartDate'),
+                    seeded_user.get('courseEndDate'), seeded_user.get('currentTermActive'),
+                    seeded_user.get('hasCurrentSchedule'), seeded_user.get('registeredPermanentAddress'),
+                    seeded_user.get('faculty'), seeded_user.get('id')
+                )
+                if not any(value is not None for value in facts[:-1]):
+                    continue
+                q.execute('''UPDATE sis_student_records
+                    SET academicStatus = COALESCE(academicStatus, %s),
+                        courseStartDate = COALESCE(courseStartDate, %s),
+                        courseEndDate = COALESCE(courseEndDate, %s),
+                        currentTermActive = COALESCE(currentTermActive, %s),
+                        hasCurrentSchedule = COALESCE(hasCurrentSchedule, %s),
+                        registeredPermanentAddress = COALESCE(registeredPermanentAddress, %s),
+                        faculty = COALESCE(faculty, %s)
+                    WHERE userId = %s AND updatedBy = 'SYSTEM_MIGRATION' ''', facts)
     print('[Database] Render PostgreSQL ready.')
 
 
