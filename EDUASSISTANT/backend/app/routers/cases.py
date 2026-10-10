@@ -164,6 +164,13 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
     if user['role'] != 'STUDENT' and user['role'] != 'ADMIN':
         return api_response(403, False, 'Chỉ sinh viên mới được quyền tạo hồ sơ học vụ.', None, 'FORBIDDEN')
 
+    if req.category and req.category != 'MILITARY_SERVICE_CONFIRMATION':
+        return api_response(
+            400, False,
+            f"Hệ thống hiện chỉ tiếp nhận hồ sơ 'MILITARY_SERVICE_CONFIRMATION' (Cấp giấy xác nhận tạm hoãn NVQS). Danh mục '{req.category}' không được hỗ trợ.",
+            None, 'INVALID_CATEGORY'
+        )
+
     from app.services.address_ai_service import normalize_student_address
 
     case_dict = req.dict()
@@ -171,20 +178,20 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
     if not case_dict.get('title'):
         case_dict['title'] = 'Yêu cầu cấp Giấy xác nhận sinh viên phục vụ tạm hoãn NVQS'
 
-    # Lấy thông tin sinh viên Authoritative Record
+    # Lấy thông tin sinh viên Authoritative Record (Tuyệt đối không invent fallback giả)
     student_user = await db_service.get_user_by_id(user['id']) or user
 
     inst_facts = {
         'studentId': user['id'],
         'studentCode': student_user.get('studentCode') or user.get('studentCode') or user.get('username'),
         'fullName': student_user.get('fullName') or user.get('fullName'),
-        'academicStatus': student_user.get('academicStatus') or 'ACTIVE',
-        'courseStartDate': student_user.get('courseStartDate') or '2023-09-01',
-        'courseEndDate': student_user.get('courseEndDate') or '2027-06-30',
-        'currentTermActive': bool(student_user.get('currentTermActive', True)),
-        'hasCurrentSchedule': bool(student_user.get('hasCurrentSchedule', True)),
-        'registeredPermanentAddress': student_user.get('registeredPermanentAddress') or '12/4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh',
-        'faculty': student_user.get('faculty') or student_user.get('department') or 'Khoa Công Nghệ Thông Tin'
+        'academicStatus': student_user.get('academicStatus'),
+        'courseStartDate': student_user.get('courseStartDate'),
+        'courseEndDate': student_user.get('courseEndDate'),
+        'currentTermActive': student_user.get('currentTermActive'),
+        'hasCurrentSchedule': student_user.get('hasCurrentSchedule'),
+        'registeredPermanentAddress': student_user.get('registeredPermanentAddress'),
+        'faculty': student_user.get('faculty') or student_user.get('department')
     }
     case_dict['institutionalFacts'] = inst_facts
     case_dict['authoritativeInstitutionalFacts'] = inst_facts
@@ -454,6 +461,21 @@ async def submit_case_feedback(
             'INVALID_FEEDBACK_TYPE'
         )
 
+    # Ràng buộc ngữ nghĩa phản hồi phù hợp với quyết định của hệ thống
+    sys_rec = (target_case.get('ruleEngine') or {}).get('decision') or ''
+    if sys_rec == 'AUTO_APPROVE' and fb_type == 'UNNECESSARY_ESCALATION':
+        return api_response(
+            400, False,
+            'Không thể chọn UNNECESSARY_ESCALATION khi hệ thống đã đề xuất AUTO_APPROVE. Hãy chọn CORRECT hoặc MISSED_ESCALATION.',
+            None, 'INCOMPATIBLE_FEEDBACK_TYPE'
+        )
+    if sys_rec == 'ESCALATE_TO_HUMAN' and fb_type == 'MISSED_ESCALATION':
+        return api_response(
+            400, False,
+            'Không thể chọn MISSED_ESCALATION khi hệ thống đã chuyển cán bộ (ESCALATE_TO_HUMAN). Hãy chọn CORRECT hoặc UNNECESSARY_ESCALATION.',
+            None, 'INCOMPATIBLE_FEEDBACK_TYPE'
+        )
+
     res = record_reviewer_feedback(
         case_id=case_id,
         feedback_type=fb_type,
@@ -504,6 +526,19 @@ async def submit_case_feedback(
         'caseId': case_id,
         'feedback': feedback_entry,
         'threshold': res
+    })
+
+
+@router.post("/api/cases/{case_id}/evaluate-rules")
+async def evaluate_case_rules_endpoint(case_id: str, user: dict = Depends(require_roles('REVIEWER', 'ADMIN'))):
+    target_case = await db_service.get_case_by_id(case_id)
+    if not target_case:
+        return api_response(404, False, f"Không tìm thấy hồ sơ #{case_id}.", None, 'NOT_FOUND')
+
+    evaluation = evaluate_case(target_case)
+    return api_response(200, True, 'Thẩm định quy tắc từ dữ liệu hồ sơ thành công.', {
+        'caseId': case_id,
+        'evaluation': evaluation
     })
 
 

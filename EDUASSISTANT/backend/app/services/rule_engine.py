@@ -7,14 +7,18 @@ Chuyên sâu: CẤP GIẤY XÁC NHẬN SINH VIÊN PHỤC VỤ TẠM HOÃN NGHĨA
 
 Áp dụng chính sách xét duyệt theo 5 nguyên nhân leo thang chuẩn của Escalation Referee:
   1. OWNERSHIP_UNCLEAR: Sai lệch định danh, MSSV/Họ tên không khớp tài khoản.
-  2. FACT_UNKNOWN: Thiếu số nhà/đường/phường/tỉnh, độ tin cậy < ngưỡng, non-live fail-safe.
+  2. FACT_UNKNOWN: Thiếu số nhà/đường/phường/tỉnh, thiếu hồ sơ thường trú trường,
+                   độ tin cậy < ngưỡng, non-live fail-safe.
   3. DATA_CONFLICT: Chọn địa chỉ tạm trú, hoặc mâu thuẫn trọng yếu với thường trú lưu trữ.
-  4. AUTHORITY_REQUIRED: Trạng thái sinh viên không an toàn (đình chỉ, bảo lưu, thôi học).
+  4. AUTHORITY_REQUIRED: Trạng thái sinh viên không an toàn (đình chỉ, bảo lưu, thôi học,
+                         chưa kích hoạt học kỳ, chưa có TKB, thiếu dữ liệu học vụ).
   5. POLICY_OUT_OF_SCOPE: Yêu cầu đặc cách, ngoài quy trình tự động chuẩn.
 
 ĐẶC BIỆT:
   - Lỗi thuần túy về format (IN HOA, chữ thường, viết tắt P./Q./TP.) KHÔNG được tự động leo thang.
   - Fail-safe: Chế độ mock, cache, fallback hoặc synthetic categorically DENY AUTO_APPROVE.
+  - TUYỆT ĐỐI KHÔNG INVENT dữ liệu trường (nếu thiếu -> ESCALATE_TO_HUMAN).
+  - Hoàn toàn thread-safe: Nhận ai_context / provenance rõ ràng, không phụ thuộc global state.
 ============================================================================
 """
 
@@ -22,7 +26,6 @@ import re
 import unicodedata
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-from app.services.ai_service import get_ai_mode
 from app.services.escalation_policy_service import get_confidence_threshold
 from app.services.address_ai_service import (
     deterministic_parse_address,
@@ -46,7 +49,7 @@ ESCALATION_CONFIG = {
         'badgeColor': '#f97316',
         'badgeBg': 'rgba(249, 115, 22, 0.15)',
         'icon': '🚨',
-        'description': 'Địa chỉ thường trú thiếu Phường/Xã hoặc Tỉnh/Thành, độ tin cậy bóc tách dưới ngưỡng, hoặc AI chạy ở chế độ giả lập/dự phòng.'
+        'description': 'Địa chỉ thường trú thiếu số nhà/đường/phường/tỉnh, thiếu địa chỉ gốc tại trường, độ tin cậy bóc tách dưới ngưỡng, hoặc AI chạy ở chế độ giả lập/dự phòng.'
     },
     'DATA_CONFLICT': {
         'code': 'DATA_CONFLICT',
@@ -62,7 +65,7 @@ ESCALATION_CONFIG = {
         'badgeColor': '#8b5cf6',
         'badgeBg': 'rgba(139, 92, 246, 0.15)',
         'icon': '👑',
-        'description': 'Sinh viên có tình trạng học tập bất thường (Tạm đình chỉ, bảo lưu, cảnh báo học vụ, chưa có thời khóa biểu) cần cán bộ Phòng Đào tạo xác minh.'
+        'description': 'Sinh viên có tình trạng học tập bất thường (Tạm đình chỉ, bảo lưu, cảnh báo học vụ, chưa có thời khóa biểu, thiếu dữ liệu học kỳ) cần cán bộ Phòng Đào tạo xác minh.'
     },
     'POLICY_OUT_OF_SCOPE': {
         'code': 'POLICY_OUT_OF_SCOPE',
@@ -85,10 +88,16 @@ def normalize_str(s: str) -> str:
     return re.sub(r'\s+', ' ', clean).strip()
 
 
-def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = None) -> dict:
+def evaluate_case(
+    case_data: dict,
+    ocr_data: Optional[dict] = None,
+    student_user: Optional[dict] = None,
+    ai_context: Optional[dict] = None
+) -> dict:
     """
     Đánh giá hồ sơ Cấp giấy xác nhận sinh viên phục vụ tạm hoãn NVQS
     dựa trên Escalation Referee 5 nguyên nhân.
+    Thread-safe, nhận context trực tiếp và không giả mạo dữ liệu trường.
     """
     if student_user is None:
         student_user = {}
@@ -98,24 +107,34 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
 
     # =========================================================================
     # LỚP 1: AUTHORITATIVE INSTITUTIONAL FACTS (Dữ liệu gốc nhà trường)
+    # TUYỆT ĐỐI KHÔNG SỬ DỤNG FALLBACK GIẢ (ACTIVE, 2023-09-01, địa chỉ mẫu...)
     # =========================================================================
     inst_facts = case_data.get('authoritativeInstitutionalFacts') or case_data.get('institutionalFacts') or {}
     student_id = inst_facts.get('studentId') or student_user.get('id')
     auth_student_code = inst_facts.get('studentCode') or student_user.get('studentCode') or student_user.get('username')
     auth_full_name = inst_facts.get('fullName') or student_user.get('fullName')
-    academic_status = str(inst_facts.get('academicStatus') or student_user.get('academicStatus') or 'ACTIVE').upper()
-    course_start = inst_facts.get('courseStartDate') or student_user.get('courseStartDate') or '2023-09-01'
-    course_end = inst_facts.get('courseEndDate') or student_user.get('courseEndDate') or '2027-06-30'
-    current_term_active = inst_facts.get('currentTermActive', student_user.get('currentTermActive', True))
+
+    raw_academic_status = inst_facts.get('academicStatus') if inst_facts.get('academicStatus') is not None else student_user.get('academicStatus')
+    academic_status = str(raw_academic_status).upper() if raw_academic_status is not None else 'UNKNOWN'
+
+    course_start = inst_facts.get('courseStartDate') or student_user.get('courseStartDate')
+    course_end = inst_facts.get('courseEndDate') or student_user.get('courseEndDate')
+
+    current_term_active = inst_facts.get('currentTermActive') if 'currentTermActive' in inst_facts else student_user.get('currentTermActive')
     if isinstance(current_term_active, str):
         current_term_active = current_term_active.lower() in ('true', '1')
-    has_schedule = inst_facts.get('hasCurrentSchedule', student_user.get('hasCurrentSchedule', True))
+    elif current_term_active is not None:
+        current_term_active = bool(current_term_active)
+
+    has_schedule = inst_facts.get('hasCurrentSchedule') if 'hasCurrentSchedule' in inst_facts else student_user.get('hasCurrentSchedule')
     if isinstance(has_schedule, str):
         has_schedule = has_schedule.lower() in ('true', '1')
+    elif has_schedule is not None:
+        has_schedule = bool(has_schedule)
+
     reg_permanent_address = (
         inst_facts.get('registeredPermanentAddress')
         or student_user.get('registeredPermanentAddress')
-        or '12/4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh'
     )
 
     # =========================================================================
@@ -165,13 +184,22 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
     ambiguous_fields = list(ai_address.get('ambiguousFields') or [])
     confidence_score = float(ai_address.get('confidence') or 0.90)
 
-    # AI Provenance metadata
-    current_ai_mode = get_ai_mode()
+    # -------------------------------------------------------------------------
+    # AI Provenance Resolution (Thread-Safe Context)
+    # Thứ tự ưu tiên: ai_context -> case_data['aiMetadata'] -> ai_address['provenance'] -> ocr_data
+    # -------------------------------------------------------------------------
+    from app.services.ai_service import get_ai_mode
+    ctx = ai_context if isinstance(ai_context, dict) else {}
     ai_meta = case_data.get('aiMetadata') or ai_address.get('provenance') or (ocr_data if isinstance(ocr_data, dict) else {}) or {}
-    is_live = bool(ai_meta.get('isLive', False) or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('isLive', False)))
-    is_fallback = bool(ai_meta.get('isFallback', False) or ai_meta.get('fallbackOccurred', False) or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('isFallback', False)))
-    is_synthetic = bool(ai_meta.get('isSynthetic', False) or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('isSynthetic', False)))
-    mode_used = ai_meta.get('modeUsed') or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('modeUsed')) or current_ai_mode
+
+    active_env_mode = get_ai_mode()
+    mode_used = str(ctx.get('modeUsed') or ai_meta.get('modeUsed') or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('modeUsed')) or active_env_mode)
+
+    is_live = bool(ctx.get('isLive') if 'isLive' in ctx else (ai_meta.get('isLive', False) or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('isLive', False)) or (mode_used == 'live' and not ai_meta.get('isFallback', False))))
+    if mode_used != 'live':
+        is_live = False
+    is_fallback = bool(ctx.get('isFallback') if 'isFallback' in ctx else (ai_meta.get('isFallback', False) or ai_meta.get('fallbackOccurred', False) or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('isFallback', False))))
+    is_synthetic = bool(ctx.get('isSynthetic') if 'isSynthetic' in ctx else (ai_meta.get('isSynthetic', False) or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('isSynthetic', False)) or (mode_used == 'mock')))
 
     # =========================================================================
     # RULE 1: OWNERSHIP_UNCLEAR (Quyền sở hữu / MSSV & Họ tên không khớp)
@@ -218,11 +246,12 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
 
     # =========================================================================
     # RULE 2: POLICY_OUT_OF_SCOPE (Yêu cầu đặc cách / Ngoài quy trình chuẩn)
+    # Loại bỏ keyword "vượt" đơn lẻ gây false-positive
     # =========================================================================
     special_keywords = [
         'đặc cách', 'ngoại lệ', 'cứu xét', 'hoàn cảnh đặc biệt', 'xin gấp',
         'miễn nghĩa vụ', 'hoãn nhập ngũ theo luật riêng', 'vượt khóa', 'vượt quy định',
-        'vượt'
+        'vượt thẩm quyền', 'vượt thời hạn'
     ]
     lower_notes = f"{request_reason} {notes}".lower()
     has_special_request = any(kw in lower_notes for kw in special_keywords)
@@ -253,6 +282,7 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
 
     # =========================================================================
     # RULE 3: AUTHORITY_REQUIRED (Vượt thẩm quyền / Tình trạng học tập cần xác minh)
+    # Kiểm tra cả trường hợp thiếu dữ liệu học vụ từ nhà trường
     # =========================================================================
     needs_officer_review = False
     auth_reason = ""
@@ -263,15 +293,15 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
             'SUSPENDED': 'Đang bị tạm đình chỉ học tập / bảo lưu',
             'WITHDRAWN': 'Đã thôi học / xóa tên',
             'GRADUATED': 'Đã tốt nghiệp',
-            'UNKNOWN': 'Không xác định được trạng thái học vụ'
+            'UNKNOWN': 'Không xác định được trạng thái học vụ (Thiếu dữ liệu gốc nhà trường)'
         }.get(academic_status, academic_status)
-        auth_reason = f"Trạng thái sinh viên không an toàn ({status_label})"
+        auth_reason = f"Trạng thái sinh viên cần xác minh ({status_label})"
 
-    elif not current_term_active:
+    elif current_term_active is None or current_term_active is False:
         needs_officer_review = True
-        auth_reason = "Sinh viên chưa kích hoạt học phần hoặc chưa đóng học phí học kỳ hiện tại"
+        auth_reason = "Sinh viên chưa kích hoạt học phần hoặc chưa hoàn thành thủ tục học kỳ hiện tại (hoặc thiếu dữ liệu học kỳ)"
 
-    elif not has_schedule:
+    elif has_schedule is None or has_schedule is False:
         needs_officer_review = True
         auth_reason = "Chưa có dữ liệu thời khóa biểu / đăng ký môn học trong học kỳ này"
 
@@ -302,7 +332,6 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
     # =========================================================================
     # RULE 4: DATA_CONFLICT (Loại địa chỉ Tạm trú)
     # =========================================================================
-    # 4.1: Nhập nhầm địa chỉ tạm trú (Thủ tục tạm hoãn NVQS bắt buộc Thường trú)
     if declared_address_type == 'TEMPORARY':
         discrepancies.append({
             'field': 'Loại địa chỉ cư trú',
@@ -328,15 +357,23 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
 
     # =========================================================================
     # RULE 5: FACT_UNKNOWN (Thiếu thành phần địa chỉ cốt lõi / Độ tin cậy thấp)
-    # Lưu ý: Chữ HOA / chữ thường KHÔNG được coi là FACT_UNKNOWN nếu đủ dữ kiện.
+    # Bắt buộc tối thiểu: Số nhà, Đường/thôn/ấp, Phường/Xã, Tỉnh/Thành phố
+    # Chữ HOA / chữ thường / viết tắt chuẩn KHÔNG coi là FACT_UNKNOWN nếu đủ dữ kiện.
     # =========================================================================
     has_missing_essential = False
     missing_desc = []
 
-    # Bắt buộc phải có Phường/Xã và Tỉnh/Thành
+    has_house = bool(parsed_house and 'houseNumber' not in missing_fields)
+    has_street = bool(parsed_street and 'street' not in missing_fields)
     has_ward = bool(parsed_ward and 'ward' not in missing_fields and 'wardCommune' not in missing_fields)
     has_province = bool(parsed_province and 'province' not in missing_fields and 'provinceCity' not in missing_fields)
 
+    if not has_house:
+        has_missing_essential = True
+        missing_desc.append('Số nhà')
+    if not has_street:
+        has_missing_essential = True
+        missing_desc.append('Đường/Thôn/Ấp')
     if not has_ward:
         has_missing_essential = True
         missing_desc.append('Phường/Xã')
@@ -344,7 +381,6 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
         has_missing_essential = True
         missing_desc.append('Tỉnh/Thành phố')
 
-    # Nếu địa chỉ hoàn toàn rỗng
     if not raw_address or len(raw_address.strip()) < 5:
         has_missing_essential = True
         missing_desc.append('Địa chỉ thường trú quá ngắn hoặc để trống')
@@ -380,8 +416,33 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
         }
 
     # =========================================================================
-    # RULE 6: DATA_CONFLICT (Mâu thuẫn trọng yếu với địa chỉ thường trú gốc)
+    # RULE 6: DATA_CONFLICT & FACT_UNKNOWN (Địa chỉ thường trú gốc)
+    # Nếu thiếu địa chỉ thường trú trong hồ sơ trường -> FACT_UNKNOWN
+    # Nếu có mâu thuẫn trọng yếu -> DATA_CONFLICT
     # =========================================================================
+    if not reg_permanent_address or not str(reg_permanent_address).strip():
+        discrepancies.append({
+            'field': 'Đối chiếu địa chỉ thường trú với hồ sơ trường',
+            'studentClaim': raw_address,
+            'institutionalFact': 'CHƯA CÓ TRONG HỒ SƠ NHÀ TRƯỜNG (None)',
+            'match': False,
+            'note': 'Hồ sơ gốc của nhà trường thiếu dữ liệu địa chỉ thường trú đã xác thực'
+        })
+        return {
+            'decision': 'ESCALATE_TO_HUMAN',
+            'status': 'UNDER_REVIEW',
+            'escalationReason': 'FACT_UNKNOWN',
+            'escalationConfig': ESCALATION_CONFIG['FACT_UNKNOWN'],
+            'ruleMatched': 'RULE_FACT_02_MISSING_INSTITUTIONAL_PERMANENT_ADDRESS',
+            'explanation': 'Thiếu dữ kiện xác thực: Hồ sơ gốc của nhà trường chưa lưu địa chỉ thường trú chính thức của sinh viên để đối chiếu.',
+            'discrepancies': discrepancies,
+            'confidence': confidence_score,
+            'thresholdUsed': current_threshold,
+            'normalizedAddress': normalized_addr,
+            'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
+            'suggestedAction': 'Yêu cầu sinh viên xuất trình CCCD gắn chip / sổ hộ khẩu để cập nhật địa chỉ thường trú vào hệ thống nhà trường'
+        }
+
     is_conflict, conflict_exp = are_addresses_materially_conflicting(raw_address, reg_permanent_address)
     discrepancies.append({
         'field': 'Đối chiếu địa chỉ thường trú với hồ sơ trường',
@@ -411,20 +472,20 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
     # FAIL-SAFE: MOCK / CACHE / FALLBACK / SYNTHETIC KHÔNG ĐƯỢC AUTO_APPROVE
     # =========================================================================
     is_safe_live = (
-        current_ai_mode == 'live'
-        and is_live is True
+        is_live is True
         and not is_fallback
         and not is_synthetic
         and mode_used == 'live'
     )
 
     if not is_safe_live:
+        reason_detail = "mock" if (is_synthetic or mode_used == "mock") else ("cache" if mode_used == "cache" else "fallback/non-live")
         discrepancies.append({
             'field': 'Xác thực nguồn gốc AI (Provenance Fail-Safe)',
             'studentClaim': 'Hồ sơ đạt chuẩn',
-            'institutionalFact': f"AI Mode: {current_ai_mode} | Live: {is_live} | Fallback: {is_fallback} | Synthetic: {is_synthetic}",
+            'institutionalFact': f"AI Mode: {mode_used} | Live: {is_live} | Fallback: {is_fallback} | Synthetic: {is_synthetic}",
             'match': False,
-            'note': 'Dữ liệu AI là mock/cache/fallback nên hệ thống không được phép tự động phê duyệt'
+            'note': f'Dữ liệu AI là {reason_detail} nên hệ thống không được phép tự động phê duyệt'
         })
         return {
             'decision': 'ESCALATE_TO_HUMAN',
@@ -432,7 +493,7 @@ def evaluate_case(case_data: dict, ocr_data: dict = None, student_user: dict = N
             'escalationReason': 'FACT_UNKNOWN',
             'escalationConfig': ESCALATION_CONFIG['FACT_UNKNOWN'],
             'ruleMatched': 'RULE_FAILSAFE_NON_LIVE_AI',
-            'explanation': 'Dữ liệu AI hiện tại là mock/cache/fallback nên hệ thống không được phép tự động phê duyệt.',
+            'explanation': f'Dữ liệu AI hiện tại là {reason_detail} nên hệ thống không được phép tự động phê duyệt.',
             'discrepancies': discrepancies,
             'confidence': confidence_score,
             'thresholdUsed': current_threshold,

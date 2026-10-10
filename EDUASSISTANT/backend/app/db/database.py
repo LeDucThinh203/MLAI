@@ -43,7 +43,12 @@ _KEYS = {
     "academicstatus": "academicStatus", "coursestartdate": "courseStartDate",
     "courseenddate": "courseEndDate", "currenttermactive": "currentTermActive",
     "hascurrentschedule": "hasCurrentSchedule", "registeredpermanentaddress": "registeredPermanentAddress",
-    "faculty": "faculty"
+    "faculty": "faculty",
+    "currentthreshold": "currentThreshold", "minthreshold": "minThreshold",
+    "maxthreshold": "maxThreshold", "stepsize": "stepSize",
+    "oldthreshold": "oldThreshold", "newthreshold": "newThreshold",
+    "reviewerid": "reviewerId", "reviewername": "reviewerName",
+    "feedbacktype": "feedbackType"
 }
 
 
@@ -292,6 +297,26 @@ CREATE TABLE IF NOT EXISTS evidence_uploads (
     ocrIsLive BOOLEAN NOT NULL DEFAULT FALSE,
     createdAt VARCHAR(100) NOT NULL
 );
+CREATE TABLE IF NOT EXISTS escalation_policy_state (
+    id VARCHAR(100) PRIMARY KEY,
+    currentThreshold DOUBLE PRECISION NOT NULL,
+    minThreshold DOUBLE PRECISION NOT NULL,
+    maxThreshold DOUBLE PRECISION NOT NULL,
+    stepSize DOUBLE PRECISION NOT NULL,
+    updatedAt VARCHAR(100) NOT NULL,
+    updatedBy VARCHAR(100)
+);
+CREATE TABLE IF NOT EXISTS escalation_threshold_history (
+    id VARCHAR(100) PRIMARY KEY,
+    caseId VARCHAR(100),
+    feedbackType VARCHAR(50) NOT NULL,
+    oldThreshold DOUBLE PRECISION NOT NULL,
+    newThreshold DOUBLE PRECISION NOT NULL,
+    reviewerId VARCHAR(100),
+    reviewerName VARCHAR(255),
+    note TEXT,
+    createdAt VARCHAR(100) NOT NULL
+);
 '''
     with get_db_connection() as c, c.cursor() as q:
         for statement in schema.split(';'):
@@ -317,6 +342,17 @@ CREATE TABLE IF NOT EXISTS evidence_uploads (
         q.execute('CREATE INDEX IF NOT EXISTS idx_evidence_owner_created ON evidence_uploads (ownerId, createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_expiry ON refresh_tokens (userId, expiresAt)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_revoked_access_tokens_expiry ON revoked_access_tokens (expiresAt)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_threshold_history_created ON escalation_threshold_history (createdAt DESC)')
+
+        # Khởi tạo bản ghi chính sách ngưỡng thích ứng mặc định
+        q.execute("SELECT EXISTS (SELECT 1 FROM escalation_policy_state WHERE id = 'GLOBAL_NVQS_POLICY') AS has_policy")
+        if not q.fetchone()['has_policy']:
+            now_iso = datetime.utcnow().isoformat() + 'Z'
+            q.execute('''
+                INSERT INTO escalation_policy_state (
+                    id, currentThreshold, minThreshold, maxThreshold, stepSize, updatedAt, updatedBy
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ''', ('GLOBAL_NVQS_POLICY', 0.75, 0.65, 0.90, 0.02, now_iso, 'SYSTEM_INIT'))
 
         q.execute('SELECT EXISTS (SELECT 1 FROM users) AS has_users')
         if not q.fetchone()['has_users']:
@@ -340,10 +376,10 @@ CREATE TABLE IF NOT EXISTS evidence_uploads (
                         u.get('email', f"{u['username']}@eduassistant.edu"), u['role'],
                         u.get('department', 'Khoa Công Nghệ Thông Tin'), u.get('avatar'), u.get('bio'),
                         bool(u.get('twoFactorEnabled')), u.get('twoFactorSecret'), False,
-                        u.get('academicStatus', 'ACTIVE'), u.get('courseStartDate', '2023-09-01'),
-                        u.get('courseEndDate', '2027-06-30'), bool(u.get('currentTermActive', True)),
-                        bool(u.get('hasCurrentSchedule', True)),
-                        u.get('registeredPermanentAddress', '12/4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh'),
+                        u.get('academicStatus'), u.get('courseStartDate'),
+                        u.get('courseEndDate'), u.get('currentTermActive'),
+                        u.get('hasCurrentSchedule'),
+                        u.get('registeredPermanentAddress'),
                         u.get('faculty', u.get('department', 'Khoa Công Nghệ Thông Tin')),
                         u.get('createdAt', now), u.get('updatedAt', now)
                     ))

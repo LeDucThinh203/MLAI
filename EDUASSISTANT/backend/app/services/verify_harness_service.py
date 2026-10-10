@@ -481,70 +481,81 @@ def run_verify_harness() -> Dict[str, Any]:
     passed_count = 0
     failed_count = 0
 
-    from app.services.ai_service import get_ai_mode, set_ai_mode
-    prev_mode = get_ai_mode()
+    for item in HARNESS_CASES:
+        t0 = time.time()
 
-    try:
-        for item in HARNESS_CASES:
-            t0 = time.time()
-            
-            # Đảm bảo context test xác định không phụ thuộc mode môi trường ngẫu nhiên
-            case_mode = item.get('aiMetadata', {}).get('modeUsed', 'live')
-            set_ai_mode(case_mode)
+        case_ai_meta = item.get('aiMetadata', {})
 
-            # Tạo payload test độc lập
-            case_data = {
-                'id': item['id'],
-                'title': item['title'],
-                'description': item['description'],
-                'category': item['category'],
-                'priority': item['priority'],
-                'evidenceFiles': item.get('files', []),
-                'aiMetadata': item['aiMetadata'],
-                'studentClaim': item.get('studentClaim', {}),
-                'institutionalFacts': item.get('student', {}),
-                'addressAnalysis': item.get('addressAnalysis', {})
-            }
-            
-            # Inject OCR data vào files nếu có
-            if item.get('files'):
-                case_data['evidenceFiles'][0]['ocrData'] = item['ocr']
+        # Chuẩn bị hồ sơ sinh viên đầy đủ cho fixture kiểm thử
+        st_info = dict(item.get('student', {}))
+        if 'currentTermActive' not in st_info:
+            st_info['currentTermActive'] = (st_info.get('academicStatus') == 'ACTIVE')
+        if 'hasCurrentSchedule' not in st_info:
+            st_info['hasCurrentSchedule'] = (st_info.get('academicStatus') == 'ACTIVE')
+        if 'courseStartDate' not in st_info:
+            st_info['courseStartDate'] = '2022-09-05'
+        if 'courseEndDate' not in st_info:
+            st_info['courseEndDate'] = '2026-06-30'
 
-            # Chạy Rule Engine
-            verdict = evaluate_case(case_data, item.get('ocr'), item.get('student'))
-            duration_ms = round((time.time() - t0) * 1000, 2)
+        # Tạo payload test độc lập (Isolated context, không sửa global state)
+        case_data = {
+            'id': item['id'],
+            'title': item['title'],
+            'description': item['description'],
+            'category': item['category'],
+            'priority': item['priority'],
+            'evidenceFiles': item.get('files', []),
+            'aiMetadata': case_ai_meta,
+            'studentClaim': item.get('studentClaim', {}),
+            'institutionalFacts': st_info,
+            'authoritativeInstitutionalFacts': st_info,
+            'addressAnalysis': item.get('addressAnalysis', {})
+        }
 
-            actual_decision = verdict.get('decision')
-            actual_reason = verdict.get('escalationReason')
+        # Inject OCR data vào files nếu có
+        if item.get('files'):
+            case_data['evidenceFiles'][0]['ocrData'] = item['ocr']
 
-            decision_ok = actual_decision == item['expectedDecision']
-            reason_ok = (item['expectedReason'] is None and actual_reason is None) or (actual_reason == item['expectedReason'])
+        # Chạy Rule Engine với ai_context độc lập, thread-safe
+        verdict = evaluate_case(
+            case_data=case_data,
+            ocr_data=item.get('ocr'),
+            student_user=st_info,
+            ai_context=case_ai_meta
+        )
+        duration_ms = round((time.time() - t0) * 1000, 2)
 
-            test_passed = decision_ok and reason_ok
-            if test_passed:
-                passed_count += 1
-            else:
-                failed_count += 1
+        actual_decision = verdict.get('decision')
+        actual_reason = verdict.get('escalationReason')
 
-            results.append({
-                'caseId': item['id'],
-                'caseName': item['title'],
-                'expectedDecision': item['expectedDecision'],
-                'actualDecision': actual_decision,
-                'expectedReason': item['expectedReason'],
-                'actualReason': actual_reason,
-                'ruleMatched': verdict.get('ruleMatched'),
-                'explanation': verdict.get('explanation'),
-                'confidence': verdict.get('confidence'),
-                'pass': test_passed,
-                'durationMs': duration_ms
-            })
-    finally:
-        set_ai_mode(prev_mode)
+        decision_ok = actual_decision == item['expectedDecision']
+        reason_ok = (item['expectedReason'] is None and actual_reason is None) or (actual_reason == item['expectedReason'])
+
+        test_passed = decision_ok and reason_ok
+        if test_passed:
+            passed_count += 1
+        else:
+            failed_count += 1
+
+        results.append({
+            'caseId': item['id'],
+            'caseName': item['title'],
+            'expectedDecision': item['expectedDecision'],
+            'actualDecision': actual_decision,
+            'expectedReason': item['expectedReason'],
+            'actualReason': actual_reason,
+            'ruleMatched': verdict.get('ruleMatched'),
+            'explanation': verdict.get('explanation'),
+            'confidence': verdict.get('confidence'),
+            'pass': test_passed,
+            'durationMs': duration_ms
+        })
 
     return {
         'runId': run_id,
         'timestamp': timestamp,
+        'disclaimer': 'Deterministic Rule Engine Verification - Không gọi Gemini Live trong các fixture này.',
+        'verificationType': 'DETERMINISTIC_RULE_ENGINE',
         'total': len(HARNESS_CASES),
         'passed': passed_count,
         'failed': failed_count,

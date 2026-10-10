@@ -6,6 +6,7 @@ from app.models.comment import Comment
 from app.models.notification import Notification
 from app.models.refresh_token import RefreshToken
 from app.models.evidence_upload import EvidenceUpload
+from app.models.escalation_policy import EscalationPolicyState, EscalationThresholdHistory
 
 __all__ = [
     "Base",
@@ -16,4 +17,6 @@ __all__ = [
     "Notification",
     "RefreshToken",
     "EvidenceUpload",
+    "EscalationPolicyState",
+    "EscalationThresholdHistory",
 ]

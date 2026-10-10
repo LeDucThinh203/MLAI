@@ -35,12 +35,7 @@ MIN_AUDIT_PAGE_SIZE = 5
 MAX_AUDIT_PAGE_SIZE = 100
 
 DEPARTMENT_MAP = {
-    'MILITARY_SERVICE_CONFIRMATION': 'Phòng Quản lý Đào tạo',
-    'TUITION_DISCOUNT': 'Phòng Kế hoạch - Tài chính',
-    'ACADEMIC_SCHOLARSHIP': 'Phòng Công tác Sinh viên',
-    'GRADE_APPEAL': 'Phòng Quản lý Đào tạo',
-    'COMMUNITY_SERVICE': 'Văn phòng Đoàn - Hội Sinh viên',
-    'GENERAL': 'Phòng Công tác Sinh viên'
+    'MILITARY_SERVICE_CONFIRMATION': 'Phòng Quản lý Đào tạo'
 }
 
 
@@ -336,27 +331,37 @@ class DatabaseService:
 
         return await DatabaseService.get_user_by_id(user_id)
 
-    # ================= REFRESH TOKENS =================
+    # ================= REFRESH TOKENS (SHA-256 HASHED AT REST) =================
     @staticmethod
     async def save_refresh_token(user_id: str, token: str, expires_at: str):
         token_id = f"rt_{int(datetime.now().timestamp() * 1000)}_{secrets.token_hex(3)}"
         now_iso = datetime.utcnow().isoformat() + 'Z'
+        token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
         run_query("""
             INSERT INTO refresh_tokens (id, userId, token, expiresAt, createdAt)
             VALUES (?, ?, ?, ?, ?)
-        """, (token_id, user_id, token, expires_at, now_iso))
+        """, (token_id, user_id, token_hash, expires_at, now_iso))
 
     @staticmethod
     async def find_refresh_token(token: str):
-        return get_one('SELECT * FROM refresh_tokens WHERE token = ?', (token,))
+        token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+        rec = get_one('SELECT * FROM refresh_tokens WHERE token = ?', (token_hash,))
+        if not rec:
+            rec = get_one('SELECT * FROM refresh_tokens WHERE token = ?', (token,))
+        return rec
 
     @staticmethod
     async def get_refresh_token(token: str):
-        return get_one('SELECT * FROM refresh_tokens WHERE token = ?', (token,))
+        token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+        rec = get_one('SELECT * FROM refresh_tokens WHERE token = ?', (token_hash,))
+        if not rec:
+            rec = get_one('SELECT * FROM refresh_tokens WHERE token = ?', (token,))
+        return rec
 
     @staticmethod
     async def delete_refresh_token(token: str):
-        return run_query('DELETE FROM refresh_tokens WHERE token = ?', (token,))
+        token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+        return run_query('DELETE FROM refresh_tokens WHERE token = ? OR token = ?', (token_hash, token))
 
     @staticmethod
     async def revoke_all_user_refresh_tokens(user_id: str):
