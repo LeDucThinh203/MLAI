@@ -58,7 +58,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "123 ĐƯỜNG LÊ LỢI, PHƯỜNG BẾN NGHÉ, QUẬN 1, TP. HỒ CHÍ MINH",
@@ -101,7 +105,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "123 duong le loi, phuong ben nghe, quan 1, tp ho chi minh",
@@ -144,7 +152,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "123 Lê Lợi, P. Bến Nghé, Q.1, TP.HCM",
@@ -187,7 +199,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "123 le loi, p ben nghe, q1, tphcm",
@@ -230,7 +246,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh",
@@ -247,9 +267,11 @@
         "province": "TP. Hồ Chí Minh"
       },
       "normalized": "123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh",
-      "missingFields": ["ward"],
+      "missingFields": [
+        "ward"
+      ],
       "isComplete": false,
-      "confidence": 0.60,
+      "confidence": 0.6,
       "source": "gemini"
     },
     "aiMetadata": {
@@ -273,7 +295,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1",
@@ -290,7 +316,9 @@
         "province": ""
       },
       "normalized": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1",
-      "missingFields": ["province"],
+      "missingFields": [
+        "province"
+      ],
       "isComplete": false,
       "confidence": 0.58,
       "source": "gemini"
@@ -316,7 +344,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "",
@@ -327,9 +359,13 @@
       "rawAddress": "",
       "parsed": {},
       "normalized": "",
-      "missingFields": ["ward", "province", "street"],
+      "missingFields": [
+        "ward",
+        "province",
+        "street"
+      ],
       "isComplete": false,
-      "confidence": 0.20,
+      "confidence": 0.2,
       "source": "gemini"
     },
     "aiMetadata": {
@@ -353,7 +389,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "Khu phố mới gần chợ, tp",
@@ -366,7 +406,10 @@
         "street": "Khu phố mới"
       },
       "normalized": "Khu phố mới gần chợ, tp",
-      "missingFields": ["ward", "province"],
+      "missingFields": [
+        "ward",
+        "province"
+      ],
       "isComplete": false,
       "confidence": 0.45,
       "source": "gemini"
@@ -392,7 +435,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "Ký túc xá Khu B ĐHQG, Phường Đông Hòa, TP. Dĩ An, Bình Dương",
@@ -433,7 +480,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "Số 45 Phố Tràng Tiền, Phường Tràng Tiền, Quận Hoàn Kiếm, Hà Nội",
@@ -476,7 +527,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "50 Đường Võ Văn Ngân, Phường Linh Chiểu, TP. Thủ Đức, TP. Hồ Chí Minh",
@@ -519,7 +574,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "12/4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh",
@@ -562,7 +621,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "SUSPENDED",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": false,
+      "hasCurrentSchedule": false
     },
     "studentClaim": {
       "declaredAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
@@ -605,7 +668,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "WITHDRAWN",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": false,
+      "hasCurrentSchedule": false
     },
     "studentClaim": {
       "declaredAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
@@ -648,7 +715,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
@@ -691,7 +762,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
@@ -745,7 +820,11 @@
       "studentCode": "SV2026-1001",
       "username": "student1",
       "academicStatus": "ACTIVE",
-      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true
     },
     "studentClaim": {
       "declaredAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",

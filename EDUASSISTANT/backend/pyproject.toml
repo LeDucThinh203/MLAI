@@ -1,7 +1,7 @@
 [project]
-name = "caseflow-backend"
+name = "eduassistant-backend"
 version = "0.1.0"
-description = "CASEFLOW AI - The Escalation Referee (Backend)"
+description = "EDUASSISTANT - The Escalation Referee for Military Service Confirmation (Backend)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -29,5 +29,5 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
+testpaths = ["../test", "tests"]
 python_files = "test_*.py"

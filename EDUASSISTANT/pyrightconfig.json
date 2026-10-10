@@ -10,19 +10,6 @@
     "backend/app",
     "."
   ],
-  "typeCheckingMode": "off",
-  "reportOptionalSubscript": false,
-  "reportOptionalMemberAccess": false,
-  "reportOptionalCall": false,
-  "reportOptionalIterable": false,
-  "reportArgumentType": false,
-  "reportGeneralTypeIssues": false,
-  "reportMissingImports": false,
-  "reportAttributeAccessIssue": false,
-  "reportCallIssue": false,
-  "reportReturnType": false,
-  "reportAssignmentType": false,
-  "reportPossiblyUnboundVariable": false,
-  "reportInvalidTypeForm": false,
-  "reportUndefinedVariable": false
+  "typeCheckingMode": "basic",
+  "reportMissingImports": false
 }
