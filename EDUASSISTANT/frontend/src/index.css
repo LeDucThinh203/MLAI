@@ -552,6 +552,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .reviewer-workspace--detail { grid-template-columns: 360px minmax(520px, 1.35fr) minmax(300px, .82fr) !important; gap: 18px !important; }
 .reviewer-workspace > .card-panel { min-width: 0; }
 .reviewer-queue-panel { align-self: start; position: sticky; top: 12px; }
+.reviewer-queue-panel > div[style*="maxHeight"] { gap: 10px !important; }
+.reviewer-queue-card { background: #fff !important; border: 1px solid #d5e2ef !important; border-left: 4px solid transparent !important; border-radius: 9px !important; padding: 14px !important; box-shadow: 0 1px 4px rgba(25,55,89,.05) !important; }
+.reviewer-queue-card:hover { border-color: #9db6d1 !important; box-shadow: 0 4px 12px rgba(25,55,89,.09) !important; }
+.reviewer-queue-card--selected { background: #f0f6fc !important; border-color: #6d9fc9 !important; border-left-color: #2176c7 !important; box-shadow: 0 0 0 2px rgba(33,118,199,.1) !important; transform: none !important; }
+.reviewer-queue-card h3 { color: #172b4d !important; font-size: .9rem !important; line-height: 1.45 !important; }
 .reviewer-case-detail__header {
   padding: 4px 4px 16px 16px;
   border-bottom: 1px solid #d8e4ef;

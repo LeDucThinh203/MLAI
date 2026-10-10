@@ -18,7 +18,7 @@ PORTAL.ADMIN.tabs.splice(1, 0, ['admin_policies', 'Chính sách', ScrollText], [
 const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
   const { user, token, logout } = useAuth();
   const location = useLocation();
-  const [aiStatus, setAiStatus] = useState({ isConfigured: false, displayLabel: 'AI status unavailable' });
+  const [aiStatus, setAiStatus] = useState({ isConfigured: false, displayLabel: 'Đang dùng quy trình thông thường' });
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const portal = PORTAL[user?.role] || { title: 'Hệ thống quản lý hồ sơ', subtitle: 'Trường đại học', icon: Shield, tabs: [] };
   const PortalIcon = portal.icon;
@@ -30,7 +30,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
         if (res.data?.success && res.data.data) {
           setAiStatus({
             isConfigured: res.data.data.isConfigured,
-            displayLabel: res.data.data.displayLabel || (res.data.data.isConfigured ? 'Gemini Live' : 'AI unavailable – Safe Human Review')
+            displayLabel: res.data.data.displayLabel || (res.data.data.isConfigured ? 'Hỗ trợ xử lý hồ sơ sẵn sàng' : 'Đang dùng quy trình thông thường')
           });
         }
       })
@@ -68,7 +68,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
             <div
               className="ai-status"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '20px', background: 'rgba(15, 23, 42, 0.05)', border: '1px solid rgba(148, 163, 184, 0.2)' }}
-              title={aiStatus.displayLabel}
+              title="Tình trạng hỗ trợ xử lý hồ sơ"
             >
               <span
                 style={{
@@ -81,7 +81,7 @@ const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
                 }}
               />
               <span style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>
-                {aiStatus.displayLabel}
+                {aiStatus.isConfigured ? 'Hỗ trợ phân tích hồ sơ sẵn sàng' : 'Sẵn sàng xử lý thủ công'}
               </span>
             </div>
           )}

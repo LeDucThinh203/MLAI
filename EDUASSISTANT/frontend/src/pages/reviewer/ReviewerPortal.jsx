@@ -21,13 +21,15 @@ const CATEGORY_LABELS = {
 };
 const PRIORITY_LABELS = { URGENT: 'Khẩn cấp', HIGH: 'Cao', MEDIUM: 'Trung bình', LOW: 'Thấp' };
 const ESCALATION_LABELS = {
-  OWNERSHIP_UNCLEAR: 'Chủ quyền hồ sơ không rõ (MSSV/Người nộp)',
-  FACT_UNKNOWN: 'Thiếu thành phần địa chỉ bắt buộc / AI không chắc chắn',
-  DATA_CONFLICT: 'Xung đột dữ liệu (Tạm trú / Khác thường trú gốc)',
-  AUTHORITY_REQUIRED: 'Cần thẩm quyền xem xét (Trạng thái đào tạo)',
-  POLICY_OUT_OF_SCOPE: 'Ngoại lệ chính sách ngoài thẩm quyền',
+  OWNERSHIP_UNCLEAR: 'Thông tin sinh viên chưa khớp',
+  FACT_UNKNOWN: 'Thiếu thông tin hoặc giấy tờ cần thiết',
+  DATA_CONFLICT: 'Thông tin kê khai chưa khớp hồ sơ nhà trường',
+  AUTHORITY_REQUIRED: 'Cần người có thẩm quyền xem xét',
+  POLICY_OUT_OF_SCOPE: 'Yêu cầu cần được xem xét riêng',
   HUMAN_REVIEW: 'Cần cán bộ thẩm định xem xét'
 };
+
+const displayCaseTitle = (title) => (title || 'Yêu cầu học vụ').replace(/\s*-\s*AUTO APPROVE DEMO\b/gi, '');
 
 const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const { token, user } = useAuth();
@@ -349,12 +351,12 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
               <div>
                 <h2 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Inbox size={18} color="var(--accent-amber)" /> Hàng Đợi Thẩm Định
+                  <Inbox size={18} color="var(--accent-amber)" /> Hồ sơ cần xử lý
                   <span style={{ fontSize: '0.75rem', background: '#334155', padding: '2px 7px', borderRadius: '12px', color: '#f8fafc' }}>
                     {filteredCases.length} / {allCases.length}
                   </span>
                 </h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Chọn hồ sơ để xem thông tin và kết quả đánh giá</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Chọn một hồ sơ để xem thông tin và cập nhật kết quả xử lý.</p>
               </div>
 
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -401,7 +403,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="Tìm tên, MSSV, mã đơn, lý do..."
+                  placeholder="Tìm theo tên, mã sinh viên, mã hồ sơ hoặc lý do..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   style={{ paddingLeft: '34px', paddingRight: searchTerm ? '32px' : '10px', fontSize: '0.82rem', padding: '8px 34px' }}
@@ -489,6 +491,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 return (
                   <div
                     key={c.id}
+                    className={`reviewer-queue-card ${isSelected ? 'reviewer-queue-card--selected' : ''}`}
                     onClick={() => { setSelectedCase(c); setActionMessage(null); setReviewReason(''); setTargetDepartment(c.assignedDepartment || ''); }}
                     role="button"
                     tabIndex={0}
@@ -519,7 +522,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                         {renderSlaBadge(c)}
                       </div>
                     </div>
-                    <h3 style={{ fontSize: '0.86rem', fontWeight: 600, lineHeight: 1.3 }}>{c.title}</h3>
+                    <h3 style={{ fontSize: '0.86rem', fontWeight: 600, lineHeight: 1.3 }}>{displayCaseTitle(c.title)}</h3>
                     
                     {/* Escalation or Auto Badge & Department */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
@@ -579,7 +582,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     {renderStatus(selectedCase.status)}
                     {renderEscalationBadge(selectedCase)}
                   </div>
-                  <h3 style={{ fontSize: '1.08rem', fontWeight: 700, lineHeight: 1.35 }}>{selectedCase.title}</h3>
+                  <h3 style={{ fontSize: '1.08rem', fontWeight: 700, lineHeight: 1.35 }}>{displayCaseTitle(selectedCase.title)}</h3>
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button
@@ -612,8 +615,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '0.68rem', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>LỚP A</span>
-                      <strong style={{ fontSize: '0.8rem', color: '#93c5fd' }}>Kê Khai Sinh Viên</strong>
+                      <strong style={{ fontSize: '0.8rem', color: '#93c5fd' }}>Thông tin sinh viên kê khai</strong>
                     </div>
                     <span style={{
                       fontSize: '0.68rem',
@@ -627,7 +629,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     </span>
                   </div>
                   <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>
-                    <span>Sinh viên: </span><strong style={{ color: 'var(--text-main)' }}>{selectedCase.studentName}</strong> ({selectedCase.studentCode || 'N/A'})
+                      <span>Sinh viên: </span><strong style={{ color: 'var(--text-main)' }}>{selectedCase.studentName}</strong> ({selectedCase.studentCode || 'Chưa có mã'})
                   </div>
                   <div style={{ fontSize: '0.76rem' }}>
                     <span style={{ color: 'var(--text-sub)' }}>Địa chỉ nộp: </span>
@@ -646,8 +648,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '0.68rem', background: '#10b981', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>LỚP B</span>
-                      <strong style={{ fontSize: '0.8rem', color: '#6ee7b7' }}>Dữ Liệu Gốc Nhà Trường</strong>
+                      <strong style={{ fontSize: '0.8rem', color: '#6ee7b7' }}>Thông tin nhà trường đang lưu</strong>
                     </div>
                     <span style={{
                       fontSize: '0.68rem',
@@ -657,21 +658,21 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       background: selectedCase.institutionalFacts?.academicStatus === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                       color: selectedCase.institutionalFacts?.academicStatus === 'ACTIVE' ? '#34d399' : '#f87171'
                     }}>
-                      {selectedCase.institutionalFacts?.academicStatus || 'Chưa xác minh'}
+                      {selectedCase.institutionalFacts?.academicStatus === 'ACTIVE' ? 'Đang học' : (selectedCase.institutionalFacts?.academicStatus || 'Chưa xác minh')}
                     </span>
                   </div>
                   <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>
                     <span>Khóa học: </span><strong style={{ color: '#cbd5e1' }}>{selectedCase.institutionalFacts?.courseStartDate ? `${selectedCase.institutionalFacts.courseStartDate} → ${selectedCase.institutionalFacts.courseEndDate || 'Chưa rõ'}` : 'Chưa có thông tin'}</strong>
                     {selectedCase.institutionalFacts?.currentTermActive !== undefined && (
                       <span style={{ color: selectedCase.institutionalFacts.currentTermActive ? '#38bdf8' : '#f87171', marginLeft: '6px' }}>
-                        (HK: {selectedCase.institutionalFacts.currentTermActive ? 'Đang kích hoạt' : 'Chưa kích hoạt'})
+                        (Học kỳ hiện tại: {selectedCase.institutionalFacts.currentTermActive ? 'Đang học' : 'Chưa tham gia'})
                       </span>
                     )}
                   </div>
                   <div style={{ fontSize: '0.76rem' }}>
                     <span style={{ color: 'var(--text-sub)' }}>Hộ khẩu thường trú gốc: </span>
                     <span style={{ color: '#f8fafc', fontWeight: 600 }}>
-                      {selectedCase.institutionalFacts?.registeredPermanentAddress || 'Chưa có trong CSDL'}
+                      {selectedCase.institutionalFacts?.registeredPermanentAddress || 'Chưa có trong hồ sơ nhà trường'}
                     </span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
@@ -683,33 +684,32 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 <div style={{ background: '#0f172a', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '0.68rem', background: '#9333ea', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>LỚP C</span>
-                      <strong style={{ fontSize: '0.8rem', color: '#d8b4fe' }}>Chuẩn Hóa AI</strong>
+                      <strong style={{ fontSize: '0.8rem', color: '#d8b4fe' }}>Thông tin địa chỉ được nhận diện</strong>
                     </div>
                     <span style={{ fontSize: '0.68rem', color: '#c084fc', background: 'rgba(192, 132, 252, 0.15)', padding: '1px 6px', borderRadius: '4px' }}>
                       Độ tin cậy: {Math.round(((selectedCase.addressAnalysis?.confidence || selectedCase.ruleEngine?.confidence || 0.95)) * 100)}%
                     </span>
                   </div>
                   <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>
-                    <span>Thành phần tách: </span>
+                    <span>Các phần địa chỉ nhận diện được: </span>
                     <span style={{ color: '#cbd5e1' }}>
-                      P: <strong style={{ color: selectedCase.addressAnalysis?.parsed?.ward ? '#38bdf8' : '#f87171' }}>{selectedCase.addressAnalysis?.parsed?.ward || '⚠️ THIẾU'}</strong> | 
-                      Q: <strong style={{ color: '#38bdf8' }}>{selectedCase.addressAnalysis?.parsed?.district || 'Chưa rõ'}</strong> | 
-                      Tỉnh: <strong style={{ color: selectedCase.addressAnalysis?.parsed?.province ? '#38bdf8' : '#f87171' }}>{selectedCase.addressAnalysis?.parsed?.province || '⚠️ THIẾU'}</strong>
+                      Phường/xã: <strong style={{ color: selectedCase.addressAnalysis?.parsed?.ward ? '#38bdf8' : '#f87171' }}>{selectedCase.addressAnalysis?.parsed?.ward || 'Chưa có'}</strong> ·
+                      Quận/huyện: <strong style={{ color: '#38bdf8' }}>{selectedCase.addressAnalysis?.parsed?.district || 'Chưa có'}</strong> ·
+                      Tỉnh/thành phố: <strong style={{ color: selectedCase.addressAnalysis?.parsed?.province ? '#38bdf8' : '#f87171' }}>{selectedCase.addressAnalysis?.parsed?.province || 'Chưa có'}</strong>
                     </span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                    <span>Chuẩn hóa: </span>
-                    <span style={{ color: '#a78bfa' }}>{selectedCase.addressAnalysis?.normalized || 'Theo quy chuẩn hành chính'}</span>
+                    <span>Địa chỉ sau khi sắp xếp: </span>
+                    <span style={{ color: '#a78bfa' }}>{selectedCase.addressAnalysis?.normalized || 'Chưa có kết quả'}</span>
                   </div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Nguồn: {selectedCase.addressAnalysis?.source || 'deterministic_parser'} (AI Safety: Parse cú pháp, không khẳng định pháp lý)
+                    Hệ thống chỉ hỗ trợ nhận diện cách viết địa chỉ; cán bộ cần đối chiếu với thông tin gốc trước khi quyết định.
                   </div>
                 </div>
               </div>
 
               {/* ========================================================================= */}
-              {/* KHUNG RULE ENGINE & MA TRẬN ĐỐI CHIẾU THỰC THỂ (GEMINI OCR VS FORM) */}
+              {/* Kết quả đối chiếu hồ sơ */}
               {/* ========================================================================= */}
               <div className="reviewer-case-detail__assessment" style={{
                 background: '#090d16',
@@ -724,7 +724,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Cpu size={16} color={selectedCase.status === 'APPROVED' ? '#34d399' : '#fb923c'} />
                     <h4 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#f8fafc' }}>
-                      Kết quả đánh giá và đối chiếu thông tin
+                      Kết quả kiểm tra hồ sơ
                     </h4>
                   </div>
                   <span style={{
@@ -735,7 +735,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     background: selectedCase.status === 'APPROVED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                     color: selectedCase.status === 'APPROVED' ? '#34d399' : '#f87171'
                   }}>
-                    {selectedCase.status === 'APPROVED' ? '✓ ĐỦ ĐIỀU KIỆN XỬ LÝ TỰ ĐỘNG' : `🚨 ${ESCALATION_LABELS[selectedCase.escalation?.reason] || 'Cần cán bộ xem xét'}`}
+                    {selectedCase.status === 'APPROVED' ? 'Đã chấp thuận' : (ESCALATION_LABELS[selectedCase.escalation?.reason] || 'Cần cán bộ xem xét')}
                   </span>
                 </div>
 
@@ -752,7 +752,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   <div style={{ fontWeight: 700, color: selectedCase.status === 'APPROVED' ? '#34d399' : '#fb923c', marginBottom: '4px' }}>
                     Kết quả kiểm tra hồ sơ
                   </div>
-                  <p>{selectedCase.ruleEngine?.explanation || selectedCase.escalation?.explanation || 'Hồ sơ đã được kiểm tra tính pháp lý qua bộ quy chuẩn đào tạo.'}</p>
+                  <p>{selectedCase.ruleEngine?.explanation || selectedCase.escalation?.explanation || 'Chưa có nhận xét tự động. Vui lòng kiểm tra thông tin và giấy tờ đính kèm.'}</p>
                   {selectedCase.escalation?.suggestedAction && (
                     <div style={{ marginTop: '6px', fontSize: '0.76rem', color: '#94a3b8' }}>
                       👉 <strong>Khuyến nghị xử lý:</strong> {selectedCase.escalation.suggestedAction}
@@ -760,20 +760,20 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   )}
                 </div>
 
-                {/* BẢNG SO SÁNH ĐỐI CHIẾU THỰC THỂ (KHAI BÁO VS AI OCR) */}
+                {/* So sánh nội dung kê khai với giấy tờ đính kèm */}
                 {selectedCase.ruleEngine?.discrepancies && selectedCase.ruleEngine.discrepancies.length > 0 && (
                   <div>
                     <span style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>
-                      Đối chiếu thông tin sinh viên kê khai và thông tin trên minh chứng:
+                      So sánh thông tin kê khai với giấy tờ đính kèm:
                     </span>
                     <div style={{ overflowX: 'auto' }}>
                       <table style={{ width: '100%', fontSize: '0.75rem', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                           <tr style={{ background: '#1e293b', color: '#94a3b8', borderBottom: '1px solid #334155' }}>
                             <th style={{ padding: '6px 8px', fontWeight: 600 }}>Thông tin cần kiểm tra</th>
-                            <th style={{ padding: '6px 8px', fontWeight: 600 }}>Sinh Viên Khai Báo</th>
-                            <th style={{ padding: '6px 8px', fontWeight: 600 }}>Thông tin đọc từ minh chứng</th>
-                            <th style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}>Kết Quả</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 600 }}>Sinh viên kê khai</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 600 }}>Trên giấy tờ</th>
+                            <th style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}>Đối chiếu</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -927,7 +927,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       gap: '4px'
                     }}
                   >
-                    <ThumbsUp size={14} /> Duyệt Đơn
+                    <ThumbsUp size={14} /> Chấp thuận
                   </button>
 
                   <button
@@ -969,7 +969,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       gap: '4px'
                     }}
                   >
-                    <ThumbsDown size={14} /> Từ Chối
+                    <ThumbsDown size={14} /> Từ chối
                   </button>
                 </div>
 
@@ -994,7 +994,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       gap: '5px'
                     }}
                   >
-                    <Shield size={14} /> Duyệt theo quyết định cán bộ
+                    <Shield size={14} /> Chấp thuận theo đánh giá của cán bộ
                   </button>
 
                   <button
@@ -1022,11 +1022,11 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
                 <details className="reviewer-feedback">
                   <summary>
-                    <span><Sliders size={15} /> Góp ý về kết quả đánh giá</span>
+                    <span><Sliders size={15} /> Phản hồi về gợi ý của hệ thống</span>
                     <small>Tùy chọn</small>
                   </summary>
                   <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '0 0 8px 0' }}>
-                    Cho biết kết quả gợi ý của hệ thống có phù hợp không để cải thiện việc hỗ trợ xử lý hồ sơ.
+                    Cho biết gợi ý có phù hợp với hồ sơ này không.
                   </p>
                   <input
                     type="text"
@@ -1076,9 +1076,9 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                             cursor: canMissed && !submittingFeedback ? 'pointer' : 'not-allowed',
                             opacity: canMissed ? 1 : 0.4
                           }}
-                          title={canMissed ? "Đáng lẽ phải leo thang người duyệt nhưng hệ thống tự duyệt (+0.02 threshold)" : "Chỉ áp dụng cho hồ sơ hệ thống tự duyệt (AUTO_APPROVE)"}
+                          title={canMissed ? "Báo rằng hồ sơ này cần cán bộ xem xét thêm." : "Chỉ dùng khi hệ thống đã chấp thuận hồ sơ."}
                         >
-                          ▲ Sót Leo Thang
+                          Cần xem xét thêm
                         </button>
                         <button
                           type="button"
@@ -1095,9 +1095,9 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                             cursor: canUnnecessary && !submittingFeedback ? 'pointer' : 'not-allowed',
                             opacity: canUnnecessary ? 1 : 0.4
                           }}
-                          title={canUnnecessary ? "Đáng lẽ duyệt tự động được nhưng hệ thống lại leo thang thừa (-0.02 threshold)" : "Chỉ áp dụng cho hồ sơ hệ thống leo thang (ESCALATE_TO_HUMAN)"}
+                          title={canUnnecessary ? "Báo rằng hồ sơ này không cần chuyển cán bộ xem xét thêm." : "Chỉ dùng khi hệ thống đề nghị cán bộ xem xét."}
                         >
-                          ▼ Leo Thang Thừa
+                          Không cần xem xét thêm
                         </button>
                       </div>
                     );
