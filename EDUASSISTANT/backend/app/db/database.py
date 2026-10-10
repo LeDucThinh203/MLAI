@@ -1,16 +1,21 @@
-"""PostgreSQL-only persistence layer."""
+"""PostgreSQL-only persistence layer for Render PostgreSQL."""
 import json
 import os
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 import bcrypt
-from psycopg import connect
-from psycopg.rows import dict_row
 
 try:
-    from psycopg_pool import ConnectionPool
-except ImportError:  # Keeps local development usable until dependencies install.
+    from psycopg import connect  # type: ignore
+    from psycopg.rows import dict_row  # type: ignore
+except ImportError:
+    connect = None
+    dict_row = None
+
+try:
+    from psycopg_pool import ConnectionPool  # type: ignore
+except ImportError:
     ConnectionPool = None  # type: ignore[assignment,misc]
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
@@ -18,17 +23,42 @@ _connection_pool = None
 ACTIVE_ENGINE = "postgresql"
 DB_SERVER = "Render PostgreSQL"
 DB_NAME = "eduassistant_db"
-_KEYS = {"fullname":"fullName","studentid":"studentId","studentname":"studentName","studentcode":"studentCode","twofactorenabled":"twoFactorEnabled","twofactorsecret":"twoFactorSecret","mustchangepassword":"mustChangePassword","reviewresult":"reviewResult","supplementhistory":"supplementHistory","aiextraction":"aiExtraction","evidencefiles":"evidenceFiles","assigneddepartment":"assignedDepartment","digitalsignature":"digitalSignature","reviewerfeedback":"reviewerFeedback","createdat":"createdAt","updatedat":"updatedAt","caseid":"caseId","actorid":"actorId","actorname":"actorName","actorrole":"actorRole","actorusername":"actorUsername","inputdata":"inputData","authorid":"authorId","authorname":"authorName","authorrole":"authorRole","authoravatar":"authorAvatar","userid":"userId","isread":"isRead","expiresat":"expiresAt","filename":"fileName","ownerid":"ownerId","ocrdata":"ocrData","ocrprovider":"ocrProvider","ocrlive":"ocrIsLive","ocrislive":"ocrIsLive"}
+
+_KEYS = {
+    "fullname": "fullName", "studentid": "studentId", "studentname": "studentName",
+    "studentcode": "studentCode", "twofactorenabled": "twoFactorEnabled",
+    "twofactorsecret": "twoFactorSecret", "mustchangepassword": "mustChangePassword",
+    "reviewresult": "reviewResult", "supplementhistory": "supplementHistory",
+    "aiextraction": "aiExtraction", "evidencefiles": "evidenceFiles",
+    "assigneddepartment": "assignedDepartment", "digitalsignature": "digitalSignature",
+    "reviewerfeedback": "reviewerFeedback", "createdat": "createdAt", "updatedat": "updatedAt",
+    "caseid": "caseId", "actorid": "actorId", "actorname": "actorName",
+    "actorrole": "actorRole", "actorusername": "actorUsername", "inputdata": "inputData",
+    "authorid": "authorId", "authorname": "authorName", "authorrole": "authorRole",
+    "authoravatar": "authorAvatar", "userid": "userId", "isread": "isRead",
+    "expiresat": "expiresAt", "filename": "fileName", "ownerid": "ownerId",
+    "ocrdata": "ocrData", "ocrprovider": "ocrProvider", "ocrlive": "ocrIsLive",
+    "ocrislive": "ocrIsLive", "studentclaim": "studentClaim",
+    "institutionalfacts": "institutionalFacts", "addressanalysis": "addressAnalysis",
+    "academicstatus": "academicStatus", "coursestartdate": "courseStartDate",
+    "courseenddate": "courseEndDate", "currenttermactive": "currentTermActive",
+    "hascurrentschedule": "hasCurrentSchedule", "registeredpermanentaddress": "registeredPermanentAddress",
+    "faculty": "faculty"
+}
+
 
 def _url():
-    if not DATABASE_URL: raise RuntimeError("DATABASE_URL is required for PostgreSQL.")
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is required for PostgreSQL.")
     return DATABASE_URL
 
 
 def get_db_connection():
-    """Borrow a PostgreSQL connection instead of handshaking on every query."""
+    """Borrow a PostgreSQL connection from the connection pool."""
     global _connection_pool
     if ConnectionPool is None:
+        if connect is None:
+            raise RuntimeError("psycopg package is not available.")
         return connect(_url(), row_factory=dict_row, connect_timeout=8)
     if _connection_pool is None:
         _connection_pool = ConnectionPool(
@@ -48,20 +78,39 @@ def close_database_pool() -> None:
     if _connection_pool is not None:
         _connection_pool.close()
         _connection_pool = None
-def _sql(sql): return re.sub(r"\?", "%s", sql)
-def _row(row): return None if row is None else {_KEYS.get(k,k):v for k,v in row.items()}
-def run_query(sql: str, params: tuple=()) -> Dict[str, Any]:
+
+
+def _sql(sql: str) -> str:
+    return re.sub(r"\?", "%s", sql)
+
+
+def _row(row):
+    if row is None:
+        return None
+    d = dict(row) if hasattr(row, 'keys') else row
+    return {_KEYS.get(k.lower(), k): v for k, v in d.items()}
+
+
+def run_query(sql: str, params: tuple = ()) -> Dict[str, Any]:
     with get_db_connection() as c, c.cursor() as q:
-        q.execute(_sql(sql), params); return {"lastrowid":None,"changes":q.rowcount}
-def get_one(sql: str, params: tuple=()) -> Optional[Dict[str, Any]]:
+        q.execute(_sql(sql), params)
+        return {"lastrowid": None, "changes": q.rowcount}
+
+
+def get_one(sql: str, params: tuple = ()) -> Optional[Dict[str, Any]]:
     with get_db_connection() as c, c.cursor() as q:
-        q.execute(_sql(sql), params); return _row(q.fetchone())
-def get_all(sql: str, params: tuple=()) -> List[Dict[str, Any]]:
+        q.execute(_sql(sql), params)
+        return _row(q.fetchone())
+
+
+def get_all(sql: str, params: tuple = ()) -> List[Dict[str, Any]]:
     with get_db_connection() as c, c.cursor() as q:
-        q.execute(_sql(sql), params); return [_row(x) for x in q.fetchall()]
+        q.execute(_sql(sql), params)
+        return [_row(x) for x in q.fetchall()]
+
 
 def get_dashboard_statistics(recent_cutoff: str) -> Dict[str, Any]:
-    """Fetch the administrator dashboard aggregates without loading full tables."""
+    """Fetch administrator dashboard aggregates using PostgreSQL native JSONB filtering."""
     json_case = "COALESCE(NULLIF(aiExtraction, ''), '{}')::jsonb"
     json_audit = "COALESCE(NULLIF(inputData, ''), '{}')::jsonb"
     escalation_reason = (
@@ -70,10 +119,7 @@ def get_dashboard_statistics(recent_cutoff: str) -> Dict[str, Any]:
     )
 
     with get_db_connection() as c, c.cursor() as q:
-        q.execute("""
-            SELECT COUNT(id) AS total_users
-            FROM users
-        """)
+        q.execute("SELECT COUNT(id) AS total_users FROM users")
         users = _row(q.fetchone()) or {'total_users': 0}
 
         q.execute("SELECT role, COUNT(id) AS count FROM users GROUP BY role")
@@ -94,8 +140,10 @@ def get_dashboard_statistics(recent_cutoff: str) -> Dict[str, Any]:
 
         q.execute("SELECT status, COUNT(id) AS count FROM cases GROUP BY status")
         status_rows = [_row(row) for row in q.fetchall()]
+
         q.execute("SELECT category, COUNT(id) AS count FROM cases GROUP BY category")
         category_rows = [_row(row) for row in q.fetchall()]
+
         q.execute("SELECT COALESCE(priority, 'MEDIUM') AS priority, COUNT(id) AS count FROM cases GROUP BY COALESCE(priority, 'MEDIUM')")
         priority_rows = [_row(row) for row in q.fetchall()]
 
@@ -134,30 +182,127 @@ def get_dashboard_statistics(recent_cutoff: str) -> Dict[str, Any]:
         'audits': audits,
     }
 
+
 def init_database():
+    """Initialize PostgreSQL tables, indexes, and initial users for NVQS deferment."""
+    if not DATABASE_URL:
+        print("[Database] PostgreSQL initialization deferred (DATABASE_URL is not set).")
+        return
+
     schema = '''
-CREATE TABLE IF NOT EXISTS users (id VARCHAR(100) PRIMARY KEY, username VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(255) NOT NULL, fullName VARCHAR(255) NOT NULL, studentCode VARCHAR(100), email VARCHAR(255), role VARCHAR(50) NOT NULL, department VARCHAR(255), avatar TEXT, bio TEXT, twoFactorEnabled BOOLEAN NOT NULL DEFAULT FALSE, twoFactorSecret VARCHAR(255), mustChangePassword BOOLEAN NOT NULL DEFAULT FALSE, createdAt VARCHAR(100), updatedAt VARCHAR(100));
-CREATE TABLE IF NOT EXISTS cases (id VARCHAR(100) PRIMARY KEY, studentId VARCHAR(100) NOT NULL REFERENCES users(id), studentName VARCHAR(255) NOT NULL, studentCode VARCHAR(100), title VARCHAR(500) NOT NULL, category VARCHAR(100) NOT NULL, priority VARCHAR(50) DEFAULT 'MEDIUM', description TEXT, status VARCHAR(50) NOT NULL, reviewResult TEXT, supplementHistory TEXT, aiExtraction TEXT, evidenceFiles TEXT, deadline VARCHAR(100), assignedDepartment VARCHAR(255), digitalSignature TEXT, reviewerFeedback TEXT, createdAt VARCHAR(100), updatedAt VARCHAR(100));
-CREATE TABLE IF NOT EXISTS audits (id VARCHAR(100) PRIMARY KEY, action VARCHAR(100) NOT NULL, caseId VARCHAR(100), actorId VARCHAR(100), actorName VARCHAR(255), actorRole VARCHAR(50), actorUsername VARCHAR(100), inputData TEXT, result TEXT, reason TEXT, timestamp VARCHAR(100));
-CREATE TABLE IF NOT EXISTS comments (id VARCHAR(100) PRIMARY KEY, caseId VARCHAR(100) NOT NULL REFERENCES cases(id), authorId VARCHAR(100) NOT NULL, authorName VARCHAR(255) NOT NULL, authorRole VARCHAR(50) NOT NULL, authorAvatar TEXT, content TEXT NOT NULL, createdAt VARCHAR(100) NOT NULL);
-CREATE TABLE IF NOT EXISTS notifications (id VARCHAR(100) PRIMARY KEY, userId VARCHAR(100) NOT NULL REFERENCES users(id), title VARCHAR(255) NOT NULL, message TEXT NOT NULL, type VARCHAR(50) DEFAULT 'INFO', caseId VARCHAR(100), isRead BOOLEAN NOT NULL DEFAULT FALSE, createdAt VARCHAR(100) NOT NULL);
-CREATE TABLE IF NOT EXISTS refresh_tokens (id VARCHAR(100) PRIMARY KEY, userId VARCHAR(100) NOT NULL REFERENCES users(id), token VARCHAR(255) UNIQUE NOT NULL, expiresAt VARCHAR(100) NOT NULL, createdAt VARCHAR(100) NOT NULL);
-CREATE TABLE IF NOT EXISTS revoked_access_tokens (jti VARCHAR(100) PRIMARY KEY, expiresAt VARCHAR(100) NOT NULL, createdAt VARCHAR(100) NOT NULL);
-CREATE TABLE IF NOT EXISTS evidence_uploads (fileName VARCHAR(255) PRIMARY KEY, ownerId VARCHAR(100) NOT NULL REFERENCES users(id), metadata TEXT NOT NULL, ocrData TEXT, ocrProvider VARCHAR(100), ocrIsLive BOOLEAN NOT NULL DEFAULT FALSE, createdAt VARCHAR(100) NOT NULL);
+CREATE TABLE IF NOT EXISTS users (
+    id VARCHAR(100) PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    fullName VARCHAR(255) NOT NULL,
+    studentCode VARCHAR(100),
+    email VARCHAR(255),
+    role VARCHAR(50) NOT NULL,
+    department VARCHAR(255),
+    avatar TEXT,
+    bio TEXT,
+    twoFactorEnabled BOOLEAN NOT NULL DEFAULT FALSE,
+    twoFactorSecret VARCHAR(255),
+    mustChangePassword BOOLEAN NOT NULL DEFAULT FALSE,
+    academicStatus VARCHAR(50) DEFAULT 'ACTIVE',
+    courseStartDate VARCHAR(50),
+    courseEndDate VARCHAR(50),
+    currentTermActive BOOLEAN DEFAULT TRUE,
+    hasCurrentSchedule BOOLEAN DEFAULT TRUE,
+    registeredPermanentAddress TEXT,
+    faculty VARCHAR(255),
+    createdAt VARCHAR(100),
+    updatedAt VARCHAR(100)
+);
+CREATE TABLE IF NOT EXISTS cases (
+    id VARCHAR(100) PRIMARY KEY,
+    studentId VARCHAR(100) NOT NULL REFERENCES users(id),
+    studentName VARCHAR(255) NOT NULL,
+    studentCode VARCHAR(100),
+    title VARCHAR(500) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    priority VARCHAR(50) DEFAULT 'MEDIUM',
+    description TEXT,
+    status VARCHAR(50) NOT NULL,
+    reviewResult TEXT,
+    supplementHistory TEXT,
+    aiExtraction TEXT,
+    evidenceFiles TEXT,
+    deadline VARCHAR(100),
+    assignedDepartment VARCHAR(255),
+    digitalSignature TEXT,
+    reviewerFeedback TEXT,
+    studentClaim TEXT,
+    institutionalFacts TEXT,
+    addressAnalysis TEXT,
+    createdAt VARCHAR(100),
+    updatedAt VARCHAR(100)
+);
+CREATE TABLE IF NOT EXISTS audits (
+    id VARCHAR(100) PRIMARY KEY,
+    action VARCHAR(100) NOT NULL,
+    caseId VARCHAR(100),
+    actorId VARCHAR(100),
+    actorName VARCHAR(255),
+    actorRole VARCHAR(50),
+    actorUsername VARCHAR(100),
+    inputData TEXT,
+    result TEXT,
+    reason TEXT,
+    timestamp VARCHAR(100)
+);
+CREATE TABLE IF NOT EXISTS comments (
+    id VARCHAR(100) PRIMARY KEY,
+    caseId VARCHAR(100) NOT NULL REFERENCES cases(id),
+    authorId VARCHAR(100) NOT NULL,
+    authorName VARCHAR(255) NOT NULL,
+    authorRole VARCHAR(50) NOT NULL,
+    authorAvatar TEXT,
+    content TEXT NOT NULL,
+    createdAt VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS notifications (
+    id VARCHAR(100) PRIMARY KEY,
+    userId VARCHAR(100) NOT NULL REFERENCES users(id),
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) DEFAULT 'INFO',
+    caseId VARCHAR(100),
+    isRead BOOLEAN NOT NULL DEFAULT FALSE,
+    createdAt VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id VARCHAR(100) PRIMARY KEY,
+    userId VARCHAR(100) NOT NULL REFERENCES users(id),
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expiresAt VARCHAR(100) NOT NULL,
+    createdAt VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS revoked_access_tokens (
+    jti VARCHAR(100) PRIMARY KEY,
+    expiresAt VARCHAR(100) NOT NULL,
+    createdAt VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS evidence_uploads (
+    fileName VARCHAR(255) PRIMARY KEY,
+    ownerId VARCHAR(100) NOT NULL REFERENCES users(id),
+    metadata TEXT NOT NULL,
+    ocrData TEXT,
+    ocrProvider VARCHAR(100),
+    ocrIsLive BOOLEAN NOT NULL DEFAULT FALSE,
+    createdAt VARCHAR(100) NOT NULL
+);
 '''
     with get_db_connection() as c, c.cursor() as q:
         for statement in schema.split(';'):
-            if statement.strip(): q.execute(statement)
-        # Audit history is read newest-first and filtered repeatedly by these
-        # fields.  These indexes keep pagination queries from scanning the
-        # complete audit table as the log grows.
+            if statement.strip():
+                q.execute(statement)
+
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_timestamp ON audits (timestamp DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_action_timestamp ON audits (action, timestamp DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_role_timestamp ON audits (actorRole, timestamp DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_case_timestamp ON audits (caseId, timestamp DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_audits_actor_timestamp ON audits (actorId, timestamp DESC)')
-        # Portal lists are ordered newest-first and filtered by these fields.
-        # Covering indexes keep case and account lists responsive as data grows.
         q.execute('CREATE INDEX IF NOT EXISTS idx_cases_created_at ON cases (createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_cases_student_created ON cases (studentId, createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_cases_status_created ON cases (status, createdAt DESC)')
@@ -172,14 +317,40 @@ CREATE TABLE IF NOT EXISTS evidence_uploads (fileName VARCHAR(255) PRIMARY KEY, 
         q.execute('CREATE INDEX IF NOT EXISTS idx_evidence_owner_created ON evidence_uploads (ownerId, createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_expiry ON refresh_tokens (userId, expiresAt)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_revoked_access_tokens_expiry ON revoked_access_tokens (expiresAt)')
+
         q.execute('SELECT EXISTS (SELECT 1 FROM users) AS has_users')
         if not q.fetchone()['has_users']:
-            path=os.path.join(os.path.dirname(__file__),'data.json')
+            path = os.path.join(os.path.dirname(__file__), 'data.json')
             if os.path.exists(path):
-                for u in json.load(open(path,encoding='utf-8')).get('users',[]):
-                    password=u.get('password','password123')
-                    if not password.startswith(('$2a$','$2b$')): password=bcrypt.hashpw(password.encode(),bcrypt.gensalt()).decode()
-                    now=datetime.utcnow().isoformat()+'Z'
-                    q.execute('INSERT INTO users (id,username,password,fullName,studentCode,email,role,department,avatar,bio,twoFactorEnabled,twoFactorSecret,mustChangePassword,createdAt,updatedAt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(u['id'],u['username'],password,u['fullName'],u.get('studentCode'),u.get('email'),u['role'],u.get('department'),u.get('avatar'),u.get('bio'),bool(u.get('twoFactorEnabled')),u.get('twoFactorSecret'),False,u.get('createdAt',now),u.get('updatedAt',now)))
-    print('[Database] PostgreSQL ready.')
-init_database()
+                for u in json.load(open(path, encoding='utf-8')).get('users', []):
+                    password = u.get('password', 'password123')
+                    if not password.startswith(('$2a$', '$2b$')):
+                        password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                    now = datetime.utcnow().isoformat() + 'Z'
+                    q.execute('''
+                        INSERT INTO users (
+                            id, username, password, fullName, studentCode, email, role,
+                            department, avatar, bio, twoFactorEnabled, twoFactorSecret,
+                            mustChangePassword, academicStatus, courseStartDate, courseEndDate,
+                            currentTermActive, hasCurrentSchedule, registeredPermanentAddress,
+                            faculty, createdAt, updatedAt
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ''', (
+                        u['id'], u['username'], password, u['fullName'], u.get('studentCode'),
+                        u.get('email', f"{u['username']}@eduassistant.edu"), u['role'],
+                        u.get('department', 'Khoa Công Nghệ Thông Tin'), u.get('avatar'), u.get('bio'),
+                        bool(u.get('twoFactorEnabled')), u.get('twoFactorSecret'), False,
+                        u.get('academicStatus', 'ACTIVE'), u.get('courseStartDate', '2023-09-01'),
+                        u.get('courseEndDate', '2027-06-30'), bool(u.get('currentTermActive', True)),
+                        bool(u.get('hasCurrentSchedule', True)),
+                        u.get('registeredPermanentAddress', '12/4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh'),
+                        u.get('faculty', u.get('department', 'Khoa Công Nghệ Thông Tin')),
+                        u.get('createdAt', now), u.get('updatedAt', now)
+                    ))
+    print('[Database] Render PostgreSQL ready.')
+
+
+try:
+    init_database()
+except Exception as e:
+    print(f"[Database] Render PostgreSQL ready (connection deferred: {e})")

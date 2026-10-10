@@ -25,6 +25,7 @@ import hashlib
 import secrets
 import bcrypt
 from datetime import datetime
+from typing import Optional, Dict, Any, List
 from app.db.database import run_query, get_one, get_all, get_dashboard_statistics
 from app.realtime import case_event_hub
 from app.core.cache import bump_cache_version
@@ -34,6 +35,7 @@ MIN_AUDIT_PAGE_SIZE = 5
 MAX_AUDIT_PAGE_SIZE = 100
 
 DEPARTMENT_MAP = {
+    'MILITARY_SERVICE_CONFIRMATION': 'Phòng Quản lý Đào tạo',
     'TUITION_DISCOUNT': 'Phòng Kế hoạch - Tài chính',
     'ACADEMIC_SCHOLARSHIP': 'Phòng Công tác Sinh viên',
     'GRADE_APPEAL': 'Phòng Quản lý Đào tạo',
@@ -65,7 +67,7 @@ def parse_json_field(val, fallback=None):
 
 
 def format_case_row(row: dict) -> dict:
-    """Định dạng bản ghi hồ sơ từ SQLite sang Object hoàn chỉnh."""
+    """Định dạng bản ghi hồ sơ sang Object hoàn chỉnh."""
     if not row:
         return None
     ai_ext = parse_json_field(row.get('aiExtraction'), None)
@@ -75,9 +77,12 @@ def format_case_row(row: dict) -> dict:
     res['reviewResult'] = parse_json_field(row.get('reviewResult'), None)
     res['supplementHistory'] = parse_json_field(row.get('supplementHistory'), None)
     res['aiExtraction'] = ai_ext
-    res['escalation'] = ai_ext.get('escalation') if isinstance(ai_ext, dict) else None
-    res['ruleEngine'] = ai_ext.get('ruleEngine') if isinstance(ai_ext, dict) else None
+    res['escalation'] = (ai_ext.get('escalation') if isinstance(ai_ext, dict) else None)
+    res['ruleEngine'] = (ai_ext.get('ruleEngine') if isinstance(ai_ext, dict) else None)
     res['reviewerFeedback'] = parse_json_field(row.get('reviewerFeedback'), [])
+    res['studentClaim'] = parse_json_field(row.get('studentClaim'), None) or (ai_ext.get('studentClaim') if isinstance(ai_ext, dict) else None)
+    res['institutionalFacts'] = parse_json_field(row.get('institutionalFacts'), None) or (ai_ext.get('institutionalFacts') if isinstance(ai_ext, dict) else None)
+    res['addressAnalysis'] = parse_json_field(row.get('addressAnalysis'), None) or (ai_ext.get('addressAnalysis') if isinstance(ai_ext, dict) else None)
     return res
 
 
@@ -728,7 +733,7 @@ class DatabaseService:
         return format_case_row(case_row), comments
 
     @staticmethod
-    async def add_comment(case_id: str, author: dict, content: str, target_case: dict = None):
+    async def add_comment(case_id: str, author: dict, content: str, target_case: Optional[dict] = None):
         target_case = target_case or await DatabaseService.get_case_by_id(case_id)
         if not target_case:
             return None

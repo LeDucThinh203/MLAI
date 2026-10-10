@@ -24,6 +24,14 @@ class User(Base):
     twoFactorEnabled: Mapped[int] = mapped_column(Integer, default=0)
     twoFactorSecret: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     mustChangePassword: Mapped[int] = mapped_column(Integer, default=0)
+    # Authoritative Institutional Record fields:
+    academicStatus: Mapped[Optional[str]] = mapped_column(String(50), default="ACTIVE")
+    courseStartDate: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    courseEndDate: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    currentTermActive: Mapped[Optional[int]] = mapped_column(Integer, default=1)
+    hasCurrentSchedule: Mapped[Optional[int]] = mapped_column(Integer, default=1)
+    registeredPermanentAddress: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    faculty: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     createdAt: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     updatedAt: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
@@ -46,6 +54,13 @@ class User(Base):
             "twoFactorEnabled": bool(self.twoFactorEnabled),
             "twoFactorSecret": self.twoFactorSecret,
             "mustChangePassword": bool(self.mustChangePassword),
+            "academicStatus": self.academicStatus or "ACTIVE",
+            "courseStartDate": self.courseStartDate,
+            "courseEndDate": self.courseEndDate,
+            "currentTermActive": bool(self.currentTermActive),
+            "hasCurrentSchedule": bool(self.hasCurrentSchedule),
+            "registeredPermanentAddress": self.registeredPermanentAddress,
+            "faculty": self.faculty,
             "createdAt": self.createdAt,
             "updatedAt": self.updatedAt,
         }

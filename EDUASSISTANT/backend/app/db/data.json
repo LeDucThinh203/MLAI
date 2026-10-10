@@ -11,6 +11,13 @@
       "department": "Khoa Công Nghệ Thông Tin",
       "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "bio": "Sinh viên CNTT đam mê AI & Blockchain - CaseFlow 2026",
+      "academicStatus": "ACTIVE",
+      "courseStartDate": "2023-09-01",
+      "courseEndDate": "2027-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true,
+      "registeredPermanentAddress": "12/4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh",
+      "faculty": "Khoa Công Nghệ Thông Tin",
       "updatedAt": "2026-10-04T11:19:59.888Z"
     },
     {
@@ -48,7 +55,14 @@
       "role": "STUDENT",
       "password": "password123",
       "department": "Khoa Công Nghệ Thông Tin",
-      "avatar": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150"
+      "avatar": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
+      "academicStatus": "ACTIVE",
+      "courseStartDate": "2023-09-01",
+      "courseEndDate": "2027-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true,
+      "registeredPermanentAddress": "88/2 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      "faculty": "Khoa Công Nghệ Thông Tin"
     },
     {
       "id": "usr_student_03",

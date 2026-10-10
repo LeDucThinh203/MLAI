@@ -27,6 +27,9 @@ class Case(Base):
     deadline: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     assignedDepartment: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     digitalSignature: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    studentClaim: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    institutionalFacts: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    addressAnalysis: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     createdAt: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     updatedAt: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
@@ -52,6 +55,9 @@ class Case(Base):
             "deadline": self.deadline,
             "assignedDepartment": self.assignedDepartment,
             "digitalSignature": self.digitalSignature,
+            "studentClaim": self.studentClaim,
+            "institutionalFacts": self.institutionalFacts,
+            "addressAnalysis": self.addressAnalysis,
             "createdAt": self.createdAt,
             "updatedAt": self.updatedAt,
         }
