@@ -488,6 +488,9 @@ def run_verify_harness() -> Dict[str, Any]:
 
         # Chuẩn bị hồ sơ sinh viên đầy đủ cho fixture kiểm thử
         st_info = dict(item.get('student', {}))
+        # Harness fixtures represent facts returned by the trusted SIS connector.
+        # The rule engine requires this provenance before it can auto-approve.
+        st_info.setdefault('source', 'VERIFIED_INSTITUTIONAL_SIS')
         if 'currentTermActive' not in st_info:
             st_info['currentTermActive'] = (st_info.get('academicStatus') == 'ACTIVE')
         if 'hasCurrentSchedule' not in st_info:
