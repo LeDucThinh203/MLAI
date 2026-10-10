@@ -6,6 +6,7 @@ from typing import Any
 
 import httpx
 from app.services.openrouter_service import generate_json
+from app.services.gemini_models import list_gemini_models
 
 
 async def add_gemini_review(result: dict[str, Any]) -> dict[str, Any]:
@@ -39,61 +40,71 @@ async def add_gemini_review(result: dict[str, Any]) -> dict[str, Any]:
         'Phải có đủ mỗi caseId đúng một lần.\nDữ liệu:\n' + json.dumps(payload, ensure_ascii=False)
     )
 
-    models = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'] if len(api_key) >= 10 else []
+    models = await list_gemini_models(api_key) if len(api_key) >= 10 else []
+    expected_ids = {str(item.get('caseId')) for item in payload}
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
             for model in models:
-                response = await client.post(
-                    f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
-                    params={'key': api_key},
-                    json={
-                        'contents': [{'parts': [{'text': prompt}]}],
-                        'generationConfig': {
-                            'responseMimeType': 'application/json',
-                            'temperature': 0.1,
-                            'maxOutputTokens': 3000,
+                try:
+                    response = await client.post(
+                        f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+                        params={'key': api_key},
+                        json={
+                            'contents': [{'parts': [{'text': prompt}]}],
+                            'generationConfig': {
+                                'responseMimeType': 'application/json',
+                                'temperature': 0.1,
+                                'maxOutputTokens': 3000,
+                            },
                         },
-                    },
-                )
-                if response.status_code != 200:
-                    continue
-                candidates = response.json().get('candidates', [])
-                parts = candidates[0].get('content', {}).get('parts', []) if candidates else []
-                text = ''.join(part.get('text', '') for part in parts).strip()
-                parsed = json.loads(text)
-                reviews = parsed.get('results')
-                expected_ids = {str(item.get('caseId')) for item in payload}
-                if not isinstance(reviews, list):
-                    continue
-                normalized = {}
-                for review in reviews:
-                    if not isinstance(review, dict):
+                    )
+                    if response.status_code != 200:
                         continue
-                    case_id = str(review.get('caseId', ''))
-                    assessment = review.get('assessment')
-                    rationale = review.get('rationale')
-                    if case_id in expected_ids and assessment in ('CONSISTENT', 'REVIEW') and isinstance(rationale, str):
-                        normalized[case_id] = {
-                            'assessment': assessment,
-                            'rationale': rationale[:500],
-                        }
-                if set(normalized) != expected_ids:
+                    candidates = response.json().get('candidates', [])
+                    parts = candidates[0].get('content', {}).get('parts', []) if candidates else []
+                    text = ''.join(part.get('text', '') for part in parts).strip()
+                    parsed = json.loads(text)
+                    reviews = parsed.get('results')
+                    if not isinstance(reviews, list):
+                        continue
+                    normalized = {}
+                    for review in reviews:
+                        if not isinstance(review, dict):
+                            continue
+                        case_id = str(review.get('caseId', ''))
+                        assessment = review.get('assessment')
+                        rationale = review.get('rationale')
+                        if case_id in expected_ids and assessment in ('CONSISTENT', 'REVIEW') and isinstance(rationale, str):
+                            normalized[case_id] = {'assessment': assessment, 'rationale': rationale[:500]}
+                    if set(normalized) != expected_ids:
+                        continue
+                    for item in result.get('results', []):
+                        item['geminiReview'] = normalized.get(str(item.get('caseId')))
+                    result['aiReview'] = {
+                        'mode': 'GEMINI_LIVE', 'provider': 'Google Gemini', 'model': model,
+                        'message': 'Gemini đã rà soát tình huống tổng hợp. Kết quả PASS/FAIL vẫn do bộ quy tắc xác định.'
+                    }
+                    return result
+                except Exception:
                     continue
-                for item in result.get('results', []):
-                    item['geminiReview'] = normalized.get(str(item.get('caseId')))
-                result['aiReview'] = {
-                    'mode': 'GEMINI_LIVE',
-                    'provider': 'Google Gemini',
-                    'model': model,
-                    'message': 'Gemini đã rà soát tình huống tổng hợp. Kết quả PASS/FAIL vẫn do bộ quy tắc xác định.'
-                }
-                return result
     except Exception:
         pass
 
-    openrouter_data, openrouter_error = await generate_json(prompt, max_tokens=3000)
+    def valid_review(payload_data: dict) -> bool:
+        reviews_data = payload_data.get('results')
+        if not isinstance(reviews_data, list):
+            return False
+        parsed_reviews = {
+            str(review.get('caseId')): review for review in reviews_data
+            if isinstance(review, dict) and review.get('assessment') in ('CONSISTENT', 'REVIEW')
+            and isinstance(review.get('rationale'), str)
+        }
+        return set(parsed_reviews) == expected_ids
+
+    openrouter_data, openrouter_error, openrouter_model, _ = await generate_json(
+        prompt, max_tokens=3000, validator=valid_review,
+    )
     reviews = openrouter_data.get('results') if isinstance(openrouter_data, dict) else None
-    expected_ids = {str(item.get('caseId')) for item in payload}
     normalized = {}
     for review in reviews or []:
         if not isinstance(review, dict):
@@ -106,7 +117,7 @@ async def add_gemini_review(result: dict[str, Any]) -> dict[str, Any]:
         for item in result.get('results', []):
             item['geminiReview'] = normalized.get(str(item.get('caseId')))
         result['aiReview'] = {
-            'mode': 'OPENROUTER_LIVE', 'provider': 'OpenRouter',
+            'mode': 'OPENROUTER_LIVE', 'provider': 'OpenRouter', 'model': openrouter_model,
             'message': 'OpenRouter đã rà soát tình huống tổng hợp. Kết quả PASS/FAIL vẫn do bộ quy tắc xác định.'
         }
         return result

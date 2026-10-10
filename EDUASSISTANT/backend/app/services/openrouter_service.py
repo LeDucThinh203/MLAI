@@ -1,21 +1,24 @@
-"""OpenRouter adapter for optional, free-model fallback requests."""
+"""Sequential fallback across the available zero-priced OpenRouter models."""
 from __future__ import annotations
 
 import json
 import os
-from typing import Any
+import time
+from typing import Any, Callable
 
 import httpx
+
+
+_MODEL_CACHE: dict[tuple[bool], tuple[float, list[str]]] = {}
+_CACHE_SECONDS = 1800
 
 
 def _content_text(content: Any) -> str:
     if isinstance(content, str):
         return content.strip()
     if isinstance(content, list):
-        return ''.join(
-            str(part.get('text', '')) for part in content
-            if isinstance(part, dict) and part.get('type') == 'text'
-        ).strip()
+        return ''.join(str(part.get('text', '')) for part in content
+                       if isinstance(part, dict) and part.get('type') == 'text').strip()
     return ''
 
 
@@ -34,27 +37,6 @@ def _parse_json_text(content: Any) -> dict[str, Any] | None:
         return None
 
 
-def _model() -> str:
-    # Use OpenRouter's free-only router unless explicitly changed by deployment config.
-    return os.environ.get('OPENROUTER_MODEL', 'openrouter/free').strip() or 'openrouter/free'
-
-
-def _request_body(prompt: str, max_tokens: int, image_data_url: str | None) -> dict[str, Any]:
-    content: Any = prompt
-    if image_data_url:
-        content = [
-            {'type': 'text', 'text': prompt},
-            {'type': 'image_url', 'image_url': {'url': image_data_url}},
-        ]
-    return {
-        'model': _model(),
-        'messages': [{'role': 'user', 'content': content}],
-        'temperature': 0,
-        'max_tokens': max_tokens,
-        'response_format': {'type': 'json_object'},
-    }
-
-
 def _headers(api_key: str) -> dict[str, str]:
     return {
         'Authorization': f'Bearer {api_key}',
@@ -64,43 +46,159 @@ def _headers(api_key: str) -> dict[str, str]:
     }
 
 
-def generate_json_sync(prompt: str, *, max_tokens: int = 4000) -> tuple[dict[str, Any] | None, str | None]:
+def _pricing_is_free(model: dict[str, Any], *, vision: bool) -> bool:
+    pricing = model.get('pricing') or {}
+    try:
+        if float(pricing.get('prompt', -1)) != 0 or float(pricing.get('completion', -1)) != 0:
+            return False
+        if 'request' in pricing and float(pricing['request']) != 0:
+            return False
+        if vision and float(pricing.get('image', -1)) != 0:
+            return False
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
+def _fetch_models(client: httpx.Client, api_key: str, *, vision: bool) -> list[str]:
+    cache_key = (vision,)
+    cached = _MODEL_CACHE.get(cache_key)
+    if cached and time.monotonic() - cached[0] < _CACHE_SECONDS:
+        return list(cached[1])
+
+    try:
+        response = client.get(
+            'https://openrouter.ai/api/v1/models',
+            headers=_headers(api_key),
+            params={'max_price': 0, 'sort': 'most-popular', 'input_modalities': 'image' if vision else 'text'},
+        )
+        response.raise_for_status()
+        models = response.json().get('data', [])
+        ids = []
+        for model in models:
+            if not isinstance(model, dict) or not _pricing_is_free(model, vision=vision):
+                continue
+            model_id = model.get('id')
+            if not isinstance(model_id, str):
+                continue
+            ids.append(model_id)
+        # Keep OpenRouter's most-popular ordering while removing duplicates.
+        ids = list(dict.fromkeys(ids))
+        if ids:
+            _MODEL_CACHE[cache_key] = (time.monotonic(), ids)
+            return ids
+    except Exception:
+        pass
+
+    return []
+
+
+def _request_body(model: str, prompt: str, max_tokens: int,
+                  image_data_url: str | None) -> dict[str, Any]:
+    content: Any = prompt
+    if image_data_url:
+        content = [
+            {'type': 'text', 'text': prompt},
+            {'type': 'image_url', 'image_url': {'url': image_data_url}},
+        ]
+    return {
+        'model': model,
+        'messages': [{'role': 'user', 'content': content}],
+        'temperature': 0,
+        'max_tokens': max_tokens,
+    }
+
+
+def generate_json_sync(
+    prompt: str, *, max_tokens: int = 4000, validator: Callable[[dict[str, Any]], bool] | None = None,
+) -> tuple[dict[str, Any] | None, str | None, str | None, int]:
     api_key = os.environ.get('OPENROUTER_API_KEY', '').strip()
     if len(api_key) < 10:
-        return None, 'OPENROUTER_API_KEY is not configured'
+        return None, 'OPENROUTER_API_KEY is not configured', None, 0
+    errors = []
+    calls = 0
     try:
-        with httpx.Client(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
-            response = client.post(
-                'https://openrouter.ai/api/v1/chat/completions',
-                headers=_headers(api_key),
-                json=_request_body(prompt, max_tokens, None),
-            )
-        if response.status_code != 200:
-            return None, f'OpenRouter returned HTTP {response.status_code}'
-        choices = response.json().get('choices', [])
-        message = choices[0].get('message', {}) if choices else {}
-        return _parse_json_text(message.get('content')), None
+        with httpx.Client(timeout=httpx.Timeout(8.0, connect=4.0)) as client:
+            for model in _fetch_models(client, api_key, vision=False):
+                try:
+                    calls += 1
+                    response = client.post(
+                        'https://openrouter.ai/api/v1/chat/completions', headers=_headers(api_key),
+                        json=_request_body(model, prompt, max_tokens, None),
+                    )
+                    if response.status_code != 200:
+                        errors.append(f'{model}: HTTP {response.status_code}')
+                        continue
+                    body = response.json()
+                    choices = body.get('choices', [])
+                    content = choices[0].get('message', {}).get('content') if choices else None
+                    parsed = _parse_json_text(content)
+                    if parsed is not None and (validator is None or validator(parsed)):
+                        return parsed, None, body.get('model') or model, calls
+                    errors.append(f'{model}: invalid or incomplete JSON response')
+                except Exception as exc:
+                    errors.append(f'{model}: {type(exc).__name__}')
     except Exception as exc:
-        return None, f'OpenRouter request failed ({type(exc).__name__})'
+        errors.append(f'OpenRouter request failed ({type(exc).__name__})')
+    return None, '; '.join(errors[-5:]) or 'No zero-priced OpenRouter models were available', None, calls
 
 
 async def generate_json(
-    prompt: str, *, max_tokens: int = 4000, image_data_url: str | None = None
-) -> tuple[dict[str, Any] | None, str | None]:
+    prompt: str, *, max_tokens: int = 4000, image_data_url: str | None = None,
+    validator: Callable[[dict[str, Any]], bool] | None = None,
+) -> tuple[dict[str, Any] | None, str | None, str | None, int]:
     api_key = os.environ.get('OPENROUTER_API_KEY', '').strip()
     if len(api_key) < 10:
-        return None, 'OPENROUTER_API_KEY is not configured'
+        return None, 'OPENROUTER_API_KEY is not configured', None, 0
+    errors = []
+    calls = 0
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
-            response = await client.post(
-                'https://openrouter.ai/api/v1/chat/completions',
-                headers=_headers(api_key),
-                json=_request_body(prompt, max_tokens, image_data_url),
-            )
-        if response.status_code != 200:
-            return None, f'OpenRouter returned HTTP {response.status_code}'
-        choices = response.json().get('choices', [])
-        message = choices[0].get('message', {}) if choices else {}
-        return _parse_json_text(message.get('content')), None
+        # Discover models through an authenticated client, then attempt each model in order.
+        async with httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=4.0)) as client:
+            cache_key = (bool(image_data_url),)
+            cached = _MODEL_CACHE.get(cache_key)
+            if cached and time.monotonic() - cached[0] < _CACHE_SECONDS:
+                models = list(cached[1])
+            else:
+                try:
+                    listing = await client.get(
+                        'https://openrouter.ai/api/v1/models', headers=_headers(api_key),
+                        params={'max_price': 0, 'sort': 'most-popular',
+                                'input_modalities': 'image' if image_data_url else 'text'},
+                    )
+                    listing.raise_for_status()
+                    candidates = listing.json().get('data', [])
+                    models = []
+                    for candidate in candidates:
+                        if not isinstance(candidate, dict) or not _pricing_is_free(candidate, vision=bool(image_data_url)):
+                            continue
+                        model_id = candidate.get('id')
+                        if isinstance(model_id, str) and model_id != _ROUTER_MODEL:
+                            models.append(model_id)
+                    models = list(dict.fromkeys(models))
+                    if models:
+                        _MODEL_CACHE[cache_key] = (time.monotonic(), models)
+                except Exception:
+                    models = []
+            for model in models:
+                try:
+                    calls += 1
+                    response = await client.post(
+                        'https://openrouter.ai/api/v1/chat/completions', headers=_headers(api_key),
+                        json=_request_body(model, prompt, max_tokens, image_data_url),
+                    )
+                    if response.status_code != 200:
+                        errors.append(f'{model}: HTTP {response.status_code}')
+                        continue
+                    body = response.json()
+                    choices = body.get('choices', [])
+                    content = choices[0].get('message', {}).get('content') if choices else None
+                    parsed = _parse_json_text(content)
+                    if parsed is not None and (validator is None or validator(parsed)):
+                        return parsed, None, body.get('model') or model, calls
+                    errors.append(f'{model}: invalid or incomplete JSON response')
+                except Exception as exc:
+                    errors.append(f'{model}: {type(exc).__name__}')
     except Exception as exc:
-        return None, f'OpenRouter request failed ({type(exc).__name__})'
+        errors.append(f'OpenRouter request failed ({type(exc).__name__})')
+    return None, '; '.join(errors[-5:]) or 'No zero-priced OpenRouter models were available', None, calls

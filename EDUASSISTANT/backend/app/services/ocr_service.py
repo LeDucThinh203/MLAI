@@ -9,14 +9,13 @@ Module trích xuất thực thể tài liệu học vụ đa phương thức (Mu
 """
 
 import os
-import json
 import time
 import base64
 import random
 from datetime import datetime
-import httpx
-from app.services.ai_service import sanitize_json_string, get_ai_mode
+from app.services.ai_service import get_ai_mode
 from app.services.openrouter_service import generate_json
+from app.services.gemini_generate_service import generate_json as generate_gemini_json
 
 DOCUMENT_PATTERNS = [
     {
@@ -79,143 +78,65 @@ async def extract_document_entities(file_buffer: bytes, file_name: str, user: di
     api_key = os.environ.get('GEMINI_API_KEY')
 
     ai_mode = get_ai_mode()
-    if ai_mode == 'live' and api_key and len(api_key.strip()) > 10 and file_buffer:
-        try:
-            ext = os.path.splitext(file_name)[1].lower()
-            mime_type = 'image/png' if ext == '.png' else ('application/pdf' if ext == '.pdf' else ('image/webp' if ext == '.webp' else 'image/jpeg'))
-            base64_data = base64.b64encode(file_buffer).decode('utf-8')
-
-            prompt_text = """Bạn là hệ thống AI Multimodal Vision OCR thẩm định văn bản học vụ và hành chính Việt Nam (EDUASSISTANT). Hãy đọc kỹ tài liệu này và trích xuất thông tin dưới định dạng JSON:
-{
-  "documentType": "Tên loại giấy tờ (ví dụ: Giấy chứng nhận Cận nghèo, Giấy chứng nhận Mùa hè xanh, Bảng điểm, Quyết định khen thưởng, v.v.)",
-  "studentName": "Họ và tên sinh viên trên giấy tờ",
-  "studentCode": "Mã số sinh viên MSSV (nếu có trên giấy tờ)",
-  "issuingAuthority": "Đơn vị hoặc cơ quan ban hành (ví dụ: UBND Phường..., Đoàn Trường..., Ban Giám Hiệu...)",
-  "issueDate": "Ngày cấp trên văn bản (DD/MM/YYYY)",
-  "certificateNumber": "Số hiệu văn bản hoặc số quyết định",
-  "gpaOrScore": "Điểm số, điểm rèn luyện hoặc mức miễn giảm (nếu có)",
-  "tamperRisk": "LOW hoặc MEDIUM hoặc HIGH (đánh giá dấu hiệu chỉnh sửa, tẩy xóa, ghép ảnh)",
-  "suggestedCategory": "TUITION_DISCOUNT hoặc COMMUNITY_SERVICE hoặc SCHOLARSHIP hoặc GRADE_APPEAL hoặc GENERAL",
-  "suggestedTitle": "Tiêu đề hồ sơ phù hợp",
-  "suggestedDescription": "Mô tả giải trình tóm tắt nội dung hồ sơ",
-  "rawExtractedText": "Đoạn văn tóm tắt 3-5 câu nội dung chính đọc được từ văn bản"
-}
-Chỉ trả về JSON thuần túy, không thêm lời dẫn."""
-
-            candidate_text = None
-            used_model = 'gemini-3.8-flash'
-
-            # Thử qua google-genai SDK
-            try:
-                from google import genai  # type: ignore
-                from google.genai import types  # type: ignore
-                client = genai.Client(api_key=api_key.strip())
-                res = client.models.generate_content(
-                    model='gemini-3.8-flash',
-                    contents=[
-                        prompt_text,
-                        types.Part.from_bytes(data=file_buffer, mime_type=mime_type)
-                    ],
-                    config={'response_mime_type': 'application/json'}
-                )
-                candidate_text = res.text
-            except Exception:
-                # Fallback REST API
-                models_to_try = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']
-                async with httpx.AsyncClient(timeout=20.0) as client:
-                    for m in models_to_try:
-                        try:
-                            used_model = m
-                            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key.strip()}"
-                            resp = await client.post(url, json={
-                                'contents': [{
-                                    'parts': [
-                                        {'text': prompt_text},
-                                        {'inlineData': {'mimeType': mime_type, 'data': base64_data}}
-                                    ]
-                                }],
-                                'generationConfig': {'responseMimeType': 'application/json'}
-                            })
-                            if resp.status_code == 200:
-                                res_json = resp.json()
-                                candidates = res_json.get('candidates', [])
-                                if candidates and 'content' in candidates[0]:
-                                    candidate_text = candidates[0]['content']['parts'][0]['text']
-                                    if candidate_text:
-                                        break
-                        except Exception:
-                            continue
-
-            if candidate_text:
-                clean_json = sanitize_json_string(candidate_text)
-                parsed = json.loads(clean_json)
-                cert_num = parsed.get('certificateNumber') or f"DOC-{random.randint(1000, 9999)}"
-
-                live_ocr_data = {
-                    **parsed,
-                    'certificateNumber': cert_num,
-                    'tamperRisk': parsed.get('tamperRisk', 'LOW'),
-                    'confidenceScore': 0.98,
-                    'confidence': 0.98,
-                    'modeUsed': 'live',
-                    'isLive': True,
-                    'isFallback': False,
-                    'isSynthetic': False,
-                    'extractedEntities': {
-                        'Họ và tên': parsed.get('studentName') or 'Chưa nhận dạng',
-                        'Mã số SV': parsed.get('studentCode') or 'Chưa nhận dạng',
-                        'Số hiệu văn bản': cert_num,
-                        'Cơ quan ban hành': parsed.get('issuingAuthority') or 'Chưa nhận dạng',
-                        'Dấu mộc & Chữ ký': 'Nghi vấn' if parsed.get('tamperRisk') == 'HIGH' else 'Hợp lệ (Đã kiểm tra qua Gemini Vision)',
-                        'Tình trạng tính toàn vẹn': 'Có nguy cơ tẩy xóa' if parsed.get('tamperRisk') == 'HIGH' else 'Toàn vẹn 100%'
-                    }
-                }
-
-                return {
-                    'success': True,
-                    'provider': f"Google Gemini Multimodal Vision ({used_model} - Live)",
-                    'modeUsed': 'live',
-                    'isLive': True,
-                    'isFallback': False,
-                    'isSynthetic': False,
-                    'durationMs': round((time.time() - start_time) * 1000),
-                    'data': live_ocr_data
-                }
-        except Exception as err:
-            print(f'⚠️ Gemini Vision live call fallback: {err}')
-
-    # Gemini is primary. If unavailable, let OpenRouter attempt vision OCR
-    # before synthesizing any demo values.
     if ai_mode == 'live' and file_buffer:
         ext = os.path.splitext(file_name)[1].lower()
         mime_type = 'image/png' if ext == '.png' else ('application/pdf' if ext == '.pdf' else ('image/webp' if ext == '.webp' else 'image/jpeg'))
         prompt = (
-            'Đọc tài liệu học vụ Việt Nam và trích xuất nội dung nhìn thấy. Không khẳng định tài liệu thật, '
-            'không kết luận pháp lý. Trả JSON gồm documentType, studentName, studentCode, issuingAuthority, '
-            'issueDate, certificateNumber, gpaOrScore, tamperRisk (LOW/MEDIUM/HIGH), suggestedCategory, '
-            'suggestedTitle, suggestedDescription, rawExtractedText. Không đoán phần không đọc được.'
+            'Read this Vietnamese academic document and extract only text that is visible. '
+            'Do not assert authenticity or legal conclusions. Return JSON fields documentType, studentName, '
+            'studentCode, issuingAuthority, issueDate, certificateNumber, gpaOrScore, tamperRisk '
+            '(LOW/MEDIUM/HIGH), suggestedCategory, suggestedTitle, suggestedDescription, rawExtractedText. '
+            'Do not guess unreadable content.'
         )
-        image_data_url = f'data:{mime_type};base64,{base64.b64encode(file_buffer).decode("ascii")}'
-        parsed, _ = await generate_json(prompt, max_tokens=2500, image_data_url=image_data_url)
-        if isinstance(parsed, dict) and isinstance(parsed.get('rawExtractedText'), str):
-            data = {
+        validator = lambda value: isinstance(value.get('rawExtractedText'), str)
+        parsed = None
+        used_provider = None
+        used_model = None
+        if api_key and len(api_key.strip()) > 10:
+            parsed, used_model, _, _ = await generate_gemini_json(
+                prompt, api_key.strip(), max_tokens=2500, validator=validator,
+                image_bytes=file_buffer, mime_type=mime_type,
+            )
+            if parsed is not None:
+                used_provider = 'Google Gemini'
+        if parsed is None:
+            image_data_url = f'data:{mime_type};base64,{base64.b64encode(file_buffer).decode("ascii")}'
+            parsed, _, used_model, _ = await generate_json(
+                prompt, max_tokens=2500, image_data_url=image_data_url, validator=validator,
+            )
+            if parsed is not None:
+                used_provider = 'OpenRouter'
+        if parsed is not None:
+            cert_num = parsed.get('certificateNumber') or None
+            confidence = parsed.get('confidence', 0.0)
+            if not isinstance(confidence, (int, float)) or isinstance(confidence, bool) or not 0 <= confidence <= 1:
+                confidence = 0.0
+            provider_label = f'{used_provider} ({used_model})' if used_model else used_provider
+            live_data = {
                 **parsed,
-                'confidenceScore': 0.0, 'confidence': 0.0,
-                'modeUsed': 'live', 'provider': 'OpenRouter',
-                'isLive': True, 'isFallback': False, 'isSynthetic': False,
+                'certificateNumber': cert_num,
+                'tamperRisk': parsed.get('tamperRisk') if parsed.get('tamperRisk') in ('LOW', 'MEDIUM', 'HIGH') else 'MEDIUM',
+                'confidenceScore': confidence,
+                'confidence': confidence,
+                'modeUsed': 'live',
+                'provider': provider_label,
+                'model': used_model,
+                'isLive': True,
+                'isFallback': False,
+                'isSynthetic': False,
                 'extractedEntities': {
-                    'Họ và tên': parsed.get('studentName') or 'Chưa nhận dạng',
-                    'Mã số SV': parsed.get('studentCode') or 'Chưa nhận dạng',
-                    'Số hiệu văn bản': parsed.get('certificateNumber') or 'Chưa nhận dạng',
-                    'Cơ quan ban hành': parsed.get('issuingAuthority') or 'Chưa nhận dạng',
-                    'Dấu mộc & Chữ ký': 'Cần cán bộ kiểm tra',
-                    'Tình trạng tính toàn vẹn': 'Chưa được xác minh',
+                    'H? v? t?n': parsed.get('studentName') or 'Ch?a nh?n d?ng',
+                    'M? s? SV': parsed.get('studentCode') or 'Ch?a nh?n d?ng',
+                    'S? hi?u v?n b?n': cert_num or 'Ch?a nh?n d?ng',
+                    'C? quan ban h?nh': parsed.get('issuingAuthority') or 'Ch?a nh?n d?ng',
+                    'D?u m?c & Ch? k?': 'C?n c?n b? ki?m tra',
+                    'T?nh tr?ng t?nh to?n v?n': 'Ch?a ???c x?c minh',
                 },
             }
             return {
-                'success': True, 'provider': 'OpenRouter', 'modeUsed': 'live',
-                'isLive': True, 'isFallback': False, 'isSynthetic': False,
-                'durationMs': round((time.time() - start_time) * 1000), 'data': data,
+                'success': True, 'provider': provider_label, 'model': used_model,
+                'modeUsed': 'live', 'isLive': True, 'isFallback': False, 'isSynthetic': False,
+                'durationMs': round((time.time() - start_time) * 1000), 'data': live_data,
             }
 
     # Intelligent Fallback / Mock / Cache

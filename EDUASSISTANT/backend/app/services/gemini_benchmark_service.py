@@ -4,9 +4,8 @@ import json
 import os
 from typing import Any
 
-import httpx
-
 from app.services.openrouter_service import generate_json_sync
+from app.services.gemini_generate_service import generate_json_sync as generate_gemini_json_sync
 
 
 FALLBACK_MESSAGE = 'Both live AI providers failed; using prepared synthetic benchmark fixtures.'
@@ -82,44 +81,29 @@ def enrich_benchmark_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
 
     api_key = os.environ.get('GEMINI_API_KEY', '').strip()
     if len(api_key) >= 10:
-        models = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']
-        try:
-            with httpx.Client(timeout=httpx.Timeout(12.0, connect=4.0)) as client:
-                for model in models:
-                    try:
-                        api_calls += 1
-                        response = client.post(
-                            f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
-                            params={'key': api_key},
-                            json={'contents': [{'parts': [{'text': prompt}]}], 'generationConfig': {
-                                'responseMimeType': 'application/json', 'temperature': 0.0, 'maxOutputTokens': 6000}},
-                        )
-                        if response.status_code != 200:
-                            last_error = f'Gemini returned HTTP {response.status_code}'
-                            continue
-                        parsed = json.loads(''.join(part.get('text', '') for part in
-                            response.json().get('candidates', [{}])[0].get('content', {}).get('parts', [])).strip())
-                        by_id = _validated_results(parsed, cases)
-                        if by_id is None:
-                            last_error = 'Gemini returned incomplete or invalid fields'
-                            continue
-                        _apply_live_results(cases, by_id, 'Google Gemini', model)
-                        return {'mode': 'GEMINI_LIVE', 'provider': 'Google Gemini', 'model': model,
-                                'apiCalls': api_calls, 'fallbackReason': None}
-                    except Exception as exc:
-                        last_error = f'Gemini request failed ({type(exc).__name__})'
-        except Exception as exc:
-            last_error = f'Gemini request failed ({type(exc).__name__})'
+        parsed, model, api_calls, gemini_error = generate_gemini_json_sync(
+            prompt, api_key, max_tokens=6000,
+            validator=lambda value: _validated_results(value, cases) is not None,
+        )
+        by_id = _validated_results(parsed, cases)
+        if by_id is not None and model:
+            _apply_live_results(cases, by_id, 'Google Gemini', model)
+            return {'mode': 'GEMINI_LIVE', 'provider': 'Google Gemini', 'model': model,
+                    'apiCalls': api_calls, 'fallbackReason': None}
+        last_error = gemini_error or last_error
     else:
         last_error = 'GEMINI_API_KEY is not configured'
 
     openrouter_key = os.environ.get('OPENROUTER_API_KEY', '').strip()
     if len(openrouter_key) >= 10:
-        api_calls += 1
-        parsed, openrouter_error = generate_json_sync(prompt, max_tokens=6000)
+        parsed, openrouter_error, openrouter_model, openrouter_calls = generate_json_sync(
+            prompt, max_tokens=6000,
+            validator=lambda value: _validated_results(value, cases) is not None,
+        )
+        api_calls += openrouter_calls
         by_id = _validated_results(parsed, cases)
         if by_id is not None:
-            model = os.environ.get('OPENROUTER_MODEL', 'openrouter/free').strip() or 'openrouter/free'
+            model = openrouter_model or 'openrouter/free'
             _apply_live_results(cases, by_id, 'OpenRouter', model)
             return {'mode': 'OPENROUTER_LIVE', 'provider': 'OpenRouter', 'model': model,
                     'apiCalls': api_calls, 'fallbackReason': None}

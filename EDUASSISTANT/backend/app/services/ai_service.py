@@ -11,12 +11,11 @@ Module tích hợp Google Gemini AI cho quy trình cấp giấy xác nhận NVQS
 """
 
 import os
-import json
 import time
 from datetime import datetime, timezone
-import httpx
 from app.db.db import db_service
 from app.services.openrouter_service import generate_json
+from app.services.gemini_generate_service import generate_json as generate_gemini_json
 
 current_ai_mode = os.environ.get('AI_MODE', 'live')
 
@@ -99,54 +98,23 @@ Hãy phản hồi dưới dạng JSON duy nhất với cấu trúc:
 }}
 Chỉ trả về JSON hợp lệ. Không đưa ra kết luận pháp lý."""
 
-            raw_response = None
-            used_model = 'gemini-3.8-flash'
-
-            # Thử qua google-genai SDK nếu có
-            try:
-                from google import genai  # type: ignore
-                client = genai.Client(api_key=api_key.strip())
-                res = client.models.generate_content(
-                    model='gemini-3.8-flash',
-                    contents=prompt_text,
-                    config={'response_mime_type': 'application/json'}
-                )
-                raw_response = res.text
-            except Exception:
-                # Fallback REST API
-                models_to_try = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']
-                async with httpx.AsyncClient(timeout=15.0) as http_client:
-                    for m in models_to_try:
-                        try:
-                            used_model = m
-                            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key.strip()}"
-                            resp = await http_client.post(url, json={
-                                'contents': [{'parts': [{'text': prompt_text}]}],
-                                'generationConfig': {'responseMimeType': 'application/json'}
-                            })
-                            if resp.status_code == 200:
-                                res_json = resp.json()
-                                candidates = res_json.get('candidates', [])
-                                if candidates and 'content' in candidates[0]:
-                                    raw_response = candidates[0]['content']['parts'][0]['text']
-                                    if raw_response:
-                                        break
-                        except Exception:
-                            continue
-
-            if raw_response:
-                clean_json = sanitize_json_string(raw_response)
-                parsed = json.loads(clean_json)
-                extracted_result = {
-                    **parsed,
-                    'model': used_model,
-                    'provider': f"Google Gemini ({used_model} - Live)",
-                    'isLive': True,
-                    'isFallback': False,
-                    'extractedAt': datetime.now(timezone.utc).isoformat()
-                }
-            else:
-                raise RuntimeError('Gemini API không phản hồi nội dung trích xuất.')
+            parsed, used_model, _, gemini_error = await generate_gemini_json(
+                prompt_text, api_key.strip(), max_tokens=2000,
+                validator=lambda value: (isinstance(value.get('aiAnalysis'), str)
+                    and isinstance(value.get('confidence'), (int, float))
+                    and not isinstance(value.get('confidence'), bool)
+                    and 0 <= value['confidence'] <= 1),
+            )
+            if parsed is None or used_model is None:
+                raise RuntimeError(gemini_error or 'No Gemini model returned valid extraction data.')
+            extracted_result = {
+                **parsed,
+                'model': used_model,
+                'provider': f"Google Gemini ({used_model} - Live)",
+                'isLive': True,
+                'isFallback': False,
+                'extractedAt': datetime.now(timezone.utc).isoformat()
+            }
 
         elif current_ai_mode == 'cache':
             cached = EXTRACTION_CACHE['MILITARY_SERVICE_CONFIRMATION']
@@ -181,7 +149,13 @@ Chỉ trả về JSON hợp lệ. Không đưa ra kết luận pháp lý."""
                 f"Tiêu đề: {case_data.get('title')}\nNội dung: {case_data.get('description')}\n"
                 f"Người nộp: {actor.get('name') or actor.get('username') or 'Sinh viên'}"
             )
-            parsed, openrouter_error = await generate_json(prompt, max_tokens=1200)
+            parsed, openrouter_error, openrouter_model, _ = await generate_json(
+                prompt, max_tokens=1200,
+                validator=lambda value: (isinstance(value.get('aiAnalysis'), str)
+                    and isinstance(value.get('confidence'), (int, float))
+                    and not isinstance(value.get('confidence'), bool)
+                    and 0 <= value['confidence'] <= 1),
+            )
             if (isinstance(parsed, dict) and isinstance(parsed.get('aiAnalysis'), str)
                     and isinstance(parsed.get('confidence'), (int, float))
                     and not isinstance(parsed.get('confidence'), bool)
@@ -189,7 +163,7 @@ Chỉ trả về JSON hợp lệ. Không đưa ra kết luận pháp lý."""
                 extracted_result = {
                     **parsed,
                     'provider': 'OpenRouter',
-                    'model': os.environ.get('OPENROUTER_MODEL', 'openrouter/free'),
+                    'model': openrouter_model,
                     'isLive': True, 'isFallback': False, 'isSynthetic': False,
                     'extractedAt': datetime.now(timezone.utc).isoformat(),
                 }

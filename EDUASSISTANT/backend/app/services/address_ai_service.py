@@ -14,15 +14,27 @@ Tuân thủ nguyên tắc:
 
 import os
 import re
-import json
 import math
 import time
 import unicodedata
 from typing import Dict, Any, List, Tuple, Optional
-import httpx
-
-from app.services.ai_service import get_ai_mode, sanitize_json_string
+from app.services.ai_service import get_ai_mode
 from app.services.openrouter_service import generate_json
+from app.services.gemini_generate_service import generate_json as generate_gemini_json
+
+
+def _valid_address_ai_result(parsed: dict) -> bool:
+    required = ('houseNumber', 'street', 'wardCommune', 'district', 'provinceCity', 'normalizedAddress')
+    confidence = parsed.get('confidence')
+    return (
+        all(key in parsed for key in required)
+        and all(parsed[key] is None or isinstance(parsed[key], str) for key in required[:-1])
+        and isinstance(parsed['normalizedAddress'], str)
+        and isinstance(parsed.get('missingFields'), list)
+        and isinstance(parsed.get('ambiguousFields'), list)
+        and isinstance(confidence, (int, float)) and not isinstance(confidence, bool)
+        and math.isfinite(confidence) and 0 <= confidence <= 1
+    )
 
 
 def remove_vietnamese_tones(text: str) -> str:
@@ -239,153 +251,41 @@ async def normalize_student_address(
         return fallback_res
 
     # Nếu AI_MODE == 'live' và có API key hợp lệ
-    if mode == 'live' and len(api_key) <= 10:
+    if mode == 'live':
         prompt = (
-            'Chuan hoa cu phap dia chi Viet Nam, chi trich xuat du lieu co trong dau vao; '
-            'khong tu dien thanh phan con thieu va khong dua ra ket luan phap ly. '
-            'Tra ve JSON voi houseNumber, street, wardCommune, district, provinceCity, '
-            'normalizedAddress, missingFields, ambiguousFields, confidence. Dia chi: ' + raw_address
+            'Normalize the syntax of this Vietnamese address. Extract only stated information; '
+            'do not fill in missing parts or make legal conclusions. Return JSON with houseNumber, '
+            'street, wardCommune, district, provinceCity, normalizedAddress, missingFields, '
+            'ambiguousFields, confidence. Address: ' + raw_address
         )
-        parsed, _ = await generate_json(prompt, max_tokens=1000)
-        if isinstance(parsed, dict):
-            confidence = parsed.get('confidence', 0)
-            required = ('houseNumber', 'street', 'wardCommune', 'district', 'provinceCity', 'normalizedAddress')
-            if (all(key in parsed for key in required)
-                    and all(parsed[key] is None or isinstance(parsed[key], str) for key in required[:-1])
-                    and isinstance(parsed['normalizedAddress'], str)
-                    and isinstance(parsed.get('missingFields'), list)
-                    and isinstance(parsed.get('ambiguousFields'), list)
-                    and isinstance(confidence, (int, float)) and not isinstance(confidence, bool)
-                    and math.isfinite(confidence) and 0 <= confidence <= 1):
+        if len(api_key) > 10:
+            parsed, used_model, _, _ = await generate_gemini_json(
+                prompt, api_key, max_tokens=1000, validator=_valid_address_ai_result,
+            )
+            if isinstance(parsed, dict) and _valid_address_ai_result(parsed):
+                required = ('houseNumber', 'street', 'wardCommune', 'district', 'provinceCity', 'normalizedAddress')
                 return {
                     **{key: parsed[key] for key in required},
                     'missingFields': parsed['missingFields'], 'ambiguousFields': parsed['ambiguousFields'],
-                    'confidence': float(confidence), 'modeUsed': 'live', 'isLive': True,
-                    'isFallback': False, 'isSynthetic': False, 'provider': 'OpenRouter',
-                    'modelUsed': os.environ.get('OPENROUTER_MODEL', 'openrouter/free'),
+                    'confidence': float(parsed['confidence']), 'modeUsed': 'live', 'isLive': True,
+                    'isFallback': False, 'isSynthetic': False, 'provider': 'Google Gemini',
+                    'modelUsed': used_model,
                     'durationMs': round((time.time() - start_time) * 1000, 2),
                 }
 
-    if mode == 'live' and len(api_key) > 10:
-        prompt_text = f"""Bạn là bộ chuẩn hóa địa chỉ hành chính Việt Nam (EDUASSISTANT Address Normalizer).
-Nhiệm vụ: Phân tích địa chỉ sinh viên tự khai dưới đây để phục vụ hồ sơ cấp Giấy xác nhận tạm hoãn NVQS:
-"{raw_address}"
-
-Quy tắc bắt buộc:
-1. Trích xuất:
-   - houseNumber: Số nhà (VD: "12/4", "20A") hoặc null nếu thiếu
-   - street: Tên đường/thôn/ấp/khu phố (viết hoa chữ cái đầu chuẩn tiếng Việt) hoặc null nếu thiếu
-   - wardCommune: Tên Phường/Xã/Thị trấn (VD: "Đa Kao", "Phường 12") hoặc null nếu thiếu
-   - district: Tên Quận/Huyện/Thị xã/Thành phố thuộc tỉnh (VD: "Quận 1", "TP. Thủ Đức") hoặc null nếu không rõ
-   - provinceCity: Tên Tỉnh/Thành phố trực thuộc TW (VD: "TP. Hồ Chí Minh", "Hà Nội") hoặc null nếu thiếu
-2. normalizedAddress: Chuỗi địa chỉ ghép chuẩn mực theo thứ tự: Số nhà Đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố. Viết hoa chuẩn tiếng Việt, có dấu phẩy ngăn cách.
-3. missingFields: Danh sách các trường bị thiếu trong tập ["houseNumber", "street", "wardCommune", "district", "provinceCity"].
-4. ambiguousFields: Danh sách các trường mơ hồ, viết tắt không thể đoán chắc.
-5. confidence: Điểm số tin cậy từ 0.00 đến 1.00.
-6. LƯU Ý AN TOÀN: Tuyệt đối không phán xét quyền hoãn NVQS hay tính pháp lý. Chỉ chuẩn hóa cú pháp địa chỉ.
-
-Trả về DUY NHẤT một JSON hợp lệ:
-{{
-  "houseNumber": "...",
-  "street": "...",
-  "wardCommune": "...",
-  "district": "...",
-  "provinceCity": "...",
-  "normalizedAddress": "...",
-  "missingFields": [],
-  "ambiguousFields": [],
-  "confidence": 0.96
-}}"""
-
-        try:
-            raw_json_str = None
-            try:
-                from google import genai  # type: ignore
-                client = genai.Client(api_key=api_key)
-                res = client.models.generate_content(
-                    model='gemini-3.8-flash',
-                    contents=prompt_text,
-                    config={'response_mime_type': 'application/json'}
-                )
-                raw_json_str = res.text
-                used_model = 'gemini-3.8-flash'
-            except Exception:
-                models_to_try = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']
-                async with httpx.AsyncClient(timeout=12.0) as http_client:
-                    for m in models_to_try:
-                        try:
-                            used_model = m
-                            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
-                            resp = await http_client.post(url, json={
-                                'contents': [{'parts': [{'text': prompt_text}]}],
-                                'generationConfig': {'responseMimeType': 'application/json'}
-                            })
-                            if resp.status_code == 200:
-                                res_json = resp.json()
-                                candidates = res_json.get('candidates', [])
-                                if candidates and 'content' in candidates[0]:
-                                    raw_json_str = candidates[0]['content']['parts'][0]['text']
-                                    if raw_json_str:
-                                        break
-                        except Exception:
-                            continue
-
-            if raw_json_str:
-                parsed = json.loads(sanitize_json_string(raw_json_str))
-                confidence_raw = parsed.get('confidence')
-                confidence = float(confidence_raw) if confidence_raw is not None else 0.0
-                if not math.isfinite(confidence) or not 0.0 <= confidence <= 1.0:
-                    raise ValueError('AI confidence is outside the valid range.')
-                return {
-                    'houseNumber': parsed.get('houseNumber'),
-                    'street': parsed.get('street'),
-                    'wardCommune': parsed.get('wardCommune'),
-                    'district': parsed.get('district'),
-                    'provinceCity': parsed.get('provinceCity'),
-                    'normalizedAddress': parsed.get('normalizedAddress') or raw_address,
-                    'missingFields': parsed.get('missingFields') or [],
-                    'ambiguousFields': parsed.get('ambiguousFields') or [],
-                    'confidence': confidence,
-                    'modeUsed': 'live',
-                    'isLive': True,
-                    'isFallback': False,
-                    'isSynthetic': False,
-                    'modelUsed': used_model,
-                    'durationMs': round((time.time() - start_time) * 1000, 2)
-                }
-        except Exception:
-            is_fallback = True
-
-        # Gemini is primary. Try OpenRouter's free-model router before the
-        # deterministic parser; this only extracts address text and never decides policy.
-        if is_fallback or not raw_json_str:
-            openrouter_prompt = (
-                'Chuẩn hóa cú pháp địa chỉ Việt Nam, chỉ trích xuất dữ liệu có trong đầu vào; '
-                'không tự điền thành phần còn thiếu và không đưa ra kết luận pháp lý. '
-                'Trả về JSON với houseNumber, street, wardCommune, district, provinceCity, '
-                'normalizedAddress, missingFields, ambiguousFields, confidence. Địa chỉ: ' + raw_address
-            )
-            parsed, _ = await generate_json(openrouter_prompt, max_tokens=1000)
-            if isinstance(parsed, dict):
-                confidence = parsed.get('confidence', 0)
-                required = ('houseNumber', 'street', 'wardCommune', 'district', 'provinceCity', 'normalizedAddress')
-                if (all(key in parsed for key in required)
-                        and all(parsed[key] is None or isinstance(parsed[key], str) for key in required[:-1])
-                        and isinstance(parsed['normalizedAddress'], str)
-                        and isinstance(parsed.get('missingFields'), list)
-                        and isinstance(parsed.get('ambiguousFields'), list)
-                        and isinstance(confidence, (int, float)) and not isinstance(confidence, bool)
-                        and math.isfinite(confidence) and 0 <= confidence <= 1):
-                    return {
-                        **{key: parsed[key] for key in required},
-                        'missingFields': parsed['missingFields'],
-                        'ambiguousFields': parsed['ambiguousFields'],
-                        'confidence': float(confidence),
-                        'modeUsed': 'live', 'isLive': True, 'isFallback': False,
-                        'isSynthetic': False, 'provider': 'OpenRouter',
-                        'modelUsed': os.environ.get('OPENROUTER_MODEL', 'openrouter/free'),
-                        'durationMs': round((time.time() - start_time) * 1000, 2),
-                    }
+        parsed, _, openrouter_model, _ = await generate_json(
+            prompt, max_tokens=1000, validator=_valid_address_ai_result,
+        )
+        if isinstance(parsed, dict) and _valid_address_ai_result(parsed):
+            required = ('houseNumber', 'street', 'wardCommune', 'district', 'provinceCity', 'normalizedAddress')
+            return {
+                **{key: parsed[key] for key in required},
+                'missingFields': parsed['missingFields'], 'ambiguousFields': parsed['ambiguousFields'],
+                'confidence': float(parsed['confidence']), 'modeUsed': 'live', 'isLive': True,
+                'isFallback': False, 'isSynthetic': False, 'provider': 'OpenRouter',
+                'modelUsed': openrouter_model,
+                'durationMs': round((time.time() - start_time) * 1000, 2),
+            }
 
     # Fallback deterministic
     det_res = deterministic_parse_address(raw_address)

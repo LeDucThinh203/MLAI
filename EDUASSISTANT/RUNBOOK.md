@@ -58,10 +58,13 @@ DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
 DATA_DIR=backend/app/db
 AI_MODE=mock
 GEMINI_API_KEY=your_gemini_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
 JWT_SECRET=<generate-a-random-secret-at-least-32-characters>
 REFRESH_SECRET=<generate-a-different-random-secret-at-least-32-characters>
 SIGNATURE_KEY=<generate-a-random-secret-at-least-32-characters>
 ```
+
+Để bật AI live, đặt `AI_MODE=live`. Hệ thống lấy các model Gemini có hỗ trợ `generateContent`, thử tuần tự đến khi có phản hồi JSON hợp lệ; sau đó mới lấy danh sách model OpenRouter có giá đầu vào và đầu ra bằng 0, thử lần lượt. Chỉ khi không model nào trả dữ liệu hợp lệ thì mới dùng dữ liệu mẫu.
 
 ---
 
