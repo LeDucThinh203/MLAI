@@ -43,7 +43,7 @@ _KEYS = {
     "academicstatus": "academicStatus", "coursestartdate": "courseStartDate",
     "courseenddate": "courseEndDate", "currenttermactive": "currentTermActive",
     "hascurrentschedule": "hasCurrentSchedule", "registeredpermanentaddress": "registeredPermanentAddress",
-    "faculty": "faculty",
+    "faculty": "faculty", "recordstatus": "recordStatus", "updatedby": "updatedBy",
     "currentthreshold": "currentThreshold", "minthreshold": "minThreshold",
     "maxthreshold": "maxThreshold", "stepsize": "stepSize",
     "oldthreshold": "oldThreshold", "newthreshold": "newThreshold",
