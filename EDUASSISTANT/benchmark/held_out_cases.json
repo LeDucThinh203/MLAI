@@ -12,7 +12,7 @@
       "username": "student1",
       "academicStatus": "ACTIVE",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true,
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
@@ -60,7 +60,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -107,7 +107,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -154,7 +154,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -201,7 +201,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -248,7 +248,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -297,7 +297,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -346,7 +346,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -391,7 +391,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -437,7 +437,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -482,7 +482,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -529,7 +529,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -576,7 +576,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -623,7 +623,7 @@
       "academicStatus": "SUSPENDED",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": false,
       "hasCurrentSchedule": false
     },
@@ -670,7 +670,7 @@
       "academicStatus": "WITHDRAWN",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": false,
       "hasCurrentSchedule": false
     },
@@ -717,7 +717,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -764,7 +764,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },
@@ -822,7 +822,7 @@
       "academicStatus": "ACTIVE",
       "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       "courseStartDate": "2022-09-05",
-      "courseEndDate": "2026-06-30",
+      "courseEndDate": "2027-06-30",
       "currentTermActive": true,
       "hasCurrentSchedule": true
     },

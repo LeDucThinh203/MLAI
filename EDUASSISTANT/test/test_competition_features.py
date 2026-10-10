@@ -120,7 +120,6 @@ def run_tests():
         # ----------------------------------------------------
         print("\n[TEST 1-3] Kiểm tra Fail-Safe: Mock / Cache / Fallback KHÔNG ĐƯỢC Auto-Approve", flush=True)
         from app.services.rule_engine import evaluate_case
-        from app.services.ai_service import set_ai_mode
 
         stu_user_dict = {
             "id": "SV001",
@@ -142,6 +141,8 @@ def run_tests():
             },
             "institutionalFacts": {
                 "academicStatus": "ACTIVE",
+                "courseStartDate": "2022-09-05",
+                "courseEndDate": "2027-06-30",
                 "currentTermActive": True,
                 "hasCurrentSchedule": True,
                 "studentCode": "SV001",
@@ -183,32 +184,34 @@ def run_tests():
             }]
         }
 
-        # 1. Mock mode
-        set_ai_mode("mock")
-        res_mock = evaluate_case(valid_case_dict, student_user=stu_user_dict)
+        # 1. Explicit mock provenance (no mutation of global AI mode)
+        res_mock = evaluate_case(valid_case_dict, student_user=stu_user_dict, ai_context={
+            "modeUsed": "mock", "isLive": False, "isFallback": False, "isSynthetic": True
+        })
         record_assertion(
             "Valid evidence nhưng AI mode=mock -> ESCALATE_TO_HUMAN & FACT_UNKNOWN",
             res_mock["decision"] == "ESCALATE_TO_HUMAN" and res_mock["escalationReason"] == "FACT_UNKNOWN" and "mock" in res_mock["explanation"].lower()
         )
 
-        # 2. Cache mode
-        set_ai_mode("cache")
-        res_cache = evaluate_case(valid_case_dict, student_user=stu_user_dict)
+        # 2. Explicit cache provenance
+        res_cache = evaluate_case(valid_case_dict, student_user=stu_user_dict, ai_context={
+            "modeUsed": "cache", "isLive": False, "isFallback": False, "isSynthetic": False
+        })
         record_assertion(
             "Valid evidence nhưng AI mode=cache -> ESCALATE_TO_HUMAN & FACT_UNKNOWN",
             res_cache["decision"] == "ESCALATE_TO_HUMAN" and res_cache["escalationReason"] == "FACT_UNKNOWN" and "cache" in res_cache["explanation"].lower()
         )
 
         # 3. Live mode but fallback occurred
-        set_ai_mode("live")
         case_fallback = dict(valid_case_dict)
         case_fallback["aiMetadata"] = {"fallbackOccurred": True}
-        res_fallback = evaluate_case(case_fallback, student_user=stu_user_dict)
+        res_fallback = evaluate_case(case_fallback, student_user=stu_user_dict, ai_context={
+            "modeUsed": "live", "isLive": True, "isFallback": True, "isSynthetic": False
+        })
         record_assertion(
             "AI mode=live nhưng fallbackOccurred -> ESCALATE_TO_HUMAN & FACT_UNKNOWN",
             res_fallback["decision"] == "ESCALATE_TO_HUMAN" and res_fallback["escalationReason"] == "FACT_UNKNOWN"
         )
-        set_ai_mode("mock")
 
         # ----------------------------------------------------
         # TEST 4-6: Human Review actions, Override, Stop

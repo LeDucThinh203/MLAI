@@ -111,7 +111,9 @@ def evaluate_case(
     # =========================================================================
     inst_facts = case_data.get('authoritativeInstitutionalFacts') or case_data.get('institutionalFacts') or {}
     student_id = inst_facts.get('studentId') or student_user.get('id')
-    auth_student_code = inst_facts.get('studentCode') or student_user.get('studentCode') or student_user.get('username')
+    # A login name is not an authoritative student code unless the identity
+    # system has explicitly stored it in studentCode.
+    auth_student_code = inst_facts.get('studentCode') or student_user.get('studentCode')
     auth_full_name = inst_facts.get('fullName') or student_user.get('fullName')
 
     raw_academic_status = inst_facts.get('academicStatus') if inst_facts.get('academicStatus') is not None else student_user.get('academicStatus')
@@ -188,14 +190,13 @@ def evaluate_case(
     # AI Provenance Resolution (Thread-Safe Context)
     # Thứ tự ưu tiên: ai_context -> case_data['aiMetadata'] -> ai_address['provenance'] -> ocr_data
     # -------------------------------------------------------------------------
-    from app.services.ai_service import get_ai_mode
     ctx = ai_context if isinstance(ai_context, dict) else {}
     ai_meta = case_data.get('aiMetadata') or ai_address.get('provenance') or (ocr_data if isinstance(ocr_data, dict) else {}) or {}
 
-    active_env_mode = get_ai_mode()
-    mode_used = str(ctx.get('modeUsed') or ai_meta.get('modeUsed') or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('modeUsed')) or active_env_mode)
-
-    is_live = bool(ctx.get('isLive') if 'isLive' in ctx else (ai_meta.get('isLive', False) or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('isLive', False)) or (mode_used == 'live' and not ai_meta.get('isFallback', False))))
+    # Provenance must be supplied by the extraction result/context. Absent
+    # evidence fails closed; global process state cannot prove a live AI call.
+    mode_used = str(ctx.get('modeUsed') or ai_meta.get('modeUsed') or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('modeUsed')) or '')
+    is_live = bool(ctx.get('isLive') if 'isLive' in ctx else (ai_meta.get('isLive', False) or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('isLive', False))))
     if mode_used != 'live':
         is_live = False
     is_fallback = bool(ctx.get('isFallback') if 'isFallback' in ctx else (ai_meta.get('isFallback', False) or ai_meta.get('fallbackOccurred', False) or (ocr_data and isinstance(ocr_data, dict) and ocr_data.get('isFallback', False))))
@@ -209,7 +210,9 @@ def evaluate_case(
     norm_auth_name = normalize_str(auth_full_name or '')
     norm_req_name = normalize_str(req_full_name or '')
 
-    code_match = not norm_req_code or not norm_auth_code or (norm_req_code == norm_auth_code) or (norm_req_code in norm_auth_code) or (norm_auth_code in norm_req_code)
+    # Student codes are authoritative identifiers. Missing values and substring
+    # matches must never establish ownership.
+    code_match = bool(norm_req_code and norm_auth_code and norm_req_code == norm_auth_code)
     name_match = not norm_req_name or not norm_auth_name or (norm_req_name == norm_auth_name) or (norm_req_name in norm_auth_name) or (norm_auth_name in norm_req_name)
 
     # Kiểm tra thêm nếu có OCR tài liệu tùy thân đính kèm
@@ -287,7 +290,27 @@ def evaluate_case(
     needs_officer_review = False
     auth_reason = ""
 
-    if academic_status in ('SUSPENDED', 'WITHDRAWN', 'GRADUATED', 'UNKNOWN'):
+    def parse_course_date(value):
+        if not isinstance(value, str):
+            return None
+        try:
+            return datetime.strptime(value.strip(), '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            return None
+
+    start_date = parse_course_date(course_start)
+    end_date = parse_course_date(course_end)
+    today = datetime.utcnow().date()
+    if not course_start or not course_end:
+        needs_officer_review = True
+        auth_reason = 'Thiếu mốc bắt đầu hoặc kết thúc khóa học trong hồ sơ đào tạo của trường'
+    elif not start_date or not end_date or start_date > end_date:
+        needs_officer_review = True
+        auth_reason = 'Mốc thời gian khóa học không hợp lệ, cần cán bộ xác minh'
+    elif today < start_date or today > end_date:
+        needs_officer_review = True
+        auth_reason = 'Dữ liệu đào tạo nằm ngoài khoảng khóa học được nhà trường ghi nhận, cần cán bộ xác minh'
+    elif academic_status in ('SUSPENDED', 'WITHDRAWN', 'GRADUATED', 'UNKNOWN'):
         needs_officer_review = True
         status_label = {
             'SUSPENDED': 'Đang bị tạm đình chỉ học tập / bảo lưu',
@@ -308,7 +331,7 @@ def evaluate_case(
     discrepancies.append({
         'field': 'Tình trạng đào tạo & học vụ',
         'studentClaim': 'Đang học tập bình thường',
-        'institutionalFact': f"Trạng thái: {academic_status} | HK hiện tại: {current_term_active} | Thời khóa biểu: {has_schedule}",
+        'institutionalFact': f"Trạng thái: {academic_status} | Khóa học: {course_start} → {course_end} | HK hiện tại: {current_term_active} | Thời khóa biểu: {has_schedule}",
         'match': not needs_officer_review,
         'note': 'Đủ điều kiện đào tạo tiêu chuẩn' if not needs_officer_review else auth_reason
     })
@@ -539,5 +562,5 @@ def evaluate_case(
             'confidence': confidence_score
         },
         'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
-        'suggestedAction': 'Hệ thống đã tự động xuất Giấy xác nhận sinh viên phục vụ tạm hoãn NVQS có chữ ký số HMAC-SHA256.'
+        'suggestedAction': 'Hệ thống đã tự động xử lý theo workflow nội bộ và tạo mã xác thực toàn vẹn HMAC-SHA256.'
     }

@@ -40,7 +40,7 @@ HARNESS_CASES = [
             'username': 'student1',
             'academicStatus': 'ACTIVE',
             'courseStartDate': '2022-09-05',
-            'courseEndDate': '2026-06-30',
+            'courseEndDate': '2027-06-30',
             'currentTermActive': True,
             'hasCurrentSchedule': True,
             'registeredPermanentAddress': '123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh'
@@ -92,7 +92,7 @@ HARNESS_CASES = [
             'username': 'student1',
             'academicStatus': 'ACTIVE',
             'courseStartDate': '2022-09-05',
-            'courseEndDate': '2026-06-30',
+            'courseEndDate': '2027-06-30',
             'currentTermActive': True,
             'hasCurrentSchedule': True,
             'registeredPermanentAddress': '123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh'
@@ -495,7 +495,7 @@ def run_verify_harness() -> Dict[str, Any]:
         if 'courseStartDate' not in st_info:
             st_info['courseStartDate'] = '2022-09-05'
         if 'courseEndDate' not in st_info:
-            st_info['courseEndDate'] = '2026-06-30'
+            st_info['courseEndDate'] = '2027-06-30'
 
         # Tạo payload test độc lập (Isolated context, không sửa global state)
         case_data = {
