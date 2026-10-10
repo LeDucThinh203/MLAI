@@ -86,12 +86,17 @@ def run_benchmark():
             'category': c['category'],
             'priority': c['priority'],
             'evidenceFiles': c.get('evidenceFiles', []),
-            'aiMetadata': c.get('aiMetadata', {})
+            'aiMetadata': c.get('aiMetadata', {}),
+            'studentClaim': c.get('studentClaim', {}),
+            'institutionalFacts': c.get('institutionalFacts') or c.get('student', {}),
+            'addressAnalysis': c.get('addressAnalysis', {})
         }
 
         ocr_data = None
         if c.get('evidenceFiles') and len(c['evidenceFiles']) > 0:
             ocr_data = c['evidenceFiles'][0].get('ocrData')
+        elif c.get('ocr'):
+            ocr_data = c['ocr']
 
         student = c.get('student', {})
         verdict = evaluate_case(payload, ocr_data, student)
