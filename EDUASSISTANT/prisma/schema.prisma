@@ -7,36 +7,196 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model User {
-  id String @id @db.VarChar(100)
-  username String @unique @db.VarChar(100)
-  password String @db.VarChar(255)
-  fullName String @map("fullname") @db.VarChar(255)
-  studentCode String? @map("studentcode") @db.VarChar(100)
-  email String? @db.VarChar(255)
-  role String @db.VarChar(50)
-  department String? @db.VarChar(255)
-  avatar String?
-  bio String?
-  twoFactorEnabled Boolean @default(false) @map("twofactorenabled")
-  twoFactorSecret String? @map("twofactorsecret") @db.VarChar(255)
-  mustChangePassword Boolean @default(false) @map("mustchangepassword")
-  createdAt String? @map("createdat") @db.VarChar(100)
-  updatedAt String? @map("updatedat") @db.VarChar(100)
-  cases Case[]
+  id                         String               @id @db.VarChar(100)
+  username                   String               @unique @db.VarChar(100)
+  password                   String               @db.VarChar(255)
+  fullName                   String               @map("fullname") @db.VarChar(255)
+  studentCode                String?              @map("studentcode") @db.VarChar(100)
+  email                      String?              @db.VarChar(255)
+  role                       String               @db.VarChar(50)
+  department                 String?              @db.VarChar(255)
+  avatar                     String?
+  bio                        String?
+  twoFactorEnabled           Boolean              @default(false) @map("twofactorenabled")
+  twoFactorSecret            String?              @map("twofactorsecret") @db.VarChar(255)
+  mustChangePassword         Boolean              @default(false) @map("mustchangepassword")
+  createdAt                  String?              @map("createdat") @db.VarChar(100)
+  updatedAt                  String?              @map("updatedat") @db.VarChar(100)
+  academicstatus             String?              @db.VarChar(50)
+  coursestartdate            String?              @db.VarChar(50)
+  courseenddate              String?              @db.VarChar(50)
+  currenttermactive          Boolean?             @default(true)
+  hascurrentschedule         Boolean?             @default(true)
+  registeredpermanentaddress String?
+  faculty                    String?              @db.VarChar(255)
+  cases                      Case[]
+  evidence_uploads           evidence_uploads[]
+  notifications              notifications[]
+  refresh_tokens             refresh_tokens[]
+  sis_student_records        sis_student_records?
+
+  @@index([createdAt(sort: Desc)], map: "idx_users_created_at")
+  @@index([role, createdAt(sort: Desc)], map: "idx_users_role_created")
   @@map("users")
 }
 
 model Case {
-  id String @id @db.VarChar(100)
-  studentId String @map("studentid") @db.VarChar(100)
-  studentName String @map("studentname") @db.VarChar(255)
-  title String @db.VarChar(500)
-  category String @db.VarChar(100)
-  priority String? @db.VarChar(50)
-  status String @db.VarChar(50)
-  createdAt String? @map("createdat") @db.VarChar(100)
-  updatedAt String? @map("updatedat") @db.VarChar(100)
-  student User @relation(fields: [studentId], references: [id])
+  id                 String     @id @db.VarChar(100)
+  studentId          String     @map("studentid") @db.VarChar(100)
+  studentName        String     @map("studentname") @db.VarChar(255)
+  studentcode        String?    @db.VarChar(100)
+  title              String     @db.VarChar(500)
+  category           String     @db.VarChar(100)
+  priority           String?    @default("MEDIUM") @db.VarChar(50)
+  description        String?
+  status             String     @db.VarChar(50)
+  reviewresult       String?
+  supplementhistory  String?
+  aiextraction       String?
+  evidencefiles      String?
+  deadline           String?    @db.VarChar(100)
+  assigneddepartment String?    @db.VarChar(255)
+  digitalsignature   String?
+  reviewerfeedback   String?
+  createdAt          String?    @map("createdat") @db.VarChar(100)
+  updatedAt          String?    @map("updatedat") @db.VarChar(100)
+  student            User       @relation(fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  comments           comments[]
+
+  @@index([category, createdAt(sort: Desc)], map: "idx_cases_category_created")
+  @@index([createdAt(sort: Desc)], map: "idx_cases_created_at")
+  @@index([assigneddepartment, createdAt(sort: Desc)], map: "idx_cases_department_created")
+  @@index([status, createdAt(sort: Desc)], map: "idx_cases_status_created")
+  @@index([studentId, createdAt(sort: Desc)], map: "idx_cases_student_created")
   @@map("cases")
+}
+
+model audits {
+  id            String  @id @db.VarChar(100)
+  action        String  @db.VarChar(100)
+  caseid        String? @db.VarChar(100)
+  actorid       String? @db.VarChar(100)
+  actorname     String? @db.VarChar(255)
+  actorrole     String? @db.VarChar(50)
+  actorusername String? @db.VarChar(100)
+  inputdata     String?
+  result        String?
+  reason        String?
+  timestamp     String? @db.VarChar(100)
+
+  @@index([action, timestamp(sort: Desc)], map: "idx_audits_action_timestamp")
+  @@index([actorid, timestamp(sort: Desc)], map: "idx_audits_actor_timestamp")
+  @@index([caseid, timestamp(sort: Desc)], map: "idx_audits_case_timestamp")
+  @@index([actorrole, timestamp(sort: Desc)], map: "idx_audits_role_timestamp")
+  @@index([timestamp(sort: Desc)], map: "idx_audits_timestamp")
+}
+
+model comments {
+  id           String  @id @db.VarChar(100)
+  caseid       String  @db.VarChar(100)
+  authorid     String  @db.VarChar(100)
+  authorname   String  @db.VarChar(255)
+  authorrole   String  @db.VarChar(50)
+  authoravatar String?
+  content      String
+  createdat    String  @db.VarChar(100)
+  cases        Case    @relation(fields: [caseid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([caseid, createdat(sort: Desc)], map: "idx_comments_case_created")
+}
+
+model escalation_policy_state {
+  id               String  @id @db.VarChar(100)
+  currentthreshold Float
+  minthreshold     Float
+  maxthreshold     Float
+  stepsize         Float
+  updatedat        String  @db.VarChar(100)
+  updatedby        String? @db.VarChar(100)
+}
+
+model escalation_threshold_history {
+  id           String  @id @db.VarChar(100)
+  caseid       String? @db.VarChar(100)
+  feedbacktype String  @db.VarChar(50)
+  oldthreshold Float
+  newthreshold Float
+  reviewerid   String? @db.VarChar(100)
+  reviewername String? @db.VarChar(255)
+  note         String?
+  createdat    String  @db.VarChar(100)
+
+  @@index([createdat(sort: Desc)], map: "idx_threshold_history_created")
+}
+
+model evidence_uploads {
+  filename    String  @id @db.VarChar(255)
+  ownerid     String  @db.VarChar(100)
+  metadata    String
+  ocrdata     String?
+  ocrprovider String? @db.VarChar(100)
+  ocrislive   Boolean @default(false)
+  createdat   String  @db.VarChar(100)
+  users       User    @relation(fields: [ownerid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([ownerid, createdat(sort: Desc)], map: "idx_evidence_owner_created")
+}
+
+model notifications {
+  id        String  @id @db.VarChar(100)
+  userid    String  @db.VarChar(100)
+  title     String  @db.VarChar(255)
+  message   String
+  type      String? @default("INFO") @db.VarChar(50)
+  caseid    String? @db.VarChar(100)
+  isread    Boolean @default(false)
+  createdat String  @db.VarChar(100)
+  users     User    @relation(fields: [userid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userid, createdat(sort: Desc)], map: "idx_notifications_user_created")
+  @@index([userid, isread], map: "idx_notifications_user_unread")
+}
+
+model refresh_tokens {
+  id        String @id @db.VarChar(100)
+  userid    String @db.VarChar(100)
+  token     String @unique @db.VarChar(255)
+  expiresat String @db.VarChar(100)
+  createdat String @db.VarChar(100)
+  users     User   @relation(fields: [userid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userid, expiresat], map: "idx_refresh_tokens_user_expiry")
+}
+
+model revoked_access_tokens {
+  jti       String @id @db.VarChar(100)
+  expiresat String @db.VarChar(100)
+  createdat String @db.VarChar(100)
+
+  @@index([expiresat], map: "idx_revoked_access_tokens_expiry")
+}
+
+model sis_student_records {
+  id                         String   @id @db.VarChar(100)
+  userid                     String   @unique @db.VarChar(100)
+  studentcode                String?  @unique @db.VarChar(100)
+  fullname                   String   @db.VarChar(255)
+  academicstatus             String?  @db.VarChar(50)
+  coursestartdate            String?  @db.VarChar(50)
+  courseenddate              String?  @db.VarChar(50)
+  currenttermactive          Boolean?
+  hascurrentschedule         Boolean?
+  registeredpermanentaddress String?
+  faculty                    String?  @db.VarChar(255)
+  source                     String   @default("INTERNAL_SIS_DEMO") @db.VarChar(100)
+  recordstatus               String   @default("ACTIVE") @db.VarChar(50)
+  createdat                  String   @db.VarChar(100)
+  updatedat                  String   @db.VarChar(100)
+  updatedby                  String?  @db.VarChar(100)
+  users                      User     @relation(fields: [userid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([academicstatus], map: "idx_sis_academic_status")
+  @@index([faculty], map: "idx_sis_faculty")
 }
