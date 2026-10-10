@@ -1,20 +1,15 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import os
 from typing import Any
 
-import httpx
-from app.services.openrouter_service import generate_json
-from app.services.gemini_models import list_gemini_models
+from app.services.gemini_generate_service import generate_json as generate_gemini_json
+from app.services.openrouter_service import generate_json as generate_openrouter_json
 
 
 async def add_gemini_review(result: dict[str, Any]) -> dict[str, Any]:
-    """Add a secondary Gemini review to synthetic harness output.
-
-    The deterministic rule engine remains the source of PASS/FAIL. Gemini only
-    comments on the synthetic outcomes; its response never changes a verdict.
-    """
+    """Add a secondary review; this never changes deterministic PASS/FAIL."""
     api_key = os.environ.get('GEMINI_API_KEY', '').strip()
     payload = [
         {
@@ -30,6 +25,7 @@ async def add_gemini_review(result: dict[str, Any]) -> dict[str, Any]:
         }
         for item in result.get('results', [])
     ]
+    expected_ids = {str(item.get('caseId')) for item in payload}
     prompt = (
         'Bạn là người rà soát phụ cho bộ kiểm tra phần mềm EDUASSISTANT. '
         'Dữ liệu sau là tình huống tổng hợp, không phải hồ sơ người thật. '
@@ -40,91 +36,57 @@ async def add_gemini_review(result: dict[str, Any]) -> dict[str, Any]:
         'Phải có đủ mỗi caseId đúng một lần.\nDữ liệu:\n' + json.dumps(payload, ensure_ascii=False)
     )
 
-    models = await list_gemini_models(api_key) if len(api_key) >= 10 else []
-    expected_ids = {str(item.get('caseId')) for item in payload}
-    try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
-            for model in models:
-                try:
-                    response = await client.post(
-                        f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
-                        params={'key': api_key},
-                        json={
-                            'contents': [{'parts': [{'text': prompt}]}],
-                            'generationConfig': {
-                                'responseMimeType': 'application/json',
-                                'temperature': 0.1,
-                                'maxOutputTokens': 3000,
-                            },
-                        },
-                    )
-                    if response.status_code != 200:
-                        continue
-                    candidates = response.json().get('candidates', [])
-                    parts = candidates[0].get('content', {}).get('parts', []) if candidates else []
-                    text = ''.join(part.get('text', '') for part in parts).strip()
-                    parsed = json.loads(text)
-                    reviews = parsed.get('results')
-                    if not isinstance(reviews, list):
-                        continue
-                    normalized = {}
-                    for review in reviews:
-                        if not isinstance(review, dict):
-                            continue
-                        case_id = str(review.get('caseId', ''))
-                        assessment = review.get('assessment')
-                        rationale = review.get('rationale')
-                        if case_id in expected_ids and assessment in ('CONSISTENT', 'REVIEW') and isinstance(rationale, str):
-                            normalized[case_id] = {'assessment': assessment, 'rationale': rationale[:500]}
-                    if set(normalized) != expected_ids:
-                        continue
-                    for item in result.get('results', []):
-                        item['geminiReview'] = normalized.get(str(item.get('caseId')))
-                    result['aiReview'] = {
-                        'mode': 'GEMINI_LIVE', 'provider': 'Google Gemini', 'model': model,
-                        'message': 'Gemini đã rà soát tình huống tổng hợp. Kết quả PASS/FAIL vẫn do bộ quy tắc xác định.'
-                    }
-                    return result
-                except Exception:
-                    continue
-    except Exception:
-        pass
-
     def valid_review(payload_data: dict) -> bool:
-        reviews_data = payload_data.get('results')
-        if not isinstance(reviews_data, list):
+        reviews = payload_data.get('results')
+        if not isinstance(reviews, list):
             return False
-        parsed_reviews = {
-            str(review.get('caseId')): review for review in reviews_data
+        normalized = {
+            str(review.get('caseId')): review for review in reviews
             if isinstance(review, dict) and review.get('assessment') in ('CONSISTENT', 'REVIEW')
             and isinstance(review.get('rationale'), str)
         }
-        return set(parsed_reviews) == expected_ids
+        return set(normalized) == expected_ids
 
-    openrouter_data, openrouter_error, openrouter_model, _ = await generate_json(
-        prompt, max_tokens=3000, validator=valid_review,
-    )
-    reviews = openrouter_data.get('results') if isinstance(openrouter_data, dict) else None
-    normalized = {}
-    for review in reviews or []:
-        if not isinstance(review, dict):
-            continue
-        case_id = str(review.get('caseId', ''))
-        if (case_id in expected_ids and review.get('assessment') in ('CONSISTENT', 'REVIEW')
-                and isinstance(review.get('rationale'), str)):
-            normalized[case_id] = {'assessment': review['assessment'], 'rationale': review['rationale'][:500]}
-    if set(normalized) == expected_ids:
+    if len(api_key) >= 10:
+        gemini_data, gemini_model, _, _ = await generate_gemini_json(
+            prompt, api_key, max_tokens=3000, validator=valid_review,
+        )
+        if gemini_data is not None and gemini_model:
+            provider = 'Google Gemini'
+            data = gemini_data
+            model = gemini_model
+            mode = 'GEMINI_LIVE'
+        else:
+            data = None
+    else:
+        data = None
+
+    if data is None:
+        data, _, model, _ = await generate_openrouter_json(
+            prompt, max_tokens=3000, validator=valid_review,
+        )
+        provider = 'OpenRouter'
+        mode = 'OPENROUTER_LIVE'
+
+    if data is not None:
+        by_id = {str(item['caseId']): item for item in data['results']}
         for item in result.get('results', []):
-            item['geminiReview'] = normalized.get(str(item.get('caseId')))
+            review = by_id.get(str(item.get('caseId')))
+            if review:
+                item['geminiReview'] = {
+                    'assessment': review['assessment'], 'rationale': review['rationale'][:500],
+                }
         result['aiReview'] = {
-            'mode': 'OPENROUTER_LIVE', 'provider': 'OpenRouter', 'model': openrouter_model,
-            'message': 'OpenRouter đã rà soát tình huống tổng hợp. Kết quả PASS/FAIL vẫn do bộ quy tắc xác định.'
+            'mode': mode,
+            'provider': provider,
+            'model': model,
+            'message': f'{provider} đã rà soát tình huống tổng hợp. Kết quả PASS/FAIL vẫn do bộ quy tắc xác định.',
         }
         return result
 
     result['aiReview'] = {
         'mode': 'DETERMINISTIC_FALLBACK',
         'provider': None,
-        'message': 'Gemini và OpenRouter không trả được kết quả hợp lệ; đang hiển thị kết quả kiểm tra sẵn có.'
+        'message': 'Không model Gemini hay OpenRouter nào trả được kết quả hợp lệ; vẫn giữ kết quả từ bộ quy tắc.',
     }
     return result
