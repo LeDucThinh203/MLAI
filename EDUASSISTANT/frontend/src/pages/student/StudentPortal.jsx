@@ -44,11 +44,24 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
   const [submittingSupplement, setSubmittingSupplement] = useState(false);
 
   const [myCases, setMyCases] = useState([]);
+  const [sisRecord, setSisRecord] = useState(null);
+  const [sisLoading, setSisLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [caseLoadError, setCaseLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [highlightedCaseId, setHighlightedCaseId] = useState(null);
+
+  useEffect(() => {
+    if (!token || !user?.id) return undefined;
+    let cancelled = false;
+    setSisLoading(true);
+    axios.get(`${API_BASE}/sis/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => { if (!cancelled) setSisRecord(res.data?.data?.record || null); })
+      .catch(() => { if (!cancelled) setSisRecord(null); })
+      .finally(() => { if (!cancelled) setSisLoading(false); });
+    return () => { cancelled = true; };
+  }, [token, user?.id]);
 
   // Debounced address normalization preview
   useEffect(() => {
@@ -292,42 +305,29 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#94a3b8', margin: 0 }}>
               PHỤC VỤ THỦ TỤC TẠM HOÃN GỌI NHẬP NGŨ (NVQS)
             </h2>
-            <p style={{ color: 'var(--text-sub)', fontSize: '0.82rem', marginTop: '6px' }}>
-              Hệ thống Escalation Referee sẽ tự động đối chiếu thông tin thường trú với hồ sơ đào tạo để cấp Giấy xác nhận có chữ ký số điện tử.
-            </p>
+            <div role="note" style={{ padding: '12px', border: '1px solid #f59e0b', borderRadius: '8px', color: '#fcd34d', background: 'rgba(120,53,15,.25)', fontSize: '0.84rem' }}>INTERNAL DEMO ONLY: This prototype records a workflow request. It does not issue an official certificate or decide military-service deferment eligibility. Verify requirements with your institution. The permanent-address check is an internal demo rule.</div>
           </div>
 
           <form onSubmit={handleSubmitCase} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* KHỐI 1: THÔNG TIN SINH VIÊN (READ-ONLY AUTHORITATIVE RECORD) */}
-            <div style={{
-              background: '#0f172a',
-              border: '1px solid rgba(148, 163, 184, 0.2)',
-              borderRadius: '10px',
-              padding: '16px 20px'
-            }}>
+            {/* Student-facing copy of the canonical SIS row. */}
+            <div style={{ background: '#0f172a', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: '10px', padding: '16px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#38bdf8', fontWeight: 700, fontSize: '0.86rem' }}>
-                <User size={16} /> THÔNG TIN SINH VIÊN (Dữ liệu gốc từ tài khoản)
+                <User size={16} /> SIS RECORD (SOURCE OF ACADEMIC FACTS)
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', fontSize: '0.84rem' }}>
-                <div>
-                  <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>Họ và tên sinh viên:</span>
-                  <strong style={{ color: '#f8fafc' }}>{user?.fullName || 'Sinh viên'}</strong>
+              {sisLoading ? <p>Loading SIS record...</p> : sisRecord ? <>
+                {sisRecord.source === 'INTERNAL_SIS_DEMO' && <p role="note" style={{ color: '#fbbf24', fontSize: '0.78rem' }}>DEMO SIS DATA - this record is synthetic and is not an official student record.</p>}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', fontSize: '0.84rem' }}>
+                  <div><span>Student name</span><br /><strong>{sisRecord.fullName || 'Missing'}</strong></div>
+                  <div><span>Student code</span><br /><strong>{sisRecord.studentCode || 'Missing'}</strong></div>
+                  <div><span>Faculty</span><br /><strong>{sisRecord.faculty || 'Missing'}</strong></div>
+                  <div><span>Academic status</span><br /><strong>{sisRecord.academicStatus || 'UNKNOWN / MISSING'}</strong></div>
+                  <div><span>Course dates</span><br /><strong>{sisRecord.courseStartDate || 'Missing'} - {sisRecord.courseEndDate || 'Missing'}</strong></div>
+                  <div><span>Current term active</span><br /><strong>{sisRecord.currentTermActive === true ? 'Yes' : sisRecord.currentTermActive === false ? 'No' : 'Unknown'}</strong></div>
+                  <div><span>Current schedule</span><br /><strong>{sisRecord.hasCurrentSchedule === true ? 'Available' : sisRecord.hasCurrentSchedule === false ? 'Not available' : 'Unknown'}</strong></div>
+                  <div><span>Record status</span><br /><strong>{sisRecord.recordStatus || 'Unknown'}</strong></div>
+                  <div style={{ gridColumn: '1 / -1' }}><span>Registered permanent address on file</span><br /><strong>{sisRecord.registeredPermanentAddress || 'Missing'}</strong></div>
                 </div>
-                <div>
-                  <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>Mã số sinh viên (MSSV):</span>
-                  <strong style={{ color: '#f8fafc', fontFamily: 'var(--font-mono)' }}>{user?.studentCode || user?.username || 'SV2026'}</strong>
-                </div>
-                <div>
-                  <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>Khoa / Ngành đào tạo:</span>
-                  <strong style={{ color: '#f8fafc' }}>{user?.department || 'Khoa Công Nghệ Thông Tin'}</strong>
-                </div>
-                <div>
-                  <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>Trạng thái đào tạo:</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(5, 150, 105, 0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, fontSize: '0.76rem' }}>
-                    ● Đang học chính khóa (ACTIVE)
-                  </span>
-                </div>
-              </div>
+              </> : <p role="status">No SIS record is available. The account profile is not a substitute for an institutional record.</p>}
             </div>
 
             {/* KHỐI 2: MỤC ĐÍCH YÊU CẦU (READ-ONLY) */}
@@ -377,7 +377,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                       checked={addressType === 'PERMANENT'}
                       onChange={() => setAddressType('PERMANENT')}
                     />
-                    <strong style={{ color: '#38bdf8' }}>Thường trú (Hộ khẩu / Đăng ký NVQS)</strong>
+                    <strong style={{ color: '#38bdf8' }}>Permanent address (internal prototype workflow)</strong>
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
                     <input
@@ -387,21 +387,18 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                       checked={addressType === 'TEMPORARY'}
                       onChange={() => setAddressType('TEMPORARY')}
                     />
-                    <span style={{ color: '#fbbf24' }}>Tạm trú (Cảnh báo: Thủ tục NVQS yêu cầu Thường trú)</span>
+                    <span style={{ color: '#fbbf24' }}>Temporary address (this prototype sends it for manual review)</span>
                   </label>
                 </div>
                 {addressType === 'TEMPORARY' && (
-                  <p style={{ fontSize: '0.76rem', color: '#fbbf24', marginTop: '6px', background: 'rgba(245, 158, 11, 0.1)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
-                    ⚠️ <strong>Cảnh báo nghiệp vụ:</strong> Thủ tục tạm hoãn gọi nhập ngũ yêu cầu nộp Giấy xác nhận về Ban Chỉ huy Quân sự cấp xã/phường nơi đăng ký <strong>thường trú</strong>. Nếu bạn chọn tạm trú, hồ sơ sẽ phải chuyển cán bộ xác minh lại.
-                  </p>
+                  <p style={{ fontSize: '0.76rem', color: '#fbbf24', marginTop: '6px' }}>This prototype routes temporary-address cases to staff review under its internal workflow rule.</p>
                 )}
               </div>
 
               {/* Ô NHẬP ĐỊA CHỈ TỰ DO */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: '#cbd5e1' }}>
-                  Địa chỉ thường trú (Nhập số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố) *
-                </label>
+                  Address (house/street, ward/commune, province/city; district if available) *</label>
                 <textarea
                   className="form-input"
                   rows={3}

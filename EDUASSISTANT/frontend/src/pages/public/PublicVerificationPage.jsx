@@ -73,12 +73,8 @@ export const PublicVerificationPage = () => {
           <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto' }}>
             <Award size={28} color="#34d399" />
           </div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38bdf8', margin: '0 0 4px 0' }}>
-            CỔNG TRA CỨU & XÁC THỰC VĂN BẢN ĐIỆN TỬ
-          </h2>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-sub)', margin: 0 }}>
-            Hệ thống EDUASSISTANT • Trường Đại Học Công Nghệ Quốc Gia
-          </p>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38bdf8', margin: '0 0 4px 0' }}>Internal workflow status lookup</h2>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-sub)', margin: 0 }}>EDUASSISTANT prototype - not an official certificate or public authority decision.</p>
         </div>
 
         {!loading && !data && <form onSubmit={handleLookup} style={{ padding: '20px', border: '1px solid rgba(56, 189, 248, 0.30)', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.72)', marginBottom: error ? '14px' : 0 }}>
@@ -103,22 +99,18 @@ export const PublicVerificationPage = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Status Stamp */}
             <div style={{
-              background: data.status === 'APPROVED' ? 'rgba(5, 150, 105, 0.15)' : 'rgba(217, 119, 6, 0.15)',
-              border: `1px solid ${data.status === 'APPROVED' ? '#059669' : '#d97706'}`,
+              background: data.verified ? 'rgba(5, 150, 105, 0.15)' : 'rgba(220, 38, 38, 0.15)',
+              border: `1px solid ${data.verified ? '#059669' : '#dc2626'}`,
               borderRadius: '12px',
               padding: '14px',
               display: 'flex',
               alignItems: 'center',
               gap: '12px'
             }}>
-              <CheckCircle2 size={28} color={data.status === 'APPROVED' ? '#34d399' : '#fbbf24'} />
+              <CheckCircle2 size={28} color={data.verified ? '#34d399' : '#f87171'} />
               <div>
-                <strong style={{ color: data.status === 'APPROVED' ? '#34d399' : '#fbbf24', fontSize: '0.95rem' }}>
-                  ✓ Chứng Nhận Hợp Lệ & Toàn Vẹn
-                </strong>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                  Văn bản có mã xác thực toàn vẹn do hệ thống EDUASSISTANT tạo.
-                </p>
+                <strong style={{ color: data.verified ? '#34d399' : '#f87171', fontSize: '0.95rem' }}>{data.verified ? 'Internal record integrity check passed' : 'Internal record integrity check failed'}</strong><br /><span>Workflow status: {data.status}</span>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>HMAC/QR confirms only the prototype record integrity; it is not an official digital signature or certificate.</p>
               </div>
             </div>
 

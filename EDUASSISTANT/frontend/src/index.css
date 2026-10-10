@@ -368,7 +368,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .auth-card [style*="color: '#ffffff'"], .auth-card [style*="color: '#fff'"] { color: #172b4d !important; }
 .auth-card .shimmer-button::after { display: none; }
 
-/* Public verification reads like an official certificate, not a developer screen. */
+/* Public verification presents a minimal internal workflow status lookup. */
 .verification-page { min-height: calc(100vh - 94px) !important; background: #f3f6fa !important; color: #172b4d !important; border-radius: 12px; }
 .verification-card { background: #fff !important; border: 1px solid #cbd9e7 !important; border-radius: 10px !important; box-shadow: 0 10px 24px rgba(25, 55, 89, .1) !important; }
 .verification-card [style*="background: '#050811'"] { background: #f7f9fc !important; border-color: #d8e1ec !important; }

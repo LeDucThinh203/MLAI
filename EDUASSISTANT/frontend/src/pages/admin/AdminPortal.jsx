@@ -42,7 +42,10 @@ const POLICY_DISPLAY = {
   'POL-NVQS-007': 'Kiểm tra độ tin cậy của AI',
   'POL-NVQS-008': 'Kiểm tra thời gian khóa học',
   'POL-NVQS-009': 'Kiểm tra địa chỉ thường trú đã xác minh',
-  'POL-NVQS-010': 'Đủ điều kiện xử lý tự động'
+  'POL-NVQS-010': 'Đủ điều kiện xử lý tự động',
+  'POL-NVQS-011': 'Inactive SIS record status',
+  'POL-NVQS-012': 'Current date outside course dates',
+  'POL-NVQS-013': 'Authenticated institutional SIS source required',
 };
 
 const POLICY_CATEGORY_LABELS = { IDENTITY: 'Danh tính', POLICY_SCOPE: 'Phạm vi quy trình', ACADEMIC: 'Thông tin học vụ', ADDRESS: 'Địa chỉ', AI_SAFETY: 'An toàn AI', AUTOMATION: 'Xử lý tự động' };
@@ -60,7 +63,10 @@ const POLICY_GUIDANCE = {
   'POL-NVQS-007': { trigger: 'Thông tin do AI phân tích chưa đủ độ tin cậy hoặc không phải dữ liệu trực tiếp.', action: 'Cán bộ kiểm tra hồ sơ theo cách thủ công.' },
   'POL-NVQS-008': { trigger: 'Ngày bắt đầu/kết thúc khóa học bị thiếu, không hợp lệ hoặc ngoài thời gian đào tạo.', action: 'Kiểm tra lại thời gian khóa học của sinh viên.' },
   'POL-NVQS-009': { trigger: 'Hồ sơ sinh viên chưa có địa chỉ thường trú đã được xác minh để đối chiếu.', action: 'Cập nhật và xác nhận địa chỉ thường trú trước khi tiếp tục xử lý.' },
-  'POL-NVQS-010': { trigger: 'Thông tin danh tính, học vụ, địa chỉ và an toàn AI đều đạt yêu cầu.', action: 'Hệ thống tiếp tục xử lý; chỉ cần cán bộ can thiệp nếu phát sinh vấn đề sau đó.' }
+  'POL-NVQS-010': { trigger: 'Thông tin danh tính, học vụ, địa chỉ và an toàn AI đều đạt yêu cầu.', action: 'Hệ thống tiếp tục xử lý; chỉ cần cán bộ can thiệp nếu phát sinh vấn đề sau đó.' },
+  'POL-NVQS-011': { trigger: 'The SIS record is not active.', action: 'Verify the record status with the data owner.' },
+  'POL-NVQS-012': { trigger: 'Today is outside the verified course date range.', action: 'Verify enrollment and course dates.' },
+  'POL-NVQS-013': { trigger: 'Student data source is not an authenticated institutional SIS.', action: 'Verify the facts against the institution data source.' },
 };
 
 const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
