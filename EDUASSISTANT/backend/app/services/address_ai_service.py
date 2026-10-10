@@ -15,6 +15,7 @@ Tuân thủ nguyên tắc:
 import os
 import re
 import json
+import math
 import time
 import unicodedata
 from typing import Dict, Any, List, Tuple, Optional
@@ -303,6 +304,10 @@ Trả về DUY NHẤT một JSON hợp lệ:
 
             if raw_json_str:
                 parsed = json.loads(sanitize_json_string(raw_json_str))
+                confidence_raw = parsed.get('confidence')
+                confidence = float(confidence_raw) if confidence_raw is not None else 0.0
+                if not math.isfinite(confidence) or not 0.0 <= confidence <= 1.0:
+                    raise ValueError('AI confidence is outside the valid range.')
                 return {
                     'houseNumber': parsed.get('houseNumber'),
                     'street': parsed.get('street'),
@@ -312,7 +317,7 @@ Trả về DUY NHẤT một JSON hợp lệ:
                     'normalizedAddress': parsed.get('normalizedAddress') or raw_address,
                     'missingFields': parsed.get('missingFields') or [],
                     'ambiguousFields': parsed.get('ambiguousFields') or [],
-                    'confidence': float(parsed.get('confidence') or 0.95),
+                    'confidence': confidence,
                     'modeUsed': 'live',
                     'isLive': True,
                     'isFallback': False,

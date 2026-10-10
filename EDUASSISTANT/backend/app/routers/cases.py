@@ -196,7 +196,9 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
         'currentTermActive': authoritative.get('currentTermActive') if sis_record else student_user.get('currentTermActive'),
         'hasCurrentSchedule': authoritative.get('hasCurrentSchedule') if sis_record else student_user.get('hasCurrentSchedule'),
         'registeredPermanentAddress': authoritative.get('registeredPermanentAddress') if sis_record else student_user.get('registeredPermanentAddress'),
-        'faculty': authoritative.get('faculty') if sis_record else student_user.get('faculty')
+        'faculty': authoritative.get('faculty') if sis_record else student_user.get('faculty'),
+        'recordStatus': authoritative.get('recordStatus') if sis_record else None,
+        'source': authoritative.get('source') if sis_record else 'LEGACY_ACCOUNT'
     }
     case_dict['institutionalFacts'] = inst_facts
     case_dict['authoritativeInstitutionalFacts'] = inst_facts
@@ -534,18 +536,6 @@ async def submit_case_feedback(
     })
 
 
-@router.post("/api/cases/{case_id}/evaluate-rules")
-async def evaluate_case_rules_endpoint(case_id: str, user: dict = Depends(require_roles('REVIEWER', 'ADMIN'))):
-    target_case = await db_service.get_case_by_id(case_id)
-    if not target_case:
-        return api_response(404, False, f"Không tìm thấy hồ sơ #{case_id}.", None, 'NOT_FOUND')
-
-    evaluation = evaluate_case(target_case)
-    return api_response(200, True, 'Thẩm định quy tắc từ dữ liệu hồ sơ thành công.', {
-        'caseId': case_id,
-        'evaluation': evaluation
-    })
-
 
 @router.get("/api/cases/{case_id}/comments")
 async def get_case_comments(case_id: str, user: dict = Depends(get_current_user)):
@@ -586,6 +576,9 @@ async def export_decision(case_id: str, request: Request, user: dict = Depends(g
     if not target_case:
         return api_response(404, False, 'Không tìm thấy hồ sơ.', None, 'NOT_FOUND')
 
+    if target_case.get('status') != 'APPROVED':
+        return api_response(409, False, 'Only approved cases have an internal receipt.', None, 'CASE_NOT_APPROVED')
+
     if user['role'] == 'STUDENT' and target_case['studentId'] != user['id']:
         return api_response(403, False, 'Bạn không có quyền truy cập quyết định này.', None, 'FORBIDDEN')
 
@@ -599,7 +592,7 @@ async def verify_case_public(case_id: str):
     verification_data = await db_service.get_case_for_verification(case_id)
     if not verification_data:
         return api_response(404, False, 'Không tìm thấy hồ sơ để xác thực.', None, 'NOT_FOUND')
-    return api_response(200, True, 'Tra cứu xác thực chứng nhận học vụ số hóa thành công.', verification_data)
+    return api_response(200, True, 'Internal workflow record lookup completed.', verification_data)
 
 
 @router.get("/api/reports/export-csv")

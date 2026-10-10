@@ -23,6 +23,7 @@ Chuyên sâu: CẤP GIẤY XÁC NHẬN SINH VIÊN PHỤC VỤ TẠM HOÃN NGHĨA
 """
 
 import re
+import math
 import unicodedata
 from datetime import datetime
 from typing import Dict, Any, List, Optional
@@ -82,6 +83,7 @@ def normalize_str(s: str) -> str:
     """Chuẩn hóa chuỗi tiếng Việt: loại bỏ dấu, ký tự đặc biệt, chuyển chữ thường."""
     if not s or not isinstance(s, str):
         return ''
+    s = s.replace(chr(273), 'd').replace(chr(272), 'D')
     nfkd = unicodedata.normalize('NFKD', s)
     no_diacritics = ''.join(c for c in nfkd if not unicodedata.combining(c))
     clean = re.sub(r'[^a-zA-Z0-9]', ' ', no_diacritics).lower()
@@ -113,14 +115,14 @@ def evaluate_case(
     student_id = inst_facts.get('studentId') or student_user.get('id')
     # A login name is not an authoritative student code unless the identity
     # system has explicitly stored it in studentCode.
-    auth_student_code = inst_facts.get('studentCode') or student_user.get('studentCode')
-    auth_full_name = inst_facts.get('fullName') or student_user.get('fullName')
+    auth_student_code = inst_facts.get('studentCode') if 'studentCode' in inst_facts else student_user.get('studentCode')
+    auth_full_name = inst_facts.get('fullName') if 'fullName' in inst_facts else student_user.get('fullName')
 
-    raw_academic_status = inst_facts.get('academicStatus') if inst_facts.get('academicStatus') is not None else student_user.get('academicStatus')
+    raw_academic_status = inst_facts.get('academicStatus') if 'academicStatus' in inst_facts else student_user.get('academicStatus')
     academic_status = str(raw_academic_status).upper() if raw_academic_status is not None else 'UNKNOWN'
 
-    course_start = inst_facts.get('courseStartDate') or student_user.get('courseStartDate')
-    course_end = inst_facts.get('courseEndDate') or student_user.get('courseEndDate')
+    course_start = inst_facts.get('courseStartDate') if 'courseStartDate' in inst_facts else student_user.get('courseStartDate')
+    course_end = inst_facts.get('courseEndDate') if 'courseEndDate' in inst_facts else student_user.get('courseEndDate')
 
     current_term_active = inst_facts.get('currentTermActive') if 'currentTermActive' in inst_facts else student_user.get('currentTermActive')
     if isinstance(current_term_active, str):
@@ -136,7 +138,8 @@ def evaluate_case(
 
     reg_permanent_address = (
         inst_facts.get('registeredPermanentAddress')
-        or student_user.get('registeredPermanentAddress')
+        if 'registeredPermanentAddress' in inst_facts
+        else student_user.get('registeredPermanentAddress')
     )
 
     # =========================================================================
@@ -184,7 +187,13 @@ def evaluate_case(
     normalized_addr = ai_address.get('normalizedAddress') or ai_address.get('normalized') or raw_address
     missing_fields = list(ai_address.get('missingFields') or [])
     ambiguous_fields = list(ai_address.get('ambiguousFields') or [])
-    confidence_score = float(ai_address.get('confidence') or 0.90)
+    confidence_raw = ai_address.get('confidence')
+    try:
+        confidence_score = float(confidence_raw) if confidence_raw is not None else 0.0
+        if not math.isfinite(confidence_score) or not 0.0 <= confidence_score <= 1.0:
+            confidence_score = 0.0
+    except (TypeError, ValueError):
+        confidence_score = 0.0
 
     # -------------------------------------------------------------------------
     # AI Provenance Resolution (Thread-Safe Context)
@@ -249,17 +258,32 @@ def evaluate_case(
             'suggestedAction': 'Cán bộ kiểm tra lại CCCD và hồ sơ gốc của sinh viên trước khi xử lý'
         }
 
+    if 'recordStatus' in inst_facts and str(inst_facts.get('recordStatus') or '').upper() != 'ACTIVE':
+        return {
+            'decision': 'ESCALATE_TO_HUMAN',
+            'status': 'UNDER_REVIEW',
+            'escalationReason': 'AUTHORITY_REQUIRED',
+            'escalationConfig': ESCALATION_CONFIG['AUTHORITY_REQUIRED'],
+            'ruleMatched': 'RULE_AUTH_04_SIS_RECORD_INACTIVE',
+            'explanation': 'The student information record is inactive or unavailable and must be checked by staff.',
+            'discrepancies': discrepancies,
+            'confidence': confidence_score,
+            'thresholdUsed': current_threshold,
+            'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
+            'suggestedAction': 'Verify that the SIS record is active and current before processing.'
+        }
+
     # =========================================================================
     # RULE 2: POLICY_OUT_OF_SCOPE (Yêu cầu đặc cách / Ngoài quy trình chuẩn)
     # Loại bỏ keyword "vượt" đơn lẻ gây false-positive
     # =========================================================================
-    special_keywords = [
-        'đặc cách', 'ngoại lệ', 'cứu xét', 'hoàn cảnh đặc biệt', 'xin gấp',
-        'miễn nghĩa vụ', 'hoãn nhập ngũ theo luật riêng', 'vượt khóa', 'vượt quy định',
-        'vượt thẩm quyền', 'vượt thời hạn'
-    ]
-    lower_notes = f"{request_reason} {notes}".lower()
-    has_special_request = any(kw in lower_notes for kw in special_keywords)
+    special_keywords = (
+        'dac cach', 'ngoai le', 'cuu xet', 'hoan canh dac biet', 'xin gap',
+        'mien nghia vu', 'hoan nhap ngu theo luat rieng', 'vuot khoa',
+        'vuot quy dinh', 'vuot tham quyen', 'vuot thoi han'
+    )
+    normalized_request = normalize_str(f"{request_reason} {notes}")
+    has_special_request = any(kw in normalized_request for kw in special_keywords)
 
     discrepancies.append({
         'field': 'Quy chế quy trình xử lý',
@@ -291,6 +315,7 @@ def evaluate_case(
     # =========================================================================
     needs_officer_review = False
     auth_reason = ""
+    auth_rule_code = 'RULE_AUTH_01_ACADEMIC_STATUS_NEEDS_OFFICER'
 
     def parse_course_date(value):
         if not isinstance(value, str):
@@ -305,18 +330,22 @@ def evaluate_case(
     today = datetime.utcnow().date()
     if not course_start or not course_end:
         needs_officer_review = True
-        auth_reason = 'Thiếu mốc bắt đầu hoặc kết thúc khóa học trong hồ sơ đào tạo của trường'
+        auth_rule_code = 'RULE_AUTH_02_COURSE_DATE_INVALID'
+        auth_reason = 'Course start or end date is missing from the institutional record.'
     elif not start_date or not end_date or start_date > end_date:
         needs_officer_review = True
-        auth_reason = 'Mốc thời gian khóa học không hợp lệ, cần cán bộ xác minh'
+        auth_rule_code = 'RULE_AUTH_02_COURSE_DATE_INVALID'
+        auth_reason = 'Course date format or ordering is invalid.'
     elif today < start_date or today > end_date:
         needs_officer_review = True
-        auth_reason = 'Dữ liệu đào tạo nằm ngoài khoảng khóa học được nhà trường ghi nhận, cần cán bộ xác minh'
-    elif academic_status in ('SUSPENDED', 'WITHDRAWN', 'GRADUATED', 'UNKNOWN'):
+        auth_rule_code = 'RULE_AUTH_03_COURSE_DATE_OUTSIDE_RANGE'
+        auth_reason = 'Current date is outside the institutional course-date range.'
+    elif academic_status != 'ACTIVE':
         needs_officer_review = True
         status_label = {
             'SUSPENDED': 'Đang bị tạm đình chỉ học tập / bảo lưu',
             'WITHDRAWN': 'Đã thôi học / xóa tên',
+            'LEAVE_OF_ABSENCE': 'Leave of absence / study break',
             'GRADUATED': 'Đã tốt nghiệp',
             'UNKNOWN': 'Không xác định được trạng thái học vụ (Thiếu dữ liệu gốc nhà trường)'
         }.get(academic_status, academic_status)
@@ -344,7 +373,7 @@ def evaluate_case(
             'status': 'UNDER_REVIEW',
             'escalationReason': 'AUTHORITY_REQUIRED',
             'escalationConfig': ESCALATION_CONFIG['AUTHORITY_REQUIRED'],
-            'ruleMatched': 'RULE_AUTH_01_ACADEMIC_STATUS_NEEDS_OFFICER',
+            'ruleMatched': auth_rule_code,
             'explanation': f"Cần chuyên viên Phòng Đào tạo xác minh: {auth_reason}.",
             'discrepancies': discrepancies,
             'confidence': confidence_score,
@@ -534,6 +563,22 @@ def evaluate_case(
             'suggestedAction': 'Chuyển cán bộ thẩm định thủ công do hệ thống đang chạy ở chế độ giả lập hoặc dự phòng (mock/cache/fallback).'
         }
 
+
+    sis_source = str(inst_facts.get('source') or '').strip().upper()
+    if sis_source != 'VERIFIED_INSTITUTIONAL_SIS':
+        return {
+            'decision': 'ESCALATE_TO_HUMAN',
+            'status': 'UNDER_REVIEW',
+            'escalationReason': 'FACT_UNKNOWN',
+            'escalationConfig': ESCALATION_CONFIG['FACT_UNKNOWN'],
+            'ruleMatched': 'RULE_FAILSAFE_UNVERIFIED_SIS',
+            'explanation': 'The student record source is not an authenticated institutional SIS integration.',
+            'discrepancies': discrepancies,
+            'confidence': confidence_score,
+            'thresholdUsed': current_threshold,
+            'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
+            'suggestedAction': 'Verify the student facts against an authenticated institutional system before processing.'
+        }
     # =========================================================================
     # TẤT CẢ TIÊU CHÍ THỎA MÃN & SAFE LIVE -> AUTO_APPROVE
     # =========================================================================

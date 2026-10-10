@@ -333,173 +333,62 @@ def generate_cases_table_html(cases: list, filter_info: dict = None) -> str:
 
 
 def generate_decision_html(case_data: dict, base_url: str = 'http://localhost:3001') -> str:
-    """Tạo HTML trang Giấy Quyết Định Học Vụ Điện Tử có mã QR xác thực."""
-    student_name = case_data.get('studentName') or 'Sinh viên'
-    student_code = case_data.get('studentCode') or 'SV2026-9921'
-    case_id = case_data.get('id')
+    """Render an internal workflow receipt, never a government certificate."""
+    from html import escape
+
+    case_id = str(case_data.get('id') or '')
     review = case_data.get('reviewResult') or {}
+    def safe(value):
+        return escape(str(value if value is not None else ''), quote=True)
 
-    category_labels = {
-        'TUITION_DISCOUNT': 'Miễn Giảm Học Phí',
-        'COMMUNITY_SERVICE': 'Công Nhận Điểm Rèn Luyện & CTXH',
-        'SCHOLARSHIP': 'Học Bổng Khuyến Khích',
-        'GRADE_APPEAL': 'Phúc Khảo Điểm Thi Học Phần',
-        'GENERAL': 'Thủ Tục Học Vụ Khác'
-    }
-
-    decision_number = f"QĐ-ĐHCN/{case_id.replace('CASE-', '')}"
-    now = datetime.now()
-    day_str = f"{now.day:02d}"
-    month_str = f"{now.month:02d}"
-    year_str = str(now.year)
-
-    # Sinh QR code Data URL
-    verification_url = f"{base_url}/verify?caseId={quote(case_id, safe='')}"
+    status = str(case_data.get('status') or 'UNKNOWN')
+    category = str(case_data.get('category') or 'UNKNOWN')
+    verification_url = f"{base_url.rstrip('/')}/verify?caseId={quote(case_id, safe='')}"
     qr_img = qrcode.make(verification_url)
     qr_buffer = io.BytesIO()
     qr_img.save(qr_buffer, format='PNG')
-    qr_code_data_url = f"data:image/png;base64,{base64.b64encode(qr_buffer.getvalue()).decode('utf-8')}"
+    qr_code_data_url = f"data:image/png;base64,{base64.b64encode(qr_buffer.getvalue()).decode('ascii')}"
 
-    return f"""<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <title>Quyết Định Phê Duyệt Hồ Sơ #{case_id} - EDUASSISTANT</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
-    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{ font-family: 'Times New Roman', Times, serif; background-color: #f1f5f9; color: #111827; padding: 25px; line-height: 1.5; }}
-    .page-container {{ max-width: 820px; margin: 0 auto; background: #ffffff; padding: 50px 65px; border-radius: 4px; box-shadow: 0 4px 25px rgba(0,0,0,0.1); }}
-    .action-bar {{ max-width: 820px; margin: 0 auto 15px auto; display: flex; justify-content: space-between; align-items: center; }}
-    .btn-print {{ background-color: #1e3a8a; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }}
-    .btn-print:hover {{ background-color: #1e40af; }}
-    .header-table {{ width: 100%; margin-bottom: 25px; border-collapse: collapse; }}
-    .header-left {{ width: 45%; text-align: center; vertical-align: top; }}
-    .header-right {{ width: 55%; text-align: center; vertical-align: top; }}
-    .org-title {{ font-size: 13px; font-weight: normal; text-transform: uppercase; }}
-    .org-main {{ font-size: 14px; font-weight: bold; text-transform: uppercase; }}
-    .doc-number {{ font-size: 13px; font-style: italic; margin-top: 5px; }}
-    .national-title {{ font-size: 13px; font-weight: bold; text-transform: uppercase; }}
-    .national-motto {{ font-size: 13px; font-weight: bold; border-bottom: 1px solid #111; display: inline-block; padding-bottom: 2px; }}
-    .doc-date {{ font-size: 13px; font-style: italic; margin-top: 5px; }}
-    .doc-main-title {{ text-align: center; font-size: 20px; font-weight: bold; margin-top: 20px; text-transform: uppercase; }}
-    .doc-sub-title {{ text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 15px; }}
-    .authority-title {{ text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; }}
-    .legal-basis {{ font-size: 13.5px; font-style: italic; margin-bottom: 15px; text-align: justify; line-height: 1.6; }}
-    .decision-label {{ text-align: center; font-size: 16px; font-weight: bold; margin: 20px 0 15px 0; text-transform: uppercase; }}
-    .article {{ font-size: 13.5px; margin-bottom: 12px; text-align: justify; }}
-    .article-title {{ font-weight: bold; }}
-    .info-list {{ margin-left: 25px; margin-top: 6px; }}
-    .info-list li {{ margin-bottom: 4px; }}
-    .signature-section {{ width: 100%; margin-top: 35px; border-collapse: collapse; }}
-    .recipient-col {{ width: 50%; vertical-align: top; font-size: 12px; }}
-    .signer-col {{ width: 50%; text-align: center; vertical-align: top; }}
-    .signer-title {{ font-size: 13px; font-weight: bold; text-transform: uppercase; }}
-    .signer-subtitle {{ font-size: 12px; font-style: italic; margin-bottom: 60px; }}
-    .signer-name {{ font-size: 14px; font-weight: bold; text-transform: uppercase; }}
-    .electronic-seal {{ display: inline-block; border: 2px solid #dc2626; color: #dc2626; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; transform: rotate(-4deg); background: rgba(254, 226, 226, 0.4); margin-bottom: 10px; }}
-    .qr-verification-box {{ margin-top: 35px; border-top: 1px dashed #cbd5e1; padding-top: 15px; display: flex; align-items: center; gap: 20px; }}
-    .qr-desc {{ font-size: 11.5px; color: #475569; }}
-    @media print {{
-      body {{ background: transparent; padding: 0; }}
-      .page-container {{ box-shadow: none; padding: 0; max-width: 100%; }}
-      .action-bar {{ display: none !important; }}
-    }}
-  </style>
-</head>
-<body>
-
-  <div class="action-bar">
-    <div style="font-size: 14px; color: #475569;">
-      <strong>EDUASSISTANT:</strong> Chứng nhận Quyết định Học vụ Điện tử chính thức
-    </div>
-    <button class="btn-print" onclick="window.print()">
-      🖨️ In Quyết Định / Lưu File PDF
-    </button>
-  </div>
-
-  <div class="page-container">
-    <table class="header-table">
-      <tr>
-        <td class="header-left">
-          <div class="org-title">BỘ GIÁO DỤC VÀ ĐÀO TẠO</div>
-          <div class="org-main">TRƯỜNG ĐẠI HỌC CÔNG NGHỆ QUỐC GIA</div>
-          <div class="org-title">HỘI ĐỒNG THẨM ĐỊNH HỌC VỤ</div>
-          <div class="doc-number">Số: {decision_number}</div>
-        </td>
-        <td class="header-right">
-          <div class="national-title">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-          <div class="national-motto">Độc lập - Tự do - Hạnh phúc</div>
-          <div class="doc-date">Thành phố Hồ Chí Minh, ngày {day_str} tháng {month_str} năm {year_str}</div>
-        </td>
-      </tr>
-    </table>
-
-    <div class="doc-main-title">QUYẾT ĐỊNH</div>
-    <div class="doc-sub-title">V/v Phê duyệt công nhận kết quả hồ sơ {category_labels.get(case_data.get('category'), case_data.get('category'))}</div>
-
-    <div class="authority-title">HỘI ĐỒNG THẨM ĐỊNH HỌC VỤ & CHÍNH SÁCH SINH VIÊN</div>
-
-    <div class="legal-basis">
-      - Căn cứ Quy chế đào tạo và công tác quản lý sinh viên của Trường Đại học Công nghệ Quốc gia;<br>
-      - Căn cứ Hồ sơ yêu cầu trực tuyến số <strong>#{case_id}</strong> của sinh viên <strong>{student_name}</strong> (MSSV: <strong>{student_code}</strong>);<br>
-      - Căn cứ kết quả thẩm tra hồ sơ minh chứng, phân tích kiểm định thực thể số hóa và đề xuất phê duyệt của Thẩm định viên <strong>{review.get('reviewerName', 'Hội đồng xét duyệt')}</strong>.
-    </div>
-
-    <div class="decision-label">QUYẾT ĐỊNH:</div>
-
-    <div class="article">
-      <span class="article-title">Điều 1.</span> <strong>CHẤP THUẬN</strong> và phê duyệt hồ sơ yêu cầu theo đúng chế độ học vụ đối với:
-      <ul class="info-list">
-        <li>Họ và tên sinh viên: <strong>{student_name}</strong></li>
-        <li>Mã số sinh viên (MSSV): <strong>{student_code}</strong></li>
-        <li>Nội dung giải quyết: <strong>{case_data.get('title')}</strong></li>
-        <li>Hạng mục phê chuẩn: <strong>{category_labels.get(case_data.get('category'), case_data.get('category'))}</strong></li>
-        <li>Đánh giá thẩm định: <em>{review.get('reason', 'Hồ sơ đầy đủ tính pháp lý và minh chứng hợp lệ.')}</em></li>
-      </ul>
-    </div>
-
-    <div class="article">
-      <span class="article-title">Điều 2.</span> Phòng Công tác Sinh viên, Phòng Đào tạo, Phòng Kế hoạch Tài chính và các đơn vị liên quan chịu trách nhiệm cập nhật quyền lợi, điểm số và chế độ miễn giảm tương ứng cho sinh viên vào hệ thống quản lý đào tạo trước thời hạn quy định.
-    </div>
-
-    <div class="article">
-      <span class="article-title">Điều 3.</span> Quyết định này có hiệu lực kể từ ngày ký và được chứng thực số hóa trên Cổng thông tin <strong>EDUASSISTANT</strong> với tính toàn vẹn được mã hóa.
-    </div>
-
-    <table class="signature-section">
-      <tr>
-        <td class="recipient-col">
-          <strong><em>Nơi nhận:</em></strong><br>
-          - Như Điều 2;<br>
-          - Sinh viên (để thực hiện);<br>
-          - Lưu: CSDL EDUASSISTANT.
-        </td>
-        <td class="signer-col">
-          <div class="signer-title">TM. HỘI ĐỒNG XÉT DUYỆT</div>
-          <div class="signer-subtitle">TRƯỞNG BAN THẨM ĐỊNH HỌC VỤ</div>
-          <div>
-            <div class="electronic-seal">
-              ✓ ĐÃ KÝ ĐIỆN TỬ BỞI EDUASSISTANT<br>
-              {review.get('reviewerName', 'Thẩm Định Viên Trưởng')}<br>
-              {now.strftime('%d/%m/%Y')}
-            </div>
-          </div>
-          <div class="signer-name">{review.get('reviewerName', 'TS. NGUYỄN VĂN THẨM')}</div>
-        </td>
-      </tr>
-    </table>
-
-    <div class="qr-verification-box">
-      <img src="{qr_code_data_url}" alt="QR Verification" style="width: 105px; height: 105px; border: 1px solid #e2e8f0; border-radius: 6px;" />
-      <div class="qr-desc">
-        <strong style="color: #1e3a8a; font-size: 13px;">TRA CỨU XÁC THỰC VĂN BẢN ĐIỆN TỬ (DIGITAL AUDIT VERIFIED)</strong><br>
-        • Mã định danh hồ sơ: <strong>#{case_id}</strong><br>
-        • Mã chứng thực QR: Quét mã để xác minh quyết định gốc lưu trữ trên cơ sở dữ liệu EDUASSISTANT.<br>
-        • Tiêu chuẩn chữ ký: SHA-256 Authenticated Token • Trạng thái: <strong>{case_data.get('status')}</strong>
-      </div>
-    </div>
-  </div>
-
-</body>
-</html>"""
+    rows = {
+        'case': case_id,
+        'student': case_data.get('studentName') or 'Sinh vien',
+        'student_code': case_data.get('studentCode') or 'N/A',
+        'request': case_data.get('title') or '',
+        'category': category,
+        'status': status,
+        'department': case_data.get('assignedDepartment') or '',
+        'reviewer': review.get('reviewerName') or 'Chua ghi nhan',
+        'reviewed_at': review.get('reviewedAt') or case_data.get('updatedAt') or '',
+        'reason': review.get('reason') or 'Khong co ghi chu',
+        'signature': case_data.get('digitalSignature') or '',
+    }
+    row_html = ''.join(
+        f'<tr><th>{safe(label)}</th><td>{safe(value)}</td></tr>'
+        for label, value in (
+            ('Ma ho so', rows['case']), ('Sinh vien', rows['student']),
+            ('Ma sinh vien', rows['student_code']), ('Yeu cau', rows['request']),
+            ('Danh muc', rows['category']), ('Trang thai quy trinh', rows['status']),
+            ('Don vi phu trach', rows['department']), ('Nguoi xu ly', rows['reviewer']),
+            ('Thoi diem xu ly', rows['reviewed_at']), ('Ghi chu', rows['reason']),
+        )
+    )
+    return f"""<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bien nhan quy trinh noi bo {safe(case_id)}</title>
+<style>
+body{{font:16px/1.55 system-ui,sans-serif;background:#f1f5f9;color:#172033;margin:0;padding:24px}}
+main{{max-width:780px;margin:auto;background:#fff;padding:32px;border:1px solid #cbd5e1;border-radius:12px}}
+h1{{font-size:1.5rem}}.notice{{padding:16px;border:2px solid #b45309;background:#fffbeb;color:#78350f;font-weight:700;border-radius:8px}}
+table{{width:100%;border-collapse:collapse;margin:24px 0}}th,td{{text-align:left;vertical-align:top;border-bottom:1px solid #e2e8f0;padding:10px}}th{{width:30%;color:#475569}}
+small{{color:#475569}}img{{width:128px;height:128px}}button{{padding:10px 16px}}@media print{{body{{background:white;padding:0}}main{{border:0}}button{{display:none}}}}
+</style></head><body><main>
+<p><strong>EDUASSISTANT - Bien nhan quy trinh noi bo</strong></p>
+<div class="notice">DAY LA KET QUA WORKFLOW NOI BO/DEMO. KHONG PHAI GIAY XAC NHAN CUA CO QUAN NHA NUOC, KHONG PHAI CHU KY SO CONG CONG, VA KHONG QUYET DINH TAM HOAN NGHIA VU QUAN SU.</div>
+<h1>Ket qua xu ly ho so</h1>
+<p>Trang thai duoi day chi phan anh quy trinh cua phan mem. Co quan/truong co tham quyen phai tu xac minh va ban hanh van ban chinh thuc theo quy dinh hien hanh.</p>
+<table>{row_html}</table>
+<p><strong>Ma toan ven HMAC-SHA256:</strong><br><code>{safe(rows['signature'])}</code></p>
+<p><img src="{safe(qr_code_data_url)}" alt="QR tra cuu trang thai ho so"></p>
+<p><small>QR chi tra cuu du lieu tren he thong. HMAC kiem tra tinh toan ven du lieu theo khoa noi bo; khong thay the chu ky so duoc cap phep hay con dau cua co quan.</small></p>
+<button onclick="window.print()">In bien nhan</button>
+</main></body></html>"""

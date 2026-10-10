@@ -7,7 +7,7 @@ from app.services.report_service import generate_users_csv
 from app.services.upload_service import UPLOAD_DIR
 from app.services.ai_service import get_ai_mode
 from app.core.responses import api_response
-from app.core.dependencies import require_roles
+from app.core.dependencies import get_current_user, require_roles
 from app.core.cache import get_json as get_cached_json, set_json as set_cached_json
 from app.schemas.admin import UpdateRoleRequest, CreateAdminUserRequest
 from app.db.database import get_all, get_one, run_query
@@ -16,6 +16,16 @@ from pydantic import BaseModel
 from typing import Optional
 
 router = APIRouter(tags=["Admin"])
+
+@router.get("/api/sis/me")
+async def get_my_sis_record(user: dict = Depends(get_current_user)):
+    """Return only the authenticated student's SIS row; never accept a userId from the client."""
+    if user.get('role') != 'STUDENT':
+        return api_response(403, False, 'Student account required.', None, 'FORBIDDEN')
+    record = get_one("""SELECT studentCode, fullName, academicStatus, courseStartDate, courseEndDate,
+        currentTermActive, hasCurrentSchedule, registeredPermanentAddress, faculty,
+        source, recordStatus, updatedAt FROM sis_student_records WHERE userId = ?""", (user['id'],))
+    return api_response(200, True, 'SIS record loaded.', {'record': record})
 
 class SisUpdateRequest(BaseModel):
     studentCode: Optional[str] = None

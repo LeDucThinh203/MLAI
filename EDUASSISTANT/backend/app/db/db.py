@@ -27,8 +27,23 @@ import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from app.db.database import run_query, get_one, get_all, get_dashboard_statistics
+from app.config import IS_PRODUCTION
 from app.realtime import case_event_hub
 from app.core.cache import bump_cache_version
+
+def _mask_public_name(value: Optional[str]) -> str:
+    parts = str(value or '').split()
+    if not parts:
+        return 'Hidden'
+    return ' '.join([*(part[0] + '***' for part in parts[:-1]), parts[-1][0] + '***'])
+
+
+def _mask_public_code(value: Optional[str]) -> Optional[str]:
+    code = str(value or '')
+    if not code:
+        return None
+    return ('*' * max(0, len(code) - 3)) + code[-3:]
+
 
 DEFAULT_AUDIT_PAGE_SIZE = 10
 MIN_AUDIT_PAGE_SIZE = 5
@@ -42,8 +57,8 @@ DEPARTMENT_MAP = {
 def get_signature_key() -> str:
     """Lấy khóa bí mật tạo mã xác thực toàn vẹn HMAC-SHA256."""
     key = os.environ.get('SIGNATURE_KEY')
-    if not key or len(key.strip()) < 16:
-        if os.environ.get('NODE_ENV') == 'production' or os.environ.get('ENV') == 'production':
+    if not key or len(key.strip()) < (32 if IS_PRODUCTION else 16):
+        if IS_PRODUCTION:
             raise RuntimeError('FATAL: Biến môi trường SIGNATURE_KEY chưa được cấu hình hoặc quá ngắn trong Production.')
         return 'caseflow_university_dev_sign_key_2026_x889'
     return key.strip()
@@ -661,7 +676,7 @@ class DatabaseService:
     @staticmethod
     async def get_case_for_verification(case_id: str):
         c = await DatabaseService.get_case_by_id(case_id)
-        if not c:
+        if not c or c.get('status') != 'APPROVED':
             return None
 
         stored_sig = c.get('digitalSignature')
@@ -673,22 +688,20 @@ class DatabaseService:
             expected_sig = hmac.new(get_signature_key().encode('utf-8'), expected_payload.encode('utf-8'), hashlib.sha256).hexdigest()
             verified = hmac.compare_digest(expected_sig.lower(), stored_sig.lower())
 
-        review = c.get('reviewResult') or {}
-
         return {
             'verified': verified,
             'caseId': c['id'],
-            'studentName': c['studentName'],
-            'studentCode': c.get('studentCode'),
-            'title': c['title'],
+            'studentName': _mask_public_name(c.get('studentName')),
+            'studentCode': _mask_public_code(c.get('studentCode')),
+            'title': 'Internal workflow record',
             'category': c['category'],
             'status': c['status'],
             'assignedDepartment': c.get('assignedDepartment') or DEPARTMENT_MAP.get(c.get('category'), 'Trường Đại Học'),
             'submittedAt': c.get('createdAt'),
-            'reviewedAt': review.get('reviewedAt') or c.get('updatedAt'),
-            'reviewerName': review.get('reviewerName') or 'Hội đồng Thẩm định Tự động',
+            'reviewedAt': c.get('updatedAt'),
+            'reviewerName': 'Hidden for privacy',
             'reviewerRole': review.get('reviewerRole') or 'SYSTEM_VERIFIED',
-            'reviewerDepartment': review.get('reviewerDepartment') or c.get('assignedDepartment'),
+            'reviewerDepartment': c.get('assignedDepartment'),
             'digitalSignature': stored_sig if has_stored_sig else None,
             'decisionNote': (
                 review.get('reason') or 'Chữ ký quyết định được xác thực hợp lệ.'

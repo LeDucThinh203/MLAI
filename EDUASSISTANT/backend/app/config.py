@@ -26,24 +26,30 @@ for p in env_paths:
     if os.path.exists(p):
         load_dotenv(p)
 
-# Cấu hình JWT & Secrets
-JWT_SECRET = os.environ.get('JWT_SECRET')
-if not JWT_SECRET:
-    if os.environ.get('NODE_ENV') == 'production' or os.environ.get('ENV') == 'production':
-        raise RuntimeError('FATAL: JWT_SECRET environment variable must be explicitly defined in production!')
-    JWT_SECRET = 'caseflow_sec_jwt_' + secrets.token_hex(32)
+# Resolve deployment mode before validating production secrets.
+_environment_values = [os.environ.get(name, '').strip().lower() for name in ('APP_ENV', 'ENV', 'NODE_ENV')]
+IS_PRODUCTION = 'production' in _environment_values
+APP_ENV = 'production' if IS_PRODUCTION else next((value for value in _environment_values if value), 'development')
 
-REFRESH_SECRET = os.environ.get('REFRESH_SECRET')
-if not REFRESH_SECRET:
-    if os.environ.get('NODE_ENV') == 'production' or os.environ.get('ENV') == 'production':
-        raise RuntimeError('FATAL: REFRESH_SECRET environment variable must be explicitly defined in production!')
-    REFRESH_SECRET = 'caseflow_sec_ref_' + secrets.token_hex(32)
+
+def _secret(name: str, minimum_length: int = 32) -> str:
+    value = os.environ.get(name, '').strip()
+    if IS_PRODUCTION and len(value) < minimum_length:
+        raise RuntimeError(f'FATAL: {name} must be configured with at least {minimum_length} characters in production.')
+    if value:
+        return value
+    return 'caseflow_' + name.lower() + '_' + secrets.token_hex(32)
+
+
+JWT_SECRET = _secret('JWT_SECRET')
+REFRESH_SECRET = _secret('REFRESH_SECRET')
+if JWT_SECRET == REFRESH_SECRET:
+    raise RuntimeError('FATAL: JWT_SECRET and REFRESH_SECRET must be different values.')
 
 PORT = int(os.environ.get('PORT', 3001))
 
 # Authentication cookies are inaccessible to JavaScript, preventing token theft
 # through browser storage when an XSS vulnerability is present.
-APP_ENV = os.environ.get('APP_ENV', os.environ.get('ENV', os.environ.get('NODE_ENV', 'development'))).lower()
 COOKIE_SECURE = os.environ.get('COOKIE_SECURE', str(APP_ENV == 'production')).lower() == 'true'
 COOKIE_SAMESITE = os.environ.get('COOKIE_SAMESITE', 'none' if COOKIE_SECURE else 'lax').lower()
 if COOKIE_SAMESITE == 'none' and not COOKIE_SECURE:

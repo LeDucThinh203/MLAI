@@ -1,63 +1,42 @@
-# QUY CHẾ CẤP GIẤY XÁC NHẬN SINH VIÊN PHỤC VỤ TẠM HOÃN NGHĨA VỤ QUÂN SỰ
-## (MILITARY SERVICE CONFIRMATION POLICY - DOMAIN NVQS 2026)
+# Internal Student Service Workflow Policy (Prototype)
 
-> [!IMPORTANT]
-> **VĂN BẢN NGHIỆP VỤ CHUYÊN SÂU — MLAI HACKATHON 2026 (TEAM 1)**
-> Use Case: Cấp Giấy xác nhận sinh viên phục vụ tạm hoãn Nghĩa vụ quân sự (`MILITARY_SERVICE_CONFIRMATION`).
-> Cơ sở pháp lý tham chiếu:
-> - Luật Nghĩa vụ Quân sự 2015 (Khoản 1 Điều 41 về tạm hoãn gọi nhập ngũ đối với sinh viên).
-> - Nghị định số 13/2016/NĐ-CP của Chính phủ quy định trình tự, thủ tục đăng ký nghĩa vụ quân sự.
-> - Thông tư số 148/2018/TT-BQP của Bộ Quốc phòng hướng dẫn tuyển chọn và gọi công dân nhập ngũ.
+## Scope and authority
 
----
+This document describes the software workflow implemented in EDUASSISTANT. It is an internal prototype policy, not a legal opinion, official institutional policy, or government procedure. The project has no verified connection to an institution's student information system or a competent military authority.
 
-### 1. Phạm Vi Áp Dụng & Mục Tiêu
+An `APPROVED` case means only that the prototype workflow reached its approved state. A generated receipt, QR code, or HMAC value is not an official certificate, a public-key digital signature, proof of legal eligibility, or a decision to defer military service. Only the competent institution and public authority can verify eligibility and issue official documents under the rules in force.
 
-Quy chế này xác định ranh giới tự động hóa và cơ chế phân xử leo thang (**The Escalation Referee**) giữa hệ thống AI và Cán bộ thẩm định Phòng Quản lý Đào tạo trong quy trình cấp Giấy xác nhận sinh viên nộp cho Ban Chỉ huy Quân sự cấp xã/phường phục vụ tạm hoãn nghĩa vụ quân sự:
-- **Chuyên môn thụ lý chính:** Phòng Quản lý Đào tạo (Academic Affairs Office).
-- **Phối hợp liên ngành:** Phòng Công tác Sinh viên, Ban Chỉ huy Quân sự địa phương.
-- **Tiêu chuẩn an toàn:** Tuyệt đối không tự ý suy diễn hoặc bổ sung dữ kiện pháp lý khi thiếu căn cứ xác thực từ hồ sơ gốc của Nhà trường.
+The current address and academic checks are conservative demo rules. Before real deployment, the institution must validate the policy, data sources, retention, staff authority, and document wording with its legal and academic-affairs offices. Do not infer current law from this code or document.
 
----
+## Authoritative data and claims
 
-### 2. Tiêu Chuẩn Hồ Sơ Đủ Điều Kiện Tự Động Phê Duyệt (`AUTO_APPROVE`)
+- The server derives the submitting identity from the authenticated account. Client-supplied identity fields are not authoritative.
+- When present, `sis_student_records` is the canonical academic record; legacy `users` fields are a compatibility fallback. Missing facts must remain missing and cause human review.
+- The student's declared address and reason are claims. AI output may parse or normalize the address, but it cannot establish identity, residence, academic status, or legal eligibility.
+- Seeded and admin-maintained internal SIS records are not authenticated SIS integrations. The engine escalates unless the record source is explicitly `VERIFIED_INSTITUTIONAL_SIS`. Mock, cached, synthetic, or fallback AI results also cannot be represented as verified real-world facts.
 
-Hệ thống chỉ được phép tự động phê duyệt cấp Giấy xác nhận điện tử khi đồng thời thỏa mãn **toàn bộ 5 điều kiện tiên quyết**:
-1. **Định danh chủ quyền hợp lệ:** Mã số sinh viên (MSSV) và họ tên khai báo trên đơn trùng khớp tuyệt đối với tài khoản sinh viên đã xác thực đang đăng nhập.
-2. **Trạng thái đào tạo chính khóa:** Hồ sơ sinh viên trong Cơ sở dữ liệu trường có `academicStatus = 'ACTIVE'`, học kỳ hiện tại đang kích hoạt (`currentTermActive = true`) và có lịch học/thời khóa biểu hợp lệ (`hasCurrentSchedule = true`).
-3. **Loại địa chỉ đúng quy định:** Sinh viên chọn loại địa chỉ **Thường trú (`PERMANENT`)**. Mẫu Giấy xác nhận NVQS pháp định gửi về Ban Chỉ huy Quân sự địa phương nơi đăng ký thường trú; kê khai tạm trú không hợp lệ.
-4. **Địa chỉ thường trú đầy đủ & đồng nhất:** 
-   - Khai báo đầy đủ tối thiểu 4 cấp đơn vị hành chính: Số nhà/Đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố.
-   - Không có mâu thuẫn trọng yếu (material conflict) với địa chỉ thường trú gốc được lưu trữ trong CSDL Nhà trường.
-   - Độ tin cậy bóc tách cú pháp đạt từ ngưỡng thích ứng hiện tại trở lên (`confidence >= currentThreshold`).
-5. **AI Provenance Live:** Động cơ AI chạy ở chế độ trực tiếp (`AI_MODE = 'live'`), không xảy ra lỗi suy thoái (`isFallback = false`) và không phải dữ liệu giả lập (`isSynthetic = false`).
+## Prototype automatic-workflow checks
 
----
+The rule engine may mark a case `AUTO_APPROVE` only when all implemented checks pass, including a trusted `VERIFIED_INSTITUTIONAL_SIS` source: exact normalized student-code and full-name match; `academicStatus = ACTIVE`; course dates are valid and include the current date; current term and schedule are explicitly true; address type is `PERMANENT`; address has a house number, street/locality, ward/commune, and province/city; an institutional permanent address exists and has no material conflict; AI confidence is at least the configured threshold; and the AI provenance is live, non-fallback, and non-synthetic.
 
-### 3. Năm (5) Nhóm Nguyên Nhân Leo Thang Lên Cán Bộ Thẩm Định (`ESCALATE_TO_HUMAN`)
+The parser does not require a district. This matches a two-tier local-administration address format and supports records that do not contain a district. A missing district alone is not a reason to escalate. The prototype's `PERMANENT` check is an internal workflow constraint; this document does not claim that it is a statutory requirement for every real application.
 
-Khi bất kỳ điều kiện tiên quyết nào không thỏa mãn, hệ thống phải dừng tự động hóa và leo thang hồ sơ lên Cán bộ thẩm định với mã nguyên nhân cụ thể:
+Passing these checks only marks the internal workflow recommendation. It does not authorize the software to issue an official certificate or make a legal decision.
 
-| Mã Nguyên Nhân | Nhãn Hiển Thị | Tiêu Chí Kích Hoạt Nghiệp Vụ | Hành Động Khuyến Nghị Cán Bộ |
-| :--- | :--- | :--- | :--- |
-| `OWNERSHIP_UNCLEAR` | Nghi vấn chủ quyền hồ sơ / Lệch MSSV | MSSV hoặc họ tên trên đơn/minh chứng lệch với tài khoản sinh viên đang nộp đơn. | Yêu cầu xuất trình CCCD gắn chip đối chiếu trực tiếp. |
-| `FACT_UNKNOWN` | Thiếu dữ kiện xác thực / Địa chỉ chưa đủ thành phần | Địa chỉ khai báo thiếu số nhà/đường, thiếu phường/xã hoặc tỉnh/thành phố; hoặc CSDL trường chưa có địa chỉ thường trú gốc; hoặc AI chạy chế độ giả lập / dự phòng (Mock/Cache/Fallback). | Hướng dẫn sinh viên bổ sung sổ hộ khẩu / thông tin cư trú VNeID. |
-| `DATA_CONFLICT` | Mâu thuẫn dữ liệu kê khai & lưu trữ | Sinh viên khai báo địa chỉ tạm trú (quy định bắt buộc thường trú) hoặc địa chỉ thường trú mâu thuẫn quận/huyện, tỉnh/thành phố với CSDL trường. | Liên hệ sinh viên xác minh cập nhật thay đổi nơi cư trú. |
-| `AUTHORITY_REQUIRED` | Cần thẩm quyền xem xét (Trạng thái đào tạo) | Sinh viên đang trong trạng thái tạm đình chỉ (`SUSPENDED`), đã thôi học (`WITHDRAWN`), xin gia hạn (`EXTENSION`), bảo lưu (`LEAVE_OF_ABSENCE`), hoặc chưa đăng ký học kỳ mới. | Chuyển Hội đồng Đào tạo xem xét điều kiện hoãn theo luật. |
-| `POLICY_OUT_OF_SCOPE` | Ngoại lệ chính sách ngoài thẩm quyền | Đơn có yêu cầu đặc cách, cứu xét, vượt khung thời gian đào tạo chuẩn hoặc yêu cầu nội dung ngoài quy chuẩn hoãn NVQS thông thường. | Trình Ban Giám hiệu quyết định văn bản đặc biệt. |
+## Human review
 
----
+The system routes a case for staff review when identity is missing or mismatched (`OWNERSHIP_UNCLEAR`), facts are missing or AI provenance/confidence is inadequate (`FACT_UNKNOWN`), claimed and stored addresses materially conflict or the claim is temporary (`DATA_CONFLICT`), academic records are missing, out of date, inactive, or otherwise not `ACTIVE` (`AUTHORITY_REQUIRED`), or the request asks for an exception beyond the prototype workflow (`POLICY_OUT_OF_SCOPE`).
 
-### 4. Cơ Chế Giám Sát Con Người Trong Vòng Lặp (Human-in-the-Loop)
+Reviewers must record a reason for their action. Returning a case for more information, stopping it, or making an administrative override follows the workflow transition guard. The guard protects application state; it does not grant legal authority.
 
-1. **Ghi đè thẩm quyền (Reviewer Override):**
-   - Cán bộ thẩm định có quyền ghi đè quyết định của Rule Engine (ví dụ: chuyển từ `ESCALATE_TO_HUMAN` sang `APPROVED` sau khi đã kiểm tra hồ sơ giấy).
-   - **Bắt buộc:** Phải cung cấp lý do ghi đè minh bạch (`overrideReason`), lưu vết vĩnh viễn vào Audit Trail toàn trường.
-2. **Dừng khẩn cấp tiến trình (`STOP`):**
-   - Cho phép đóng băng ngay lập tức các hồ sơ phát hiện dấu hiệu gian lận hoặc tranh chấp pháp lý.
-3. **Phản hồi thích ứng ngưỡng (`Reviewer Feedback`):**
-   - `MISSED_ESCALATION` (Sót leo thang): Hệ thống tự duyệt sai -> Ngưỡng tin cậy tăng `+0.02` (tối đa `0.90`).
-   - `UNNECESSARY_ESCALATION` (Leo thang thừa): Hệ thống leo thang không cần thiết -> Ngưỡng tin cậy giảm `-0.02` (tối thiểu `0.65`).
-   - `CORRECT` (Đúng chuẩn): Quyết định chính xác, không thay đổi ngưỡng.
-4. **Chứng thực điện tử & Chữ ký số:**
-   - Mọi Giấy xác nhận sinh viên điện tử được cấp đều được đóng dấu chữ ký số HMAC-SHA256, đính kèm mã QR tra cứu công khai độc lập, chống làm giả.
+## Workflow states
+
+`SUBMITTED` may move to `UNDER_REVIEW`, `REQUIRES_SUPPLEMENT`, or `STOPPED`. `UNDER_REVIEW` may move to `APPROVED`, `REJECTED`, `REQUIRES_SUPPLEMENT`, or `STOPPED`. `REQUIRES_SUPPLEMENT` may move to `UNDER_REVIEW` or `STOPPED`. Terminal states require an explicitly authorized admin override to reopen.
+
+## Adaptive threshold
+
+The confidence threshold is a configurable prototype control, bounded by 0.65 and 0.90 with 0.02 feedback steps. Reviewer feedback changes the workflow threshold only; it does not change legal criteria or prove model calibration. A single feedback event must not be treated as institutional policy approval.
+
+## Required before real-world use
+
+Connect an authenticated, audited institutional SIS source and set its trusted provenance only from that integration; establish an explicit data-verification and record-freshness process; have the competent institution approve the eligibility and address rules; separate internal recommendations from authorized issuance; use an approved digital-signature mechanism if official documents are ever issued; and obtain privacy/security review for personal data and public verification links.

@@ -73,7 +73,14 @@
       "role": "STUDENT",
       "password": "password123",
       "department": "Khoa Kinh Tế & Quản Trị",
-      "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150"
+      "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150",
+      "academicStatus": "GRADUATED",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": false,
+      "hasCurrentSchedule": false,
+      "registeredPermanentAddress": "Thôn An Bình, Xã Bình An, Tỉnh Đồng Nai (địa chỉ giả lập)",
+      "faculty": "Khoa Kinh Tế & Quản Trị"
     },
     {
       "id": "usr_student_04",
@@ -84,7 +91,14 @@
       "role": "STUDENT",
       "password": "password123",
       "department": "Khoa Cơ Khí & Tự Động Hóa",
-      "avatar": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150"
+      "avatar": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150",
+      "academicStatus": "ACTIVE",
+      "courseStartDate": "2023-09-05",
+      "courseEndDate": "2027-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true,
+      "registeredPermanentAddress": "45 Đường Lê Lợi, Phường Thủ Dầu Một, TP. Hồ Chí Minh (địa chỉ giả lập)",
+      "faculty": "Khoa Cơ Khí & Tự Động Hóa"
     },
     {
       "id": "usr_student_05",
@@ -95,7 +109,14 @@
       "role": "STUDENT",
       "password": "password123",
       "department": "Khoa Ngoại Ngữ",
-      "avatar": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150"
+      "avatar": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150",
+      "academicStatus": "LEAVE_OF_ABSENCE",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": false,
+      "hasCurrentSchedule": false,
+      "registeredPermanentAddress": "18 Đường Trần Phú, Phường Vũng Tàu, TP. Hồ Chí Minh (địa chỉ giả lập)",
+      "faculty": "Khoa Ngoại Ngữ"
     },
     {
       "id": "usr_student_06",
@@ -106,7 +127,14 @@
       "role": "STUDENT",
       "password": "password123",
       "department": "Khoa Điện - Điện Tử",
-      "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150"
+      "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+      "academicStatus": "ACTIVE",
+      "courseStartDate": "2024-09-03",
+      "courseEndDate": "2028-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true,
+      "registeredPermanentAddress": "72 Đường Nguyễn Huệ, Phường Pleiku, Tỉnh Gia Lai (địa chỉ giả lập)",
+      "faculty": "Khoa Điện - Điện Tử"
     },
     {
       "id": "usr_student_07",
@@ -117,7 +145,14 @@
       "role": "STUDENT",
       "password": "password123",
       "department": "Khoa Luật & Khoa Học Xã Hội",
-      "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
+      "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+      "academicStatus": "ACTIVE",
+      "courseStartDate": "2023-09-05",
+      "courseEndDate": "2027-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true,
+      "registeredPermanentAddress": "9 Đường Phan Đình Phùng, Phường Đà Lạt, Tỉnh Lâm Đồng (địa chỉ giả lập)",
+      "faculty": "Khoa Luật & Khoa Học Xã Hội"
     },
     {
       "id": "usr_student_08",
@@ -128,7 +163,14 @@
       "role": "STUDENT",
       "password": "password123",
       "department": "Khoa Y Dược",
-      "avatar": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150"
+      "avatar": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150",
+      "academicStatus": "SUSPENDED",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": false,
+      "hasCurrentSchedule": false,
+      "registeredPermanentAddress": "101 Đường Hùng Vương, Phường Huế, TP. Huế (địa chỉ giả lập)",
+      "faculty": "Khoa Y Dược"
     },
     {
       "id": "usr_student_09",
@@ -139,7 +181,14 @@
       "role": "STUDENT",
       "password": "password123",
       "department": "Khoa Kiến Trúc & Xây Dựng",
-      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "academicStatus": "ACTIVE",
+      "courseStartDate": "2024-09-03",
+      "courseEndDate": "2029-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true,
+      "registeredPermanentAddress": "26 Đường Trần Phú, Phường Quy Nhơn, Tỉnh Gia Lai (địa chỉ giả lập)",
+      "faculty": "Khoa Kiến Trúc & Xây Dựng"
     },
     {
       "id": "usr_student_10",
@@ -150,7 +199,14 @@
       "role": "STUDENT",
       "password": "password123",
       "department": "Khoa Khoa Học Dữ Liệu",
-      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
+      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+      "academicStatus": "ACTIVE",
+      "courseStartDate": "2023-09-05",
+      "courseEndDate": "2027-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true,
+      "registeredPermanentAddress": "54 Đường Cách Mạng Tháng Tám, Phường Ninh Kiều, TP. Cần Thơ (địa chỉ giả lập)",
+      "faculty": "Khoa Khoa Học Dữ Liệu"
     },
     {
       "id": "usr_student_11",
@@ -161,7 +217,14 @@
       "role": "STUDENT",
       "password": "password123",
       "department": "Khoa Tài Chính Ngân Hàng",
-      "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150"
+      "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+      "academicStatus": "GRADUATED",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2026-06-30",
+      "currentTermActive": false,
+      "hasCurrentSchedule": false,
+      "registeredPermanentAddress": "31 Đường Lê Duẩn, Phường Hải Châu, TP. Đà Nẵng (địa chỉ giả lập)",
+      "faculty": "Khoa Tài Chính Ngân Hàng"
     },
     {
       "id": "usr_reviewer_02",
@@ -217,7 +280,14 @@
       "role": "STUDENT",
       "department": "Khoa Điện - Điện Tử",
       "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
-      "createdAt": "2026-10-03T18:40:21.742Z"
+      "createdAt": "2026-10-03T18:40:21.742Z",
+      "academicStatus": "ACTIVE",
+      "courseStartDate": "2026-09-07",
+      "courseEndDate": "2030-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true,
+      "registeredPermanentAddress": "7 Đường Võ Văn Kiệt, Phường Tân An, TP. Cần Thơ (địa chỉ giả lập)",
+      "faculty": "Khoa Điện - Điện Tử"
     }
   ],
   "cases": [
