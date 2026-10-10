@@ -305,7 +305,6 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#94a3b8', margin: 0 }}>
               Phục vụ hồ sơ nghĩa vụ quân sự
             </h2>
-            <div role="note" style={{ padding: '12px', border: '1px solid #f59e0b', borderRadius: '8px', color: '#fcd34d', background: 'rgba(120,53,15,.25)', fontSize: '0.84rem' }}>Đây là bản dùng thử. Hệ thống chỉ ghi nhận và theo dõi yêu cầu, không cấp giấy xác nhận chính thức và không quyết định bạn có được tạm hoãn nghĩa vụ quân sự hay không. Vui lòng hỏi nhà trường và cơ quan có thẩm quyền về thủ tục. Việc đối chiếu địa chỉ ở đây chỉ áp dụng cho bản dùng thử.</div>
           </div>
 
           <form onSubmit={handleSubmitCase} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
