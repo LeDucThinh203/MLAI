@@ -13,7 +13,7 @@ const PORTAL = {
   ADMIN: { title: 'Cổng quản trị', subtitle: 'Điều hành hệ thống học vụ', icon: Shield, tabs: [['admin_overview', 'Tổng quan', BarChart3], ['admin_users', 'Tài khoản', Users], ['reviewer_queue', 'Thẩm định', Inbox], ['reviewer_audit', 'Nhật ký', History]] }
 };
 
-PORTAL.ADMIN.tabs.splice(2, 0, ['admin_policies', 'Chính sách', ScrollText], ['admin_sis', 'Dữ liệu SIS', Database]);
+PORTAL.ADMIN.tabs.splice(1, 0, ['admin_policies', 'Chính sách', ScrollText], ['admin_sis', 'Dữ liệu SIS', Database]);
 
 const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
   const { user, token, logout } = useAuth();

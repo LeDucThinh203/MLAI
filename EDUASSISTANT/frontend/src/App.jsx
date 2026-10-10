@@ -14,7 +14,7 @@ import PublicVerificationPage from './pages/public/PublicVerificationPage';
 import JudgeModePage from './pages/judge/JudgeModePage';
 
 const portalTabsByRole = {
-  ADMIN: ['admin_overview', 'admin_users', 'admin_policies', 'admin_sis', 'reviewer_queue', 'reviewer_audit', 'account_settings'],
+  ADMIN: ['admin_overview', 'admin_policies', 'admin_sis', 'admin_users', 'reviewer_queue', 'reviewer_audit', 'account_settings'],
   REVIEWER: ['reviewer_queue', 'reviewer_audit', 'account_settings'],
   STUDENT: ['student_submit', 'student_cases', 'student_history', 'account_settings']
 };
