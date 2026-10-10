@@ -41,7 +41,7 @@ async def get_system_ai_status(user: dict = Depends(get_current_user)):
         'currentMode': 'live' if is_configured else 'fallback',
         'operationalStatus': current_status,
         'displayLabel': display_label,
-        'model': 'gemini-2.5-flash',
+        'model': 'gemini-3.8-flash',
         'fallbackParser': 'Deterministic Vietnamese Administrative Address Parser',
         'failSafeEnabled': True
     })

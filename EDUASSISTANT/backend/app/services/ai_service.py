@@ -99,21 +99,21 @@ Hãy phản hồi dưới dạng JSON duy nhất với cấu trúc:
 Chỉ trả về JSON hợp lệ. Không đưa ra kết luận pháp lý."""
 
             raw_response = None
-            used_model = 'gemini-2.5-flash'
+            used_model = 'gemini-3.8-flash'
 
             # Thử qua google-genai SDK nếu có
             try:
                 from google import genai  # type: ignore
                 client = genai.Client(api_key=api_key.strip())
                 res = client.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model='gemini-3.8-flash',
                     contents=prompt_text,
                     config={'response_mime_type': 'application/json'}
                 )
                 raw_response = res.text
             except Exception:
                 # Fallback REST API
-                models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+                models_to_try = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']
                 async with httpx.AsyncClient(timeout=15.0) as http_client:
                     for m in models_to_try:
                         try:

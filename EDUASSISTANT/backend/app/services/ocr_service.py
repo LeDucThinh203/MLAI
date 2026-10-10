@@ -102,7 +102,7 @@ async def extract_document_entities(file_buffer: bytes, file_name: str, user: di
 Chỉ trả về JSON thuần túy, không thêm lời dẫn."""
 
             candidate_text = None
-            used_model = 'gemini-2.5-flash'
+            used_model = 'gemini-3.8-flash'
 
             # Thử qua google-genai SDK
             try:
@@ -110,7 +110,7 @@ Chỉ trả về JSON thuần túy, không thêm lời dẫn."""
                 from google.genai import types  # type: ignore
                 client = genai.Client(api_key=api_key.strip())
                 res = client.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model='gemini-3.8-flash',
                     contents=[
                         prompt_text,
                         types.Part.from_bytes(data=file_buffer, mime_type=mime_type)
@@ -120,7 +120,7 @@ Chỉ trả về JSON thuần túy, không thêm lời dẫn."""
                 candidate_text = res.text
             except Exception:
                 # Fallback REST API
-                models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+                models_to_try = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']
                 async with httpx.AsyncClient(timeout=20.0) as client:
                     for m in models_to_try:
                         try:

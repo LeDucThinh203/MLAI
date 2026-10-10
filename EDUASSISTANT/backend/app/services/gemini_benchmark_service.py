@@ -38,7 +38,7 @@ def enrich_benchmark_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         'Phải trả đúng một kết quả cho từng caseId.\nDữ liệu:\n' + json.dumps(fixtures, ensure_ascii=False)
     )
 
-    models = ['gemini-2.5-flash', 'gemini-2.0-flash']
+    models = ['gemini-3.8-flash', 'gemini-3.6-flash']
     api_calls = 0
     last_error = 'Gemini did not return a valid response'
     try:

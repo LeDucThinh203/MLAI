@@ -65,7 +65,7 @@ async def get_judge_summary():
     configured = len(os.environ.get('GEMINI_API_KEY', '').strip()) > 10
     return api_response(200, True, 'Public judge summary loaded.', {
         'systemStatus': 'AVAILABLE',
-        'ai': {'configured': configured, 'status': 'CONFIGURED' if configured else 'NOT_CONFIGURED', 'model': 'gemini-2.5-flash'},
+        'ai': {'configured': configured, 'status': 'CONFIGURED' if configured else 'NOT_CONFIGURED', 'model': 'gemini-3.8-flash'},
         'adaptiveThreshold': get_confidence_threshold(),
         'benchmark': _benchmark_summary(),
         'verifyHarness': {'scenarioCount': len(HARNESS_CASES), 'type': 'DETERMINISTIC_RULE_ENGINE_VERIFICATION'},
