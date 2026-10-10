@@ -32,6 +32,21 @@ const ACADEMIC_STATUS_LABELS = {
 
 const SIS_RECORD_STATUS_LABELS = { ACTIVE: 'Đang sử dụng', SUSPENDED: 'Tạm khóa' };
 
+const POLICY_DISPLAY = {
+  'POL-NVQS-001': 'Xác minh đúng người sở hữu hồ sơ',
+  'POL-NVQS-002': 'Yêu cầu nằm ngoài quy trình xử lý',
+  'POL-NVQS-003': 'Kiểm tra thẩm quyền xác nhận thông tin học vụ',
+  'POL-NVQS-004': 'Địa chỉ tạm trú không phù hợp',
+  'POL-NVQS-005': 'Thiếu thông tin địa chỉ cần thiết',
+  'POL-NVQS-006': 'Địa chỉ thường trú không khớp',
+  'POL-NVQS-007': 'Kiểm tra độ tin cậy của AI',
+  'POL-NVQS-008': 'Kiểm tra thời gian khóa học'
+};
+
+const POLICY_CATEGORY_LABELS = { IDENTITY: 'Danh tính', POLICY_SCOPE: 'Phạm vi quy trình', ACADEMIC: 'Thông tin học vụ', ADDRESS: 'Địa chỉ', AI_SAFETY: 'An toàn AI' };
+const POLICY_ACTION_LABELS = { ESCALATE_TO_HUMAN: 'Chuyển cán bộ xử lý' };
+const POLICY_REASON_LABELS = { OWNERSHIP_UNCLEAR: 'Cần xác minh người sở hữu', POLICY_OUT_OF_SCOPE: 'Ngoài phạm vi quy trình', AUTHORITY_REQUIRED: 'Cần cán bộ có thẩm quyền xác nhận', DATA_CONFLICT: 'Thông tin chưa khớp', FACT_UNKNOWN: 'Thiếu thông tin để xác nhận' };
+
 const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const { token } = useAuth();
   const [users, setUsers] = useState([]);
@@ -283,8 +298,14 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
       )}
 
       {activeTab === 'admin_policies' && <section className="card-panel" style={{ padding: '24px' }}>
-        <h2>Policy Registry</h2><p>Quy tắc nghiệp vụ nội bộ đang điều khiển Escalation Referee. Chỉ đọc; Rule Engine production là nguồn thực thi cuối cùng.</p>
-        {policies.map(policy => <div key={policy.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}><strong>{policy.id} — {policy.name}</strong><br /><small>{policy.category} · {policy.systemAction} · {policy.escalationReason} · Internal Workflow Policy</small></div>)}
+        <h2>Danh mục quy tắc nghiệp vụ <small style={{ fontWeight: 500 }}>(Policy Registry)</small></h2>
+        <p>Các quy tắc nội bộ hướng dẫn việc kiểm tra hồ sơ. Chỉ xem; hệ thống xét duyệt tự động là nguồn quyết định cuối cùng <span>(Rule Engine)</span>.</p>
+        {policies.map(policy => <div key={policy.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
+          <strong>{policy.id} — {POLICY_DISPLAY[policy.id] || policy.name} <small style={{ fontWeight: 500 }}>({policy.name})</small></strong><br />
+          <small>
+            {POLICY_CATEGORY_LABELS[policy.category] || policy.category} ({policy.category}) · {POLICY_ACTION_LABELS[policy.systemAction] || policy.systemAction} ({policy.systemAction}) · {POLICY_REASON_LABELS[policy.escalationReason] || policy.escalationReason} ({policy.escalationReason}) · Quy tắc quy trình nội bộ (Internal Workflow Policy)
+          </small>
+        </div>)}
       </section>}
 
       {activeTab === 'admin_sis' && <section className="card-panel" style={{ padding: '24px', overflow: 'hidden' }}>
