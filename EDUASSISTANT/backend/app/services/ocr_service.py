@@ -19,6 +19,15 @@ from app.services.ai_service import sanitize_json_string, get_ai_mode
 
 DOCUMENT_PATTERNS = [
     {
+        'type': 'MILITARY_SERVICE_CONFIRMATION',
+        'categoryName': 'Cấp giấy xác nhận sinh viên phục vụ tạm hoãn NVQS',
+        'keywords': ['nghĩa vụ quân sự', 'nvqs', 'tạm hoãn', 'giấy xác nhận sinh viên', 'chỉ huy quân sự', 'quân sự', 'thường trú', 'cccd'],
+        'defaultIssuing': 'Trường Đại Học',
+        'sampleCodePrefix': 'NVQS-2026',
+        'titleGenerator': lambda name, code: f"Yêu cầu cấp Giấy xác nhận tạm hoãn NVQS - {name or 'Sinh viên'} ({code or 'SV2026'})",
+        'descGenerator': lambda name, org: "Đơn đề nghị cấp giấy xác nhận sinh viên phục vụ thủ tục tạm hoãn nghĩa vụ quân sự năm 2026."
+    },
+    {
         'type': 'TUITION_DISCOUNT',
         'categoryName': 'Miễn giảm học phí',
         'keywords': ['cận nghèo', 'hộ nghèo', 'giảm học phí', 'chính sách', 'hộ gia đình', 'ubnd', 'miễn giảm'],
@@ -97,8 +106,8 @@ Chỉ trả về JSON thuần túy, không thêm lời dẫn."""
 
             # Thử qua google-genai SDK
             try:
-                from google import genai
-                from google.genai import types
+                from google import genai  # type: ignore
+                from google.genai import types  # type: ignore
                 client = genai.Client(api_key=api_key.strip())
                 res = client.models.generate_content(
                     model='gemini-2.5-flash',

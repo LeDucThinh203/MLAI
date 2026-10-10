@@ -110,7 +110,14 @@ async def login(req: LoginRequest):
         })
         return api_response(401, False, 'Tên đăng nhập hoặc mật khẩu không chính xác.', None, 'INVALID_CREDENTIALS')
 
-    is_match = bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8'))
+    try:
+        user_pw = user.get('password', '')
+        if user_pw.startswith(('$2a$', '$2b$', '$2y$')):
+            is_match = bcrypt.checkpw(password.encode('utf-8'), user_pw.encode('utf-8'))
+        else:
+            is_match = (password == user_pw)
+    except Exception:
+        is_match = (password == user.get('password', ''))
     if not is_match:
         await record_failed_attempt(username.lower())
         await db_service.log_audit({

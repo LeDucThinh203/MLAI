@@ -6,6 +6,10 @@ from app.db.db import db_service
 
 async def get_current_user(request: Request) -> dict:
     raw_token = request.cookies.get(ACCESS_COOKIE_NAME)
+    if not raw_token:
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            raw_token = auth_header[7:].strip()
 
     if not raw_token:
         raise HTTPException(

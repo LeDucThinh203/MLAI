@@ -47,6 +47,7 @@ def generate_cases_csv(cases: list) -> str:
     ]
 
     category_labels = {
+        'MILITARY_SERVICE_CONFIRMATION': 'Cấp giấy xác nhận tạm hoãn NVQS',
         'TUITION_DISCOUNT': 'Miễn giảm học phí',
         'COMMUNITY_SERVICE': 'Điểm rèn luyện & CTXH',
         'SCHOLARSHIP': 'Học bổng khuyến khích',

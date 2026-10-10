@@ -42,3 +42,19 @@ async def set_ai_mode_endpoint(req: SetAiModeRequest, user: dict = Depends(requi
             'currentMode': req.mode
         })
     return api_response(400, False, 'Chế độ AI không hợp lệ. Chỉ chấp nhận live, mock, cache.', None, 'INVALID_MODE')
+
+
+from pydantic import BaseModel
+from typing import Optional
+
+class NormalizeAddressRequest(BaseModel):
+    rawAddress: str
+    addressType: Optional[str] = 'PERMANENT'
+
+
+@router.post("/api/ai/normalize-address")
+async def normalize_address_endpoint(req: NormalizeAddressRequest, user: dict = Depends(get_current_user)):
+    from app.services.address_ai_service import normalize_student_address
+    result = await normalize_student_address(req.rawAddress, req.addressType or 'PERMANENT', user)
+    return api_response(200, True, 'Chuẩn hóa địa chỉ thành công.', result)
+

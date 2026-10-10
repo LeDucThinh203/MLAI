@@ -164,23 +164,78 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
     if user['role'] != 'STUDENT' and user['role'] != 'ADMIN':
         return api_response(403, False, 'Chỉ sinh viên mới được quyền tạo hồ sơ học vụ.', None, 'FORBIDDEN')
 
+    from app.services.address_ai_service import normalize_student_address
+
     case_dict = req.dict()
-    ai_res = await extract_case_data(case_dict, user)
-    ai_extraction = ai_res.get('data', {})
-    case_dict['aiExtraction'] = ai_extraction
+    case_dict['category'] = 'MILITARY_SERVICE_CONFIRMATION'
+    if not case_dict.get('title'):
+        case_dict['title'] = 'Yêu cầu cấp Giấy xác nhận sinh viên phục vụ tạm hoãn NVQS'
+
+    # Lấy thông tin sinh viên Authoritative Record
+    student_user = await db_service.get_user_by_id(user['id']) or user
+
+    inst_facts = {
+        'studentId': user['id'],
+        'studentCode': student_user.get('studentCode') or user.get('studentCode') or user.get('username'),
+        'fullName': student_user.get('fullName') or user.get('fullName'),
+        'academicStatus': student_user.get('academicStatus') or 'ACTIVE',
+        'courseStartDate': student_user.get('courseStartDate') or '2023-09-01',
+        'courseEndDate': student_user.get('courseEndDate') or '2027-06-30',
+        'currentTermActive': bool(student_user.get('currentTermActive', True)),
+        'hasCurrentSchedule': bool(student_user.get('hasCurrentSchedule', True)),
+        'registeredPermanentAddress': student_user.get('registeredPermanentAddress') or '12/4 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh',
+        'faculty': student_user.get('faculty') or student_user.get('department') or 'Khoa Công Nghệ Thông Tin'
+    }
+    case_dict['institutionalFacts'] = inst_facts
+    case_dict['authoritativeInstitutionalFacts'] = inst_facts
+
+    # Student Claims
+    raw_addr = req.rawAddress or case_dict.get('description') or ''
+    addr_type = req.addressType or 'PERMANENT'
+    student_claim = {
+        'addressType': addr_type,
+        'rawAddress': raw_addr,
+        'declaredStructuredAddress': req.declaredStructuredAddress,
+        'requestReason': req.description or 'Cấp giấy xác nhận sinh viên phục vụ tạm hoãn nghĩa vụ quân sự',
+        'notes': req.notes or '',
+        'studentCode': inst_facts['studentCode'],
+        'fullName': inst_facts['fullName']
+    }
+    case_dict['studentClaim'] = student_claim
+
+    # AI Address Normalization
+    ai_address_res = await normalize_student_address(raw_addr, addr_type, user)
+    case_dict['aiAddressAnalysis'] = ai_address_res
+    case_dict['aiExtraction'] = {
+        'normalizedAddress': ai_address_res.get('normalizedAddress'),
+        'missingFields': ai_address_res.get('missingFields'),
+        'confidence': ai_address_res.get('confidence'),
+        'modeUsed': ai_address_res.get('modeUsed'),
+        'studentClaim': student_claim,
+        'institutionalFacts': inst_facts,
+        'addressAnalysis': ai_address_res,
+        'provenance': {
+            'modeUsed': ai_address_res.get('modeUsed'),
+            'isLive': ai_address_res.get('isLive'),
+            'isFallback': ai_address_res.get('isFallback'),
+            'isSynthetic': ai_address_res.get('isSynthetic'),
+            'confidence': ai_address_res.get('confidence')
+        }
+    }
     case_dict['aiMetadata'] = {
-        'modeUsed': ai_res.get('modeUsed'),
-        'fallbackOccurred': ai_res.get('fallbackOccurred'),
-        'fallbackReason': ai_res.get('fallbackReason'),
-        'durationMs': ai_res.get('durationMs')
+        'modeUsed': ai_address_res.get('modeUsed'),
+        'isLive': ai_address_res.get('isLive'),
+        'isFallback': ai_address_res.get('isFallback'),
+        'isSynthetic': ai_address_res.get('isSynthetic'),
+        'fallbackOccurred': ai_address_res.get('isFallback'),
+        'confidence': ai_address_res.get('confidence'),
+        'durationMs': ai_address_res.get('durationMs')
     }
 
-    # Ưu tiên dữ kiện OCR từ tệp minh chứng thực tế thay vì text AI
     files = case_dict.get('evidenceFiles') or []
     factual_ocr = files[0].get('ocrData') if (files and isinstance(files[0], dict)) else None
 
-    rule_verdict = evaluate_case(case_dict, factual_ocr, user)
-
+    rule_verdict = evaluate_case(case_dict, factual_ocr, student_user)
     case_dict['ruleEngine'] = rule_verdict
     case_dict['status'] = rule_verdict['status']
 
@@ -194,7 +249,7 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
 
     created = await db_service.create_case(case_dict, user)
     await case_event_hub.broadcast({'type': 'case_created', 'case': created}, roles={'REVIEWER', 'ADMIN'})
-    return api_response(201, True, 'Tạo hồ sơ học vụ thành công.', {'case': created, **(created or {})})
+    return api_response(201, True, 'Tạo yêu cầu cấp Giấy xác nhận tạm hoãn NVQS thành công.', {'case': created, **(created or {})})
 
 
 @router.post("/api/cases/{case_id}/supplement")

@@ -19,6 +19,13 @@ from app.db.db import db_service
 current_ai_mode = os.environ.get('AI_MODE', 'mock')
 
 EXTRACTION_CACHE = {
+    'MILITARY_SERVICE_CONFIRMATION': {
+        'documentType': 'Cấp giấy xác nhận sinh viên phục vụ tạm hoãn NVQS',
+        'contentSummary': 'Địa chỉ thường trú và thông tin học vụ đã được phân tích kiểm định',
+        'confidence': 0.96,
+        'policyRuleMatch': 'RULE_MILITARY_SERVICE_STANDARD',
+        'suggestedAction': 'AUTO_APPROVE_ELIGIBLE'
+    },
     'TUITION_DISCOUNT': {
         'extractedHouseholdId': 'HN-2026-8812',
         'householdStatus': 'CẬN NGHÈO',
@@ -122,7 +129,7 @@ Chỉ trả về JSON hợp lệ."""
 
             # Thử qua google-genai SDK nếu có
             try:
-                from google import genai
+                from google import genai  # type: ignore
                 client = genai.Client(api_key=api_key.strip())
                 res = client.models.generate_content(
                     model='gemini-2.5-flash',
