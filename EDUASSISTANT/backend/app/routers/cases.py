@@ -6,6 +6,7 @@ import jwt
 from fastapi.responses import HTMLResponse
 
 from app.db.db import db_service
+from app.db.database import get_one
 from app.services.ai_service import extract_case_data
 from app.services.rule_engine import evaluate_case
 from app.services.workflow_guard import validate_status_transition
@@ -181,17 +182,21 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
     # Lấy thông tin sinh viên Authoritative Record (Tuyệt đối không invent fallback giả)
     student_user = await db_service.get_user_by_id(user['id']) or user
 
+    sis_record = get_one('SELECT * FROM sis_student_records WHERE userId = ?', (user['id'],))
+    authoritative = sis_record or {}
+    # SIS is canonical when present. If migration data is absent, preserve only
+    # explicit legacy fields; do not invent academic facts or use username as MSSV.
     inst_facts = {
         'studentId': user['id'],
-        'studentCode': student_user.get('studentCode') or user.get('studentCode') or user.get('username'),
-        'fullName': student_user.get('fullName') or user.get('fullName'),
-        'academicStatus': student_user.get('academicStatus'),
-        'courseStartDate': student_user.get('courseStartDate'),
-        'courseEndDate': student_user.get('courseEndDate'),
-        'currentTermActive': student_user.get('currentTermActive'),
-        'hasCurrentSchedule': student_user.get('hasCurrentSchedule'),
-        'registeredPermanentAddress': student_user.get('registeredPermanentAddress'),
-        'faculty': student_user.get('faculty') or student_user.get('department')
+        'studentCode': authoritative.get('studentCode') if sis_record else student_user.get('studentCode'),
+        'fullName': authoritative.get('fullName') if sis_record else student_user.get('fullName'),
+        'academicStatus': authoritative.get('academicStatus') if sis_record else student_user.get('academicStatus'),
+        'courseStartDate': authoritative.get('courseStartDate') if sis_record else student_user.get('courseStartDate'),
+        'courseEndDate': authoritative.get('courseEndDate') if sis_record else student_user.get('courseEndDate'),
+        'currentTermActive': authoritative.get('currentTermActive') if sis_record else student_user.get('currentTermActive'),
+        'hasCurrentSchedule': authoritative.get('hasCurrentSchedule') if sis_record else student_user.get('hasCurrentSchedule'),
+        'registeredPermanentAddress': authoritative.get('registeredPermanentAddress') if sis_record else student_user.get('registeredPermanentAddress'),
+        'faculty': authoritative.get('faculty') if sis_record else student_user.get('faculty')
     }
     case_dict['institutionalFacts'] = inst_facts
     case_dict['authoritativeInstitutionalFacts'] = inst_facts

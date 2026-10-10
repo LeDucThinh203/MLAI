@@ -317,6 +317,18 @@ CREATE TABLE IF NOT EXISTS escalation_threshold_history (
     note TEXT,
     createdAt VARCHAR(100) NOT NULL
 );
+CREATE TABLE IF NOT EXISTS sis_student_records (
+    id VARCHAR(100) PRIMARY KEY,
+    userId VARCHAR(100) UNIQUE NOT NULL REFERENCES users(id),
+    studentCode VARCHAR(100) UNIQUE,
+    fullName VARCHAR(255) NOT NULL,
+    academicStatus VARCHAR(50), courseStartDate VARCHAR(50), courseEndDate VARCHAR(50),
+    currentTermActive BOOLEAN, hasCurrentSchedule BOOLEAN,
+    registeredPermanentAddress TEXT, faculty VARCHAR(255),
+    source VARCHAR(100) NOT NULL DEFAULT 'INTERNAL_SIS_DEMO',
+    recordStatus VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    createdAt VARCHAR(100) NOT NULL, updatedAt VARCHAR(100) NOT NULL, updatedBy VARCHAR(100)
+);
 '''
     with get_db_connection() as c, c.cursor() as q:
         for statement in schema.split(';'):
@@ -343,6 +355,8 @@ CREATE TABLE IF NOT EXISTS escalation_threshold_history (
         q.execute('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_expiry ON refresh_tokens (userId, expiresAt)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_revoked_access_tokens_expiry ON revoked_access_tokens (expiresAt)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_threshold_history_created ON escalation_threshold_history (createdAt DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_sis_academic_status ON sis_student_records (academicStatus)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_sis_faculty ON sis_student_records (faculty)')
 
         # Khởi tạo bản ghi chính sách ngưỡng thích ứng mặc định
         q.execute("SELECT EXISTS (SELECT 1 FROM escalation_policy_state WHERE id = 'GLOBAL_NVQS_POLICY') AS has_policy")
@@ -383,6 +397,11 @@ CREATE TABLE IF NOT EXISTS escalation_threshold_history (
                         u.get('faculty', u.get('department', 'Khoa Công Nghệ Thông Tin')),
                         u.get('createdAt', now), u.get('updatedAt', now)
                     ))
+        # Additive migration: existing student account facts seed the internal
+        # demo SIS registry once; legacy user fields remain for compatibility.
+        q.execute("""INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,createdAt,updatedAt,updatedBy)
+            SELECT 'SIS-' || id,id,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,%s,%s,'SYSTEM_MIGRATION'
+            FROM users WHERE role='STUDENT' ON CONFLICT (userId) DO NOTHING""", (datetime.utcnow().isoformat()+'Z', datetime.utcnow().isoformat()+'Z'))
     print('[Database] Render PostgreSQL ready.')
 
 

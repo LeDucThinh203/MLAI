@@ -10,8 +10,38 @@ from app.core.responses import api_response
 from app.core.dependencies import require_roles
 from app.core.cache import get_json as get_cached_json, set_json as set_cached_json
 from app.schemas.admin import UpdateRoleRequest, CreateAdminUserRequest
+from app.db.database import get_all, get_one, run_query
+from app.services.policy_registry_service import POLICY_REGISTRY
 
 router = APIRouter(tags=["Admin"])
+
+
+@router.get('/api/admin/policies')
+async def get_policy_registry(user: dict = Depends(require_roles('ADMIN'))):
+    state = get_one('SELECT * FROM escalation_policy_state WHERE id = ?', ('GLOBAL_NVQS_POLICY',))
+    history = get_all('SELECT * FROM escalation_threshold_history ORDER BY createdAt DESC LIMIT 10')
+    return api_response(200, True, 'Policy registry loaded.', {'policies': POLICY_REGISTRY, 'domain': 'MILITARY_SERVICE_CONFIRMATION', 'adaptivePolicy': state, 'thresholdHistory': history})
+
+
+@router.get('/api/admin/sis')
+async def list_sis_records(search: str = '', academicStatus: str = '', faculty: str = '', recordStatus: str = '', page: int = 1, pageSize: int = 10, user: dict = Depends(require_roles('ADMIN'))):
+    clauses, params = ['1=1'], []
+    if search.strip():
+        clauses.append("(studentCode ILIKE ? OR fullName ILIKE ? OR faculty ILIKE ? OR registeredPermanentAddress ILIKE ?)")
+        params += [f'%{search.strip()}%'] * 4
+    for column, value in [('academicStatus', academicStatus), ('faculty', faculty), ('recordStatus', recordStatus)]:
+        if value.strip(): clauses.append(f'{column} = ?'); params.append(value.strip())
+    where = ' WHERE ' + ' AND '.join(clauses)
+    total = (get_one('SELECT COUNT(*) AS count FROM sis_student_records' + where, tuple(params)) or {}).get('count', 0)
+    size = min(20, max(1, pageSize)); safe_page = max(1, page)
+    records = get_all('SELECT * FROM sis_student_records' + where + ' ORDER BY updatedAt DESC LIMIT ? OFFSET ?', tuple(params + [size, (safe_page - 1) * size]))
+    return api_response(200, True, 'SIS records loaded.', {'records': records, 'total': int(total), 'page': safe_page, 'pageSize': size})
+
+
+@router.get('/api/admin/sis/{record_id}')
+async def get_sis_record(record_id: str, user: dict = Depends(require_roles('ADMIN'))):
+    record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    return api_response(200 if record else 404, bool(record), 'SIS record loaded.' if record else 'SIS record not found.', {'record': record} if record else None)
 
 
 @router.get("/api/admin/users")

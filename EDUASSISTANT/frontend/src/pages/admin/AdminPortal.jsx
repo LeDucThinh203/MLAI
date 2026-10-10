@@ -26,6 +26,8 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adminMessage, setAdminMessage] = useState(null);
+  const [policies, setPolicies] = useState([]);
+  const [sisRecords, setSisRecords] = useState([]);
 
   // States tạo tài khoản cán bộ từ Admin
   const [newFullName, setNewFullName] = useState('');
@@ -59,6 +61,17 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
   useEffect(() => {
     if (token) fetchAdminData();
+  }, [token, activeTab]);
+
+  useEffect(() => {
+    if (!token || !['admin_policies', 'admin_sis'].includes(activeTab)) return;
+    const endpoint = activeTab === 'admin_policies' ? '/admin/policies' : '/admin/sis?pageSize=20';
+    axios.get(`${API_BASE}${endpoint}`).then(res => {
+      if (res.data?.success) {
+        if (activeTab === 'admin_policies') setPolicies(res.data.data.policies || []);
+        else setSisRecords(res.data.data.records || []);
+      }
+    }).catch(() => setAdminMessage({ type: 'error', text: 'Không thể tải dữ liệu quản trị.' }));
   }, [token, activeTab]);
 
   const handleAdminCreateUser = async (e) => {
@@ -147,6 +160,16 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
           <span>{adminMessage.text}</span>
         </div>
       )}
+
+      {activeTab === 'admin_policies' && <section className="card-panel" style={{ padding: '24px' }}>
+        <h2>Policy Registry</h2><p>Quy tắc nghiệp vụ nội bộ đang điều khiển Escalation Referee. Chỉ đọc; Rule Engine production là nguồn thực thi cuối cùng.</p>
+        {policies.map(policy => <div key={policy.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}><strong>{policy.id} — {policy.name}</strong><br /><small>{policy.category} · {policy.systemAction} · {policy.escalationReason} · Internal Workflow Policy</small></div>)}
+      </section>}
+
+      {activeTab === 'admin_sis' && <section className="card-panel" style={{ padding: '24px' }}>
+        <h2>SIS Registry <small style={{ color: 'var(--text-muted)' }}>Internal SIS Demo Store</small></h2><p>Layer 1 — Authoritative Institutional Facts. Đây không phải kết nối trực tiếp tới SIS của trường.</p>
+        {sisRecords.map(record => <div key={record.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}><strong>{record.studentCode || 'Thiếu MSSV'} — {record.fullName}</strong><br /><small>{record.academicStatus || 'UNKNOWN'} · {record.faculty || 'Chưa rõ'} · {record.courseStartDate || '—'} → {record.courseEndDate || '—'}</small></div>)}
+      </section>}
 
       {/* 1. TỔNG QUAN QUẢN TRỊ & CƠ CẤU HỒ SƠ */}
       {activeTab === 'admin_overview' && stats && (

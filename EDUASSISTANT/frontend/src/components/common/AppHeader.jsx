@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { BarChart3, FileText, GraduationCap, History, Inbox, LoaderCircle, LogOut, PlusCircle, Settings, Shield, ShieldAlert, UserCheck, Users } from 'lucide-react';
+import { BarChart3, Database, FileText, GraduationCap, History, Inbox, LoaderCircle, LogOut, PlusCircle, ScrollText, Settings, Shield, ShieldAlert, UserCheck, Users } from 'lucide-react';
 import { API_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import NotificationBell from '../notifications/NotificationBell';
@@ -12,6 +12,8 @@ const PORTAL = {
   REVIEWER: { title: 'Cổng thẩm định hồ sơ', subtitle: 'Ban giám sát và xét duyệt', icon: UserCheck, tabs: [['reviewer_queue', 'Hàng đợi', Inbox], ['reviewer_audit', 'Nhật ký', History]] },
   ADMIN: { title: 'Cổng quản trị', subtitle: 'Điều hành hệ thống học vụ', icon: Shield, tabs: [['admin_overview', 'Tổng quan', BarChart3], ['admin_users', 'Tài khoản', Users], ['reviewer_queue', 'Thẩm định', Inbox], ['reviewer_audit', 'Nhật ký', History]] }
 };
+
+PORTAL.ADMIN.tabs.splice(2, 0, ['admin_policies', 'Chính sách', ScrollText], ['admin_sis', 'Dữ liệu SIS', Database]);
 
 const AppHeader = ({ activeTab, setActiveTab, onOpen2FAModal, onOpenCase }) => {
   const { user, token, logout } = useAuth();
