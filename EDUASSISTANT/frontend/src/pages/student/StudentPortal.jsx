@@ -105,7 +105,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
   };
 
   useEffect(() => {
-    if (token && activeTab === 'student_cases') fetchStudentData();
+    if (token && (activeTab === 'student_cases' || activeTab === 'student_history')) fetchStudentData();
   }, [token, activeTab]);
 
   useEffect(() => {
@@ -778,6 +778,21 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
               })
             )}
           </div>
+        </div>
+      )}
+
+      {/* TAB 3: LỊCH SỬ HOẠT ĐỘNG (AUDIT TRAIL) */}
+      {activeTab === 'student_history' && (
+        <div className="card-panel" style={{ padding: '24px' }}>
+          <AuditTrailViewer
+            token={token}
+            onRefresh={fetchStudentData}
+            loading={loading}
+            title="Lịch Sử Hoạt Động Của Bạn"
+            subtitle="Theo dõi chi tiết các thao tác đã thực hiện trên tài khoản và lịch sử thẩm định hồ sơ NVQS"
+            showRoleFilter={false}
+            isStudentView={true}
+          />
         </div>
       )}
     </div>
