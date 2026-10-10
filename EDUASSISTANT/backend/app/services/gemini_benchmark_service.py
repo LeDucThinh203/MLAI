@@ -38,12 +38,12 @@ def enrich_benchmark_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         'Phải trả đúng một kết quả cho từng caseId.\nDữ liệu:\n' + json.dumps(fixtures, ensure_ascii=False)
     )
 
-    models = ['gemini-3.8-flash', 'gemini-3.6-flash']
+    models = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']
     api_calls = 0
     last_error = 'Gemini did not return a valid response'
     try:
-        # Two bounded attempts keep the web request responsive while allowing
-        # one model fallback before switching to the prepared mock fixtures.
+        # Bounded attempts across stable Flash models keep the web request
+        # responsive before switching to the prepared mock fixtures.
         with httpx.Client(timeout=httpx.Timeout(12.0, connect=4.0)) as client:
             for model in models:
                 try:
