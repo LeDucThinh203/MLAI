@@ -42,6 +42,7 @@ export default function JudgeModePage({ onNavigateTab }) {
       const res = await axios.post(`${API_BASE}/verify/run`);
       if (res.data?.success) {
         setVerifyResults(res.data.data);
+        await fetchJudgeMetrics();
       }
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Lỗi khi thực thi Verify Harness!');
@@ -200,10 +201,10 @@ export default function JudgeModePage({ onNavigateTab }) {
         <ol style={{ margin: 0, paddingLeft: '20px', color: '#cbd5e1', fontSize: '0.84rem', lineHeight: 1.7 }}>
           <li>Nhấn <strong>RUN VERIFY</strong>.</li>
           <li>Kiểm tra các scenario deterministic và kết quả PASS/FAIL.</li>
-          <li>Xem Missed Escalation Rate, Unnecessary Escalation Rate, Adaptive Threshold; thử Live Student Workflow khi cần.</li>
+          <li>Xem chỉ số benchmark độc lập, ngưỡng tin cậy và thử Live Student Workflow khi cần.</li>
         </ol>
         <p style={{ margin: '10px 0 0', color: '#94a3b8', fontSize: '0.78rem' }}>
-          Verify Harness là deterministic, không gọi Gemini Live và không ghi dữ liệu production. Live Student Workflow mới gọi Gemini khi được cấu hình và khả dụng.
+          RUN VERIFY kiểm tra nhanh 9 tình huống và không gọi Gemini Live. Các chỉ số bên dưới lấy từ lần benchmark độc lập gần nhất gồm nhiều tình huống hơn; chúng được tải lại sau khi chạy kiểm chuẩn.
         </p>
       </section>
 
@@ -424,8 +425,12 @@ export default function JudgeModePage({ onNavigateTab }) {
           <Activity size={18} color="#34d399" /> Chỉ Số Đo Lường Benchmark Thật (Measurement Metrics)
         </h3>
         <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
-          Current deterministic NVQS decision benchmark scenario set. Runner không gọi Gemini và không sinh số giả.
+          Kết quả từ bộ kiểm chuẩn quyết định NVQS độc lập. Bộ kiểm chuẩn không gọi Gemini và không sinh số giả.
         </p>
+
+        {metrics?.benchmark?.totalCases && <div style={{ margin: '0 0 16px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.20)', color: '#cbd5e1', fontSize: '0.78rem' }}>
+          <strong style={{ color: '#38bdf8' }}>Kết quả đang hiển thị:</strong> {metrics.benchmark.totalCases} tình huống độc lập · Mã chạy {metrics.benchmark.benchmarkRunId || '—'} · Cập nhật {metrics.benchmark.timestamp ? new Date(metrics.benchmark.timestamp).toLocaleString('vi-VN') : '—'}.
+        </div>}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
           <div style={{ background: '#090d16', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b' }}>

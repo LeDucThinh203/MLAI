@@ -12,13 +12,14 @@ router = APIRouter(tags=["Judge"])
 
 
 def _benchmark_summary():
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     result_path = os.path.join(project_root, 'benchmark', 'results', 'latest.json')
     default = {
         'benchmarkType': 'DETERMINISTIC_DECISION_BENCHMARK', 'aiCallsPerformed': False,
         'totalCases': None, 'decisionAccuracy': None, 'automationRate': None,
         'escalationRate': None, 'missedEscalationRate': None,
         'unnecessaryEscalationRate': None,
+        'benchmarkRunId': None, 'timestamp': None, 'executionTimeSec': None,
     }
     try:
         with open(result_path, 'r', encoding='utf-8') as source:
@@ -27,6 +28,9 @@ def _benchmark_summary():
         result = dict(default)
         result['benchmarkType'] = data.get('benchmarkType', default['benchmarkType'])
         result['aiCallsPerformed'] = data.get('aiCallsPerformed', False)
+        result['benchmarkRunId'] = data.get('benchmarkRunId')
+        result['timestamp'] = data.get('timestamp')
+        result['executionTimeSec'] = data.get('executionTimeSec')
         for key in metrics:
             if key in result:
                 result[key] = metrics[key]
