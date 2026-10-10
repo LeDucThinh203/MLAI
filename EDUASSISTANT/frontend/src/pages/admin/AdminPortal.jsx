@@ -40,6 +40,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const [availableStudents, setAvailableStudents] = useState([]);
   const [viewingSis, setViewingSis] = useState(null);
   const [sisViewingLoading, setSisViewingLoading] = useState(false);
+  const [sisNoAvailableStudent, setSisNoAvailableStudent] = useState(false);
 
   // States tạo tài khoản cán bộ từ Admin
   const [newFullName, setNewFullName] = useState('');
@@ -154,7 +155,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
       const students = res.data?.data?.students || [];
       setAvailableStudents(students);
       if (students.length === 0) {
-        setAdminMessage({ type: 'error', text: 'Mọi tài khoản sinh viên hiện đã có hồ sơ SIS.' });
+        setSisNoAvailableStudent(true);
         return;
       }
       const student = students[0];
@@ -361,6 +362,14 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             </div>
             <div style={{ marginTop: '18px', padding: '12px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.10)', fontSize: '0.84rem' }}><strong>Vai trò trong thẩm định:</strong> SIS là dữ liệu xác thực do quản trị viên quản lý. Khi sinh viên nộp hồ sơ NVQS, hệ thống snapshot dữ liệu SIS hiện có vào hồ sơ để Rule Engine đối chiếu danh tính, học vụ, thời hạn khóa học và địa chỉ. AI chỉ hỗ trợ phân tích, không thay thế dữ liệu SIS.</div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}><button type="button" className="btn-primary" onClick={() => { setViewingSis(null); setSisEditorMode('edit'); setEditingSis({ ...viewingSis, recordStatus: viewingSis.recordStatus || 'ACTIVE' }); }}>Cập nhật hồ sơ</button></div>
+          </div>
+        </div>}
+        {sisNoAvailableStudent && <div role="dialog" aria-modal="true" aria-labelledby="sis-no-student-title" style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div className="card-panel" style={{ width: 'min(520px, 100%)', padding: '26px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
+            <h3 id="sis-no-student-title" style={{ marginTop: 0 }}>Chưa có sinh viên để thêm SIS</h3>
+            <p style={{ color: 'var(--text-muted)', lineHeight: 1.65 }}>Mỗi hồ sơ SIS phải gắn duy nhất với một tài khoản STUDENT để dữ liệu được snapshot chính xác khi sinh viên nộp hồ sơ NVQS. Hiện mọi tài khoản sinh viên đều đã có SIS.</p>
+            <p style={{ color: 'var(--text-muted)', lineHeight: 1.65 }}>Hãy tạo tài khoản sinh viên mới tại mục <strong>Tài khoản</strong>, sau đó quay lại đây để lập hồ sơ SIS và điền các facts học vụ.</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '22px' }}><button type="button" className="btn-secondary" onClick={() => setSisNoAvailableStudent(false)}>Đóng</button><button type="button" className="btn-primary" onClick={() => { window.location.assign('?tab=admin_users'); }}>Đến Tài khoản</button></div>
           </div>
         </div>}
       </section>}
