@@ -30,6 +30,10 @@ class SisUpdateRequest(BaseModel):
     recordStatus: Optional[str] = None
 
 
+class SisCreateRequest(SisUpdateRequest):
+    userId: str
+
+
 @router.get('/api/admin/policies')
 async def get_policy_registry(user: dict = Depends(require_roles('ADMIN'))):
     state = get_one('SELECT * FROM escalation_policy_state WHERE id = ?', ('GLOBAL_NVQS_POLICY',))
@@ -50,6 +54,54 @@ async def list_sis_records(search: str = '', academicStatus: str = '', faculty: 
     size = min(20, max(1, pageSize)); safe_page = max(1, page)
     records = get_all('SELECT * FROM sis_student_records' + where + ' ORDER BY updatedAt DESC LIMIT ? OFFSET ?', tuple(params + [size, (safe_page - 1) * size]))
     return api_response(200, True, 'SIS records loaded.', {'records': records, 'total': int(total), 'page': safe_page, 'pageSize': size})
+
+
+@router.get('/api/admin/sis/available-students')
+async def list_students_without_sis(user: dict = Depends(require_roles('ADMIN'))):
+    students = get_all('''SELECT u.id, u.studentCode, u.fullName, u.faculty, u.academicStatus
+        FROM users u LEFT JOIN sis_student_records s ON s.userId = u.id
+        WHERE u.role = ? AND s.id IS NULL ORDER BY u.fullName ASC''', ('STUDENT',))
+    return api_response(200, True, 'Students available for SIS registration loaded.', {'students': students})
+
+
+@router.post('/api/admin/sis')
+async def create_sis_record(req: SisCreateRequest, user: dict = Depends(require_roles('ADMIN'))):
+    data = req.dict()
+    student = get_one('SELECT * FROM users WHERE id = ? AND role = ?', (data['userId'], 'STUDENT'))
+    if not student:
+        return api_response(400, False, 'Select an existing student account for this SIS record.', None, 'INVALID_STUDENT')
+    if get_one('SELECT id FROM sis_student_records WHERE userId = ?', (data['userId'],)):
+        return api_response(409, False, 'This student already has an SIS record.', None, 'SIS_RECORD_EXISTS')
+
+    data['studentCode'] = data['studentCode'].strip().upper() if data.get('studentCode') else student.get('studentCode')
+    data['fullName'] = data['fullName'].strip()
+    if not data['fullName']:
+        return api_response(400, False, 'Full name is required.', None, 'VALIDATION_ERROR')
+    if data.get('academicStatus') not in (None, 'ACTIVE', 'SUSPENDED', 'WITHDRAWN', 'GRADUATED', 'LEAVE_OF_ABSENCE', 'UNKNOWN'):
+        return api_response(400, False, 'Invalid academic status.', None, 'VALIDATION_ERROR')
+    try:
+        start = datetime.strptime(data['courseStartDate'], '%Y-%m-%d').date() if data.get('courseStartDate') else None
+        end = datetime.strptime(data['courseEndDate'], '%Y-%m-%d').date() if data.get('courseEndDate') else None
+    except ValueError:
+        return api_response(400, False, 'Course dates must use YYYY-MM-DD.', None, 'VALIDATION_ERROR')
+    if start and end and start > end:
+        return api_response(400, False, 'Course start must not be after course end.', None, 'VALIDATION_ERROR')
+    if data['studentCode'] and get_one('SELECT id FROM sis_student_records WHERE studentCode = ?', (data['studentCode'],)):
+        return api_response(409, False, 'Student code already exists.', None, 'DUPLICATE_STUDENT_CODE')
+
+    record_id = f"SIS-{data['userId']}"
+    now = datetime.utcnow().isoformat() + 'Z'
+    run_query('''INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,recordStatus,createdAt,updatedAt,updatedBy)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
+        record_id, data['userId'], data['studentCode'], data['fullName'], data.get('academicStatus'),
+        data.get('courseStartDate'), data.get('courseEndDate'), data.get('currentTermActive'), data.get('hasCurrentSchedule'),
+        data.get('registeredPermanentAddress'), data.get('faculty'), 'INTERNAL_SIS_ADMIN', data.get('recordStatus') or 'ACTIVE', now, now, user.get('id')
+    ))
+    record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    await db_service.log_audit({'action': 'ADMIN_SIS_RECORD_CREATED', 'actor': user, 'caseId': None,
+        'input': {'recordId': record_id, 'userId': data['userId'], 'studentCode': data['studentCode']},
+        'result': 'SUCCESS', 'reason': 'Admin created an authoritative internal SIS record.'})
+    return api_response(201, True, 'SIS record created.', {'record': record})
 
 
 @router.get('/api/admin/sis/{record_id}')

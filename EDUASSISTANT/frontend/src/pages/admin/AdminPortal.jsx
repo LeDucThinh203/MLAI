@@ -36,6 +36,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const [sisSaving, setSisSaving] = useState(false);
   const [deletingSisId, setDeletingSisId] = useState(null);
   const [editingSis, setEditingSis] = useState(null);
+  const [sisEditorMode, setSisEditorMode] = useState('edit');
+  const [availableStudents, setAvailableStudents] = useState([]);
+  const [viewingSis, setViewingSis] = useState(null);
+  const [sisViewingLoading, setSisViewingLoading] = useState(false);
 
   // States tạo tài khoản cán bộ từ Admin
   const [newFullName, setNewFullName] = useState('');
@@ -92,6 +96,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
     setSisSaving(true);
     try {
       const payload = {
+        userId: editingSis.userId,
         studentCode: editingSis.studentCode,
         fullName: editingSis.fullName,
         academicStatus: editingSis.academicStatus,
@@ -103,11 +108,19 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
         faculty: editingSis.faculty,
         recordStatus: editingSis.recordStatus
       };
-      const res = await axios.put(`${API_BASE}/admin/sis/${editingSis.id}`, payload);
+      const res = sisEditorMode === 'create'
+        ? await axios.post(`${API_BASE}/admin/sis`, payload)
+        : await axios.put(`${API_BASE}/admin/sis/${editingSis.id}`, payload);
       if (!res.data?.success) throw new Error(res.data?.message || 'Cập nhật SIS thất bại.');
       setEditingSis(null);
-      setSisRecords(items => items.map(item => item.id === res.data.data.record.id ? res.data.data.record : item));
-      setAdminMessage({ type: 'success', text: 'Cập nhật hồ sơ SIS thành công.' });
+      if (sisEditorMode === 'create') {
+        setSisTotal(total => total + 1);
+        setSisPage(1);
+        setSisRecords(items => [res.data.data.record, ...items].slice(0, 20));
+      } else {
+        setSisRecords(items => items.map(item => item.id === res.data.data.record.id ? res.data.data.record : item));
+      }
+      setAdminMessage({ type: 'success', text: sisEditorMode === 'create' ? 'Đã thêm hồ sơ SIS.' : 'Cập nhật hồ sơ SIS thành công.' });
     } catch (err) {
       setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể cập nhật hồ sơ SIS.' });
     } finally {
@@ -131,6 +144,44 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
       setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể xóa bản ghi SIS.' });
     } finally {
       setDeletingSisId(null);
+    }
+  };
+
+  const openCreateSis = async () => {
+    setSisSaving(true);
+    try {
+      const res = await axios.get(`${API_BASE}/admin/sis/available-students`);
+      const students = res.data?.data?.students || [];
+      setAvailableStudents(students);
+      if (students.length === 0) {
+        setAdminMessage({ type: 'error', text: 'Mọi tài khoản sinh viên hiện đã có hồ sơ SIS.' });
+        return;
+      }
+      const student = students[0];
+      setSisEditorMode('create');
+      setEditingSis({
+        userId: student.id, studentCode: student.studentCode || '', fullName: student.fullName || '',
+        academicStatus: student.academicStatus || 'UNKNOWN', courseStartDate: null, courseEndDate: null,
+        currentTermActive: true, hasCurrentSchedule: true, registeredPermanentAddress: null,
+        faculty: student.faculty || null, recordStatus: 'ACTIVE'
+      });
+    } catch (err) {
+      setAdminMessage({ type: 'error', text: err.response?.data?.message || 'Không thể tải danh sách sinh viên chưa có SIS.' });
+    } finally {
+      setSisSaving(false);
+    }
+  };
+
+  const openSisDetails = async (record) => {
+    setSisViewingLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE}/admin/sis/${record.id}`);
+      if (!res.data?.success) throw new Error(res.data?.message || 'Không thể tải hồ sơ SIS.');
+      setViewingSis(res.data.data.record);
+    } catch (err) {
+      setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể tải hồ sơ SIS.' });
+    } finally {
+      setSisViewingLoading(false);
     }
   };
 
@@ -232,9 +283,14 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             <h2 style={{ marginBottom: '6px' }}>Dữ liệu SIS sinh viên</h2>
             <p style={{ margin: 0, color: 'var(--text-muted)' }}>Nguồn dữ liệu nội bộ cho hồ sơ sinh viên. Tổng cộng: <strong>{sisTotal}</strong> bản ghi.</p>
           </div>
-          <button type="button" className="btn-secondary" onClick={() => setSisPage(1)} disabled={sisLoading}>
-            <RefreshCw size={15} className={sisLoading ? 'animate-spin' : ''} /> Làm mới
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button type="button" className="btn-secondary" onClick={() => setSisPage(1)} disabled={sisLoading}>
+              <RefreshCw size={15} className={sisLoading ? 'animate-spin' : ''} /> Làm mới
+            </button>
+            <button type="button" className="btn-primary" onClick={openCreateSis} disabled={sisSaving}>
+              Thêm hồ sơ SIS
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '10px', marginBottom: '18px', flexWrap: 'wrap' }}>
@@ -263,7 +319,8 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 <td style={{ padding: '14px 12px' }}>{record.courseStartDate || '—'} <span style={{ color: 'var(--text-muted)' }}>→</span> {record.courseEndDate || '—'}</td>
                 <td style={{ padding: '14px 12px', textAlign: 'right' }}>
                   <div style={{ display: 'inline-flex', gap: '8px' }}>
-                    <button type="button" className="btn-secondary" onClick={() => setEditingSis({ ...record, recordStatus: record.recordStatus || 'ACTIVE' })}>Cập nhật</button>
+                    <button type="button" className="btn-secondary" onClick={() => openSisDetails(record)} disabled={sisViewingLoading}>Xem</button>
+                    <button type="button" className="btn-secondary" onClick={() => { setSisEditorMode('edit'); setEditingSis({ ...record, recordStatus: record.recordStatus || 'ACTIVE' }); }}>Cập nhật</button>
                     <button type="button" className="btn-secondary" disabled={deletingSisId === record.id} onClick={() => deleteSis(record)} style={{ color: '#dc2626', borderColor: 'rgba(220, 38, 38, 0.35)' }}>
                       {deletingSisId === record.id ? 'Đang xóa...' : 'Xóa'}
                     </button>
@@ -280,8 +337,9 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
         {editingSis && <div role="dialog" aria-modal="true" aria-labelledby="sis-update-title" style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <form onSubmit={e => { e.preventDefault(); saveSis(); }} className="card-panel" style={{ width: 'min(720px, 100%)', maxHeight: '90vh', overflowY: 'auto', padding: '24px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}><div><h3 id="sis-update-title" style={{ margin: 0 }}>Cập nhật hồ sơ SIS</h3><small style={{ color: 'var(--text-muted)' }}>Chỉ cập nhật dữ liệu đã được xác minh.</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setEditingSis(null)}><X size={18} /></button></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}><div><h3 id="sis-update-title" style={{ margin: 0 }}>{sisEditorMode === 'create' ? 'Thêm hồ sơ SIS' : 'Cập nhật hồ sơ SIS'}</h3><small style={{ color: 'var(--text-muted)' }}>SIS là nguồn facts được snapshot vào hồ sơ và đối chiếu bởi Rule Engine.</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setEditingSis(null)}><X size={18} /></button></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+              {sisEditorMode === 'create' && <label style={{ gridColumn: '1 / -1' }}>Tài khoản sinh viên<select value={editingSis.userId} onChange={e => { const student = availableStudents.find(item => item.id === e.target.value); setEditingSis({ ...editingSis, userId: e.target.value, studentCode: student?.studentCode || '', fullName: student?.fullName || '', faculty: student?.faculty || null, academicStatus: student?.academicStatus || 'UNKNOWN' }); }}><option value="">Chọn sinh viên</option>{availableStudents.map(student => <option key={student.id} value={student.id}>{student.studentCode || 'Chưa có MSSV'} — {student.fullName}</option>)}</select></label>}
               <label>MSSV<input value={editingSis.studentCode || ''} onChange={e => setEditingSis({ ...editingSis, studentCode: e.target.value || null })} /></label>
               <label>Họ và tên<input required value={editingSis.fullName || ''} onChange={e => setEditingSis({ ...editingSis, fullName: e.target.value })} /></label>
               <label>Trạng thái học vụ<select value={editingSis.academicStatus || 'UNKNOWN'} onChange={e => setEditingSis({ ...editingSis, academicStatus: e.target.value })}><option value="ACTIVE">Đang học</option><option value="SUSPENDED">Tạm dừng</option><option value="WITHDRAWN">Đã thôi học</option><option value="GRADUATED">Đã tốt nghiệp</option><option value="LEAVE_OF_ABSENCE">Bảo lưu</option><option value="UNKNOWN">Chưa xác định</option></select></label>
@@ -292,8 +350,18 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               <label>Địa chỉ thường trú<input value={editingSis.registeredPermanentAddress || ''} onChange={e => setEditingSis({ ...editingSis, registeredPermanentAddress: e.target.value || null })} /></label>
             </div>
             <div style={{ display: 'flex', gap: '20px', marginTop: '16px', flexWrap: 'wrap' }}><label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><input type="checkbox" checked={Boolean(editingSis.currentTermActive)} onChange={e => setEditingSis({ ...editingSis, currentTermActive: e.target.checked })} /> Có học kỳ đang hoạt động</label><label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><input type="checkbox" checked={Boolean(editingSis.hasCurrentSchedule)} onChange={e => setEditingSis({ ...editingSis, hasCurrentSchedule: e.target.checked })} /> Có thời khóa biểu hiện tại</label></div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}><button type="button" className="btn-secondary" onClick={() => setEditingSis(null)} disabled={sisSaving}>Hủy</button><button type="submit" className="btn-primary" disabled={sisSaving}>{sisSaving ? 'Đang cập nhật...' : 'Cập nhật'}</button></div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}><button type="button" className="btn-secondary" onClick={() => setEditingSis(null)} disabled={sisSaving}>Hủy</button><button type="submit" className="btn-primary" disabled={sisSaving}>{sisSaving ? 'Đang lưu...' : sisEditorMode === 'create' ? 'Thêm hồ sơ' : 'Cập nhật'}</button></div>
           </form>
+        </div>}
+        {viewingSis && <div role="dialog" aria-modal="true" aria-labelledby="sis-view-title" style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div className="card-panel" style={{ width: 'min(680px, 100%)', padding: '24px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}><div><h3 id="sis-view-title" style={{ margin: 0 }}>Hồ sơ SIS: {viewingSis.fullName}</h3><small style={{ color: 'var(--text-muted)' }}>{viewingSis.studentCode || 'Chưa có MSSV'} · Nguồn: {viewingSis.source || 'INTERNAL_SIS_DEMO'}</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setViewingSis(null)}><X size={18} /></button></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '20px' }}>
+              {[['Trạng thái học vụ', viewingSis.academicStatus || 'UNKNOWN'], ['Trạng thái bản ghi', viewingSis.recordStatus || 'ACTIVE'], ['Khoa / đơn vị', viewingSis.faculty || 'Chưa cập nhật'], ['Khóa học', `${viewingSis.courseStartDate || '—'} → ${viewingSis.courseEndDate || '—'}`], ['Học kỳ hoạt động', viewingSis.currentTermActive ? 'Có' : 'Không'], ['Thời khóa biểu', viewingSis.hasCurrentSchedule ? 'Có' : 'Không'], ['Địa chỉ thường trú', viewingSis.registeredPermanentAddress || 'Chưa cập nhật'], ['Cập nhật lần cuối', viewingSis.updatedAt || '—']].map(([label, value]) => <div key={label} style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '8px' }}><small style={{ color: 'var(--text-muted)', display: 'block' }}>{label}</small><strong style={{ fontSize: '0.88rem' }}>{value}</strong></div>)}
+            </div>
+            <div style={{ marginTop: '18px', padding: '12px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.10)', fontSize: '0.84rem' }}><strong>Vai trò trong thẩm định:</strong> Khi sinh viên tạo hồ sơ NVQS, các facts của SIS được snapshot vào hồ sơ. Rule Engine dùng chúng để đối chiếu danh tính, trạng thái học vụ, thời hạn khóa học và địa chỉ; AI chỉ hỗ trợ phân tích, không thay thế dữ liệu SIS.</div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}><button type="button" className="btn-primary" onClick={() => { setViewingSis(null); setSisEditorMode('edit'); setEditingSis({ ...viewingSis, recordStatus: viewingSis.recordStatus || 'ACTIVE' }); }}>Cập nhật hồ sơ</button></div>
+          </div>
         </div>}
       </section>}
 
