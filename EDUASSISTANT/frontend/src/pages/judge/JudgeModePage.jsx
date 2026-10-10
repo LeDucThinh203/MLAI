@@ -22,14 +22,14 @@ export default function JudgeModePage({ onNavigateTab }) {
   const fetchJudgeMetrics = async () => {
     setLoadingMetrics(true);
     try {
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await axios.get(`${API_BASE}/admin/system/metrics`, { headers });
+      const res = await axios.get(`${API_BASE}/judge/summary`, { withCredentials: true });
       if (res.data?.success) {
         setMetrics(res.data.data);
+      } else {
+        setErrorMsg('Unable to load live status.');
       }
     } catch (err) {
-      // Nếu không có quyền admin, vẫn có thể đọc thông tin cơ bản
-      console.warn('Không thể tải admin metrics (cần quyền admin):', err);
+      setErrorMsg('Unable to load live status.');
     } finally {
       setLoadingMetrics(false);
     }
@@ -52,7 +52,7 @@ export default function JudgeModePage({ onNavigateTab }) {
 
   useEffect(() => {
     fetchJudgeMetrics();
-  }, [token]);
+  }, []);
 
   const openPortalTab = (tab) => {
     onNavigateTab?.(tab);
@@ -159,7 +159,7 @@ export default function JudgeModePage({ onNavigateTab }) {
             <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Hệ Thống</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 8px #34d399' }} />
-              <strong style={{ fontSize: '1.05rem', color: '#34d399' }}>{metrics?.systemStatus || 'ONLINE'}</strong>
+              <strong style={{ fontSize: '1.05rem', color: '#34d399' }}>{metrics?.systemStatus || 'UNKNOWN'}</strong>
             </div>
           </div>
 
@@ -168,7 +168,7 @@ export default function JudgeModePage({ onNavigateTab }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
               <Cpu size={16} color="#38bdf8" />
               <strong style={{ fontSize: '1.05rem', color: '#38bdf8' }}>
-                {(metrics?.aiMode || 'mock').toUpperCase()}
+                {metrics?.ai?.status || 'UNKNOWN'}
               </strong>
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function JudgeModePage({ onNavigateTab }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
               <Activity size={16} color="#f59e0b" />
               <strong style={{ fontSize: '1.05rem', color: '#f59e0b' }}>
-                {metrics?.currentEscalationThreshold || '0.75'} (75%)
+                {typeof metrics?.adaptiveThreshold === 'number' ? `${metrics.adaptiveThreshold} (${Math.round(metrics.adaptiveThreshold * 100)}%)` : 'UNKNOWN'}
               </strong>
             </div>
           </div>
@@ -188,12 +188,24 @@ export default function JudgeModePage({ onNavigateTab }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
               <Shield size={16} color="#8b5cf6" />
               <strong style={{ fontSize: '1.05rem', color: '#8b5cf6' }}>
-                {metrics?.totalHumanOverrides || 0} lần
+                {'Not exposed publicly'}
               </strong>
             </div>
           </div>
         </div>
       </div>
+
+      <section className="card-panel" style={{ padding: '18px 22px', border: '1px solid #38bdf830' }}>
+        <h2 style={{ margin: '0 0 8px', fontSize: '1rem' }}>Dành cho Ban Giám Khảo</h2>
+        <ol style={{ margin: 0, paddingLeft: '20px', color: '#cbd5e1', fontSize: '0.84rem', lineHeight: 1.7 }}>
+          <li>Nhấn <strong>RUN VERIFY</strong>.</li>
+          <li>Kiểm tra các scenario deterministic và kết quả PASS/FAIL.</li>
+          <li>Xem Missed Escalation Rate, Unnecessary Escalation Rate, Adaptive Threshold; thử Live Student Workflow khi cần.</li>
+        </ol>
+        <p style={{ margin: '10px 0 0', color: '#94a3b8', fontSize: '0.78rem' }}>
+          Verify Harness là deterministic, không gọi Gemini Live và không ghi dữ liệu production. Live Student Workflow mới gọi Gemini khi được cấu hình và khả dụng.
+        </p>
+      </section>
 
       {errorMsg && (
         <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '12px 16px', borderRadius: '8px', fontSize: '0.88rem' }}>
@@ -257,7 +269,7 @@ export default function JudgeModePage({ onNavigateTab }) {
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#f8fafc' }}>Public QR Verify</div>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Tra cứu chứng thực chữ ký số</div>
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Tra cứu mã xác thực toàn vẹn</div>
           </div>
         </a>
       </div>
@@ -412,14 +424,14 @@ export default function JudgeModePage({ onNavigateTab }) {
           <Activity size={18} color="#34d399" /> Chỉ Số Đo Lường Benchmark Thật (Measurement Metrics)
         </h3>
         <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
-          Được tính toán tự động qua runner <code>run_benchmark.py</code> trên tập dữ liệu kiểm chuẩn độc lập (Held-Out Cases), không sinh số giả.
+          Current deterministic NVQS decision benchmark scenario set. Runner không gọi Gemini và không sinh số giả.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
           <div style={{ background: '#090d16', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
             <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Decision Accuracy</span>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34d399', marginTop: '6px' }}>
-              {metrics?.benchmarkMetrics?.decisionAccuracy || 'Not measured yet'}
+              {typeof metrics?.benchmark?.decisionAccuracy === 'number' ? `${metrics.benchmark.decisionAccuracy}%` : 'UNKNOWN'}
             </div>
             <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px' }}>Tỷ lệ phán quyết chuẩn xác</div>
           </div>
@@ -427,15 +439,15 @@ export default function JudgeModePage({ onNavigateTab }) {
           <div style={{ background: '#090d16', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
             <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Automation Rate</span>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#38bdf8', marginTop: '6px' }}>
-              {metrics?.benchmarkMetrics?.automationRate || 'Not measured yet'}
+              {typeof metrics?.benchmark?.automationRate === 'number' ? `${metrics.benchmark.automationRate}%` : 'UNKNOWN'}
             </div>
             <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px' }}>Tỷ lệ hồ sơ tự động duyệt</div>
           </div>
 
           <div style={{ background: '#090d16', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
             <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Missed Escalation Rate</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: metrics?.benchmarkMetrics?.missedEscalationRate === '0.0%' ? '#34d399' : '#ef4444', marginTop: '6px' }}>
-              {metrics?.benchmarkMetrics?.missedEscalationRate || 'Not measured yet'}
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: metrics?.benchmark?.missedEscalationRate === 0 ? '#34d399' : '#ef4444', marginTop: '6px' }}>
+              {typeof metrics?.benchmark?.missedEscalationRate === 'number' ? `${metrics.benchmark.missedEscalationRate}%` : 'UNKNOWN'}
             </div>
             <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px' }}>Tỷ lệ bỏ sót ca cần leo thang (Mục tiêu 0%)</div>
           </div>
@@ -443,7 +455,7 @@ export default function JudgeModePage({ onNavigateTab }) {
           <div style={{ background: '#090d16', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
             <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Unnecessary Escalation Rate</span>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b', marginTop: '6px' }}>
-              {metrics?.benchmarkMetrics?.unnecessaryEscalationRate || 'Not measured yet'}
+              {typeof metrics?.benchmark?.unnecessaryEscalationRate === 'number' ? `${metrics.benchmark.unnecessaryEscalationRate}%` : 'UNKNOWN'}
             </div>
             <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px' }}>Tỷ lệ leo thang thừa không cần thiết</div>
           </div>
