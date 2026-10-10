@@ -197,7 +197,7 @@ python test/test_competition_features.py
 - **Quy trình & Biểu mẫu phỏng vấn:** Chi tiết tại `docs/user-validation/`
 - **Mã Commit Gốc (Before):** `01f0fb94d724801db2e46231db4c2fb6b6d51081`
 - **Báo cáo tổng hợp:** `docs/user-validation/summary-template.md`
-- **Phản hồi người dùng thực tế:** Ghi nhận trực tiếp từ sinh viên và cán bộ quản lý đào tạo, đánh giá cao giao diện 3 lớp dữ kiện minh bạch và cơ chế phân xử an toàn không để lọt sai sót nghĩa vụ quân sự.
+- **User validation status:** PENDING. The repository currently contains templates and reserved folders for real participant evidence.
 
 ---
 **EDUASSISTANT Team 1 - MLAI Hackathon 2026** — *The Escalation Referee & Human-in-the-Loop Safeguards for Military Service Deferment Verification.*

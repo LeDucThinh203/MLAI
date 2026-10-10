@@ -92,7 +92,7 @@ export const PublicVerificationPage = () => {
                   ✓ Chứng Nhận Hợp Lệ & Toàn Vẹn
                 </strong>
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                  Văn bản đã được số hóa và ký số điện tử trên hệ thống CSDL nhà trường.
+                  Văn bản có mã xác thực toàn vẹn do hệ thống EDUASSISTANT tạo.
                 </p>
               </div>
             </div>

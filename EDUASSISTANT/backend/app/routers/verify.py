@@ -19,13 +19,16 @@ router = APIRouter(tags=["Verify Harness"])
 @router.get("/api/verify/run")
 async def execute_verify_harness_endpoint():
     """
-    Thực thi bộ Verify Harness in-memory kiểm chuẩn toàn diện 6 ca nghiệp vụ:
+    Thực thi bộ Verify Harness in-memory kiểm chuẩn toàn diện 9 tình huống:
       1. Routine Valid Case
-      2. FACT_UNKNOWN Case
-      3. DATA_CONFLICT Case
-      4. AUTHORITY_REQUIRED Case
-      5. POLICY_OUT_OF_SCOPE Case
-      6. OWNERSHIP_UNCLEAR Case
+      2. Formatting-only variation
+      3. Missing address field
+      4. Temporary address
+      5. Permanent address conflict
+      6. Academic/authority case
+      7. Policy out of scope
+      8. Ownership mismatch
+      9. AI fallback / fail-safe
     """
     result = run_verify_harness()
     return api_response(200, True, 'Chạy Verify Harness kiểm chuẩn quy tắc thành công.', result)

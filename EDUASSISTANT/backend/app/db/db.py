@@ -5,7 +5,7 @@ CASEFLOW AI - DATABASE BUSINESS SERVICE (PYTHON MODULE)
 Module tầng nghiệp vụ thao tác dữ liệu:
   - Quản lý người dùng, mật khẩu Bcrypt, đổi mật khẩu & thu hồi refresh token
   - Xác thực 2 bước (2FA Google Authenticator TOTP)
-  - Quản lý hồ sơ học vụ, lọc đa tiêu chí, ký số HMAC-SHA256
+  - Quản lý hồ sơ học vụ, lọc đa tiêu chí, mã xác thực toàn vẹn HMAC-SHA256
   - Quản lý nhật ký kiểm toán (Audit Trail) với phân quyền cô lập bảo mật
   - Quản lý bình luận, thông báo hệ thống và tra cứu xác thực văn bản
 ============================================================================
@@ -40,7 +40,7 @@ DEPARTMENT_MAP = {
 
 
 def get_signature_key() -> str:
-    """Lấy khóa bí mật tạo chữ ký số HMAC-SHA256."""
+    """Lấy khóa bí mật tạo mã xác thực toàn vẹn HMAC-SHA256."""
     key = os.environ.get('SIGNATURE_KEY')
     if not key or len(key.strip()) < 16:
         if os.environ.get('NODE_ENV') == 'production' or os.environ.get('ENV') == 'production':
@@ -692,7 +692,7 @@ class DatabaseService:
             'decisionNote': (
                 review.get('reason') or 'Chữ ký quyết định được xác thực hợp lệ.'
                 if verified
-                else 'Không xác thực được chứng nhận: hồ sơ chưa được duyệt hoặc chữ ký số không hợp lệ.'
+                else 'Không xác thực được chứng nhận: hồ sơ chưa được duyệt hoặc mã xác thực toàn vẹn không hợp lệ.'
             )
         }
 

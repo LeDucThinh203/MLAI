@@ -141,9 +141,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (profileData) => {
     try {
-      const res = await axios.put(`${API_BASE}/auth/profile`, profileData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.put(`${API_BASE}/auth/profile`, profileData);
       if (res.data?.success && res.data?.data?.user) {
         setUser(prev => ({ ...prev, ...res.data.data.user }));
         return { success: true, user: res.data.data.user, message: res.data.message || 'Cập nhật thông tin thành công!' };
@@ -157,10 +155,7 @@ export const AuthProvider = ({ children }) => {
   const uploadAvatar = async (formData) => {
     try {
       const res = await axios.post(`${API_BASE}/auth/avatar`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data?.success && res.data?.data?.user) {
         setUser(prev => ({ ...prev, ...res.data.data.user }));
@@ -178,8 +173,6 @@ export const AuthProvider = ({ children }) => {
         oldPassword,
         newPassword,
         confirmPassword
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       return { success: res.data?.success, message: res.data?.message || 'Đổi mật khẩu thành công' };
     } catch (err) {
@@ -189,10 +182,7 @@ export const AuthProvider = ({ children }) => {
 
   const deleteAccount = async (password) => {
     try {
-      const res = await axios.delete(`${API_BASE}/auth/account`, {
-        headers: { Authorization: `Bearer ${token}` },
-        data: { password }
-      });
+      const res = await axios.delete(`${API_BASE}/auth/account`, { data: { password } });
       if (res.data?.success) {
         logout();
         return { success: true, message: res.data.message };
@@ -205,9 +195,7 @@ export const AuthProvider = ({ children }) => {
 
   const generate2FA = async () => {
     try {
-      const res = await axios.post(`${API_BASE}/auth/2fa/generate`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.post(`${API_BASE}/auth/2fa/generate`, {});
       return res.data;
     } catch (err) {
       return { success: false, message: err.response?.data?.message || 'Lỗi tạo mã 2FA' };
@@ -216,9 +204,7 @@ export const AuthProvider = ({ children }) => {
 
   const enable2FA = async (secret, otpCode) => {
     try {
-      const res = await axios.post(`${API_BASE}/auth/2fa/enable`, { secret, otpCode }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.post(`${API_BASE}/auth/2fa/enable`, { secret, otpCode });
       if (res.data?.success) {
         setUser(prev => ({ ...prev, twoFactorEnabled: true }));
       }
@@ -230,9 +216,7 @@ export const AuthProvider = ({ children }) => {
 
   const disable2FA = async (otpCode) => {
     try {
-      const res = await axios.post(`${API_BASE}/auth/2fa/disable`, { otpCode }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.post(`${API_BASE}/auth/2fa/disable`, { otpCode });
       if (res.data?.success) {
         setUser(prev => ({ ...prev, twoFactorEnabled: false }));
       }

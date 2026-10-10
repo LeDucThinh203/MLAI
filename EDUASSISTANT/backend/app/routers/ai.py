@@ -31,6 +31,9 @@ async def get_system_ai_status(user: dict = Depends(get_current_user)):
     current_status = "CONFIGURED" if is_configured else "NOT_CONFIGURED"
     display_label = "Gemini Live" if is_configured else "AI unavailable – Safe Human Review"
 
+    # Without a successful, recent health probe, configuration is the only
+    # truthful claim this endpoint can make.
+    display_label = "Gemini configured" if is_configured else "AI unavailable – Safe Human Review"
     return api_response(200, True, 'Lấy trạng thái AI thành công.', {
         'provider': 'Google Gemini Live API',
         'isConfigured': is_configured,
