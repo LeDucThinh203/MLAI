@@ -4,25 +4,15 @@ import { API_BASE } from '../api/client';
 
 const AuthContext = createContext();
 let csrfToken = null;
-let bearerToken = null;
-const TAB_SESSION_TOKEN_KEY = 'edu_tab_session_access_token';
 export const getCsrfToken = () => csrfToken;
 const rememberCsrfToken = (value) => { csrfToken = value || null; };
-const rememberBearerToken = (value) => {
-  bearerToken = value || null;
-  if (typeof window === 'undefined') return;
-  if (bearerToken) window.sessionStorage.setItem(TAB_SESSION_TOKEN_KEY, bearerToken);
-  else window.sessionStorage.removeItem(TAB_SESSION_TOKEN_KEY);
-};
 
-// JWTs normally live only in HttpOnly cookies. A short-lived token in
-// sessionStorage is used only after a private browser blocks those cookies.
+// JWTs live only in HttpOnly cookies. Remove legacy bearer headers and attach
+// credentials plus the non-secret CSRF value on every Axios request.
 axios.defaults.withCredentials = true;
 axios.interceptors.request.use((config) => {
   config.withCredentials = true;
-  if (bearerToken) {
-    config.headers = { ...config.headers, Authorization: `Bearer ${bearerToken}` };
-  } else if (config.headers) {
+  if (config.headers) {
     delete config.headers.Authorization;
     delete config.headers.authorization;
   }
@@ -38,15 +28,6 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const activateBearerFallback = (data) => {
-    if (!data?.sessionAccessToken || !data?.user) return false;
-    rememberBearerToken(data.sessionAccessToken);
-    rememberCsrfToken(data.csrfToken);
-    setUser(data.user);
-    setToken(true);
-    return true;
-  };
 
   const fetchMe = async () => {
     try {
@@ -84,13 +65,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const savedTabToken = window.sessionStorage.getItem(TAB_SESSION_TOKEN_KEY);
-        if (savedTabToken) rememberBearerToken(savedTabToken);
         const csrfResponse = await axios.get(`${API_BASE}/auth/csrf`);
         const session = csrfResponse.data?.data;
-        if (session?.hasSession || bearerToken) {
+        if (session?.hasSession) {
           rememberCsrfToken(session.csrfToken);
-          if (!(await fetchMe()) && !bearerToken) await tryRefreshToken();
+          if (!(await fetchMe())) await tryRefreshToken();
         }
       } catch {
         // Treat a temporarily unavailable API exactly like a signed-out state.
@@ -102,7 +81,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      rememberBearerToken(null);
       const res = await axios.post(`${API_BASE}/login`, { username, password });
       if (res.data?.success) {
         if (res.data.data?.requires2FA) {
@@ -118,12 +96,6 @@ export const AuthProvider = ({ children }) => {
         rememberCsrfToken(res.data.data.csrfToken);
         setUser(userData);
         setToken(true);
-        if (!(await fetchMe())) {
-          const fallbackRes = await axios.post(`${API_BASE}/login`, { username, password }, { headers: { 'X-Auth-Transport': 'bearer' } });
-          if (fallbackRes.data?.success && activateBearerFallback(fallbackRes.data.data)) {
-            return { success: true, user: fallbackRes.data.data.user, sessionMode: 'tab' };
-          }
-        }
         return { success: true, user: userData };
       }
       return { success: false, message: res.data?.message || 'Đăng nhập thất bại' };
@@ -135,19 +107,12 @@ export const AuthProvider = ({ children }) => {
 
   const login2FA = async (tempToken, otpCode) => {
     try {
-      rememberBearerToken(null);
       const res = await axios.post(`${API_BASE}/auth/2fa/login`, { tempToken, otpCode });
       if (res.data?.success) {
         const { user: userData } = res.data.data;
         rememberCsrfToken(res.data.data.csrfToken);
         setUser(userData);
         setToken(true);
-        if (!(await fetchMe())) {
-          const fallbackRes = await axios.post(`${API_BASE}/auth/2fa/login`, { tempToken, otpCode }, { headers: { 'X-Auth-Transport': 'bearer' } });
-          if (fallbackRes.data?.success && activateBearerFallback(fallbackRes.data.data)) {
-            return { success: true, user: fallbackRes.data.data.user, sessionMode: 'tab' };
-          }
-        }
         return { success: true, user: userData };
       }
       return { success: false, message: res.data?.message || 'Xác thực OTP thất bại' };
@@ -263,7 +228,6 @@ export const AuthProvider = ({ children }) => {
 
   const clearLocalSession = () => {
     rememberCsrfToken(null);
-    rememberBearerToken(null);
     setToken(null);
     setRefreshToken(null);
     setUser(null);

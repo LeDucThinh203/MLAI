@@ -81,20 +81,15 @@ def _clear_auth_cookies(response) -> None:
     response.delete_cookie(CSRF_COOKIE_NAME, path='/', **common)
 
 
-def _auth_response(status_code: int, message: str, user_data: dict, access_token: str, refresh_token: str, include_session_token: bool = False):
+def _auth_response(status_code: int, message: str, user_data: dict, access_token: str, refresh_token: str):
     csrf_token = secrets.token_urlsafe(32)
-    payload = {'csrfToken': csrf_token, 'user': user_data}
-    # Browsers that block cross-site cookies in private mode can explicitly
-    # request a short-lived, tab-only bearer fallback after cookie login fails.
-    if include_session_token:
-        payload['sessionAccessToken'] = access_token
-    response = api_response(status_code, True, message, payload)
+    response = api_response(status_code, True, message, {'csrfToken': csrf_token, 'user': user_data})
     _issue_auth_cookies(response, access_token, refresh_token, csrf_token)
     return response
 
 
 @router.post("/api/login")
-async def login(req: LoginRequest, request: Request):
+async def login(req: LoginRequest):
     username = req.username.strip() if req.username else ''
     password = req.password if req.password else ''
     two_factor_code = req.twoFactorCode or req.otpCode
@@ -211,14 +206,11 @@ async def login(req: LoginRequest, request: Request):
         'reason': f"Đăng nhập thành công vào hệ thống với vai trò {user['role']}"
     })
 
-    return _auth_response(
-        200, 'Đăng nhập thành công.', user_data, access_token, refresh_token,
-        include_session_token=request.headers.get('X-Auth-Transport', '').lower() == 'bearer'
-    )
+    return _auth_response(200, 'Đăng nhập thành công.', user_data, access_token, refresh_token)
 
 
 @router.post("/api/auth/2fa/login")
-async def login_2fa_endpoint(req: Login2FARequest, request: Request):
+async def login_2fa_endpoint(req: Login2FARequest):
     user_id = req.userId
     if req.tempToken:
         try:
@@ -288,10 +280,7 @@ async def login_2fa_endpoint(req: Login2FARequest, request: Request):
         'reason': f"Đăng nhập thành công với 2FA TOTP ({user['role']})"
     })
 
-    return _auth_response(
-        200, 'Xác thực OTP thành công.', user_data, access_token, refresh_token,
-        include_session_token=request.headers.get('X-Auth-Transport', '').lower() == 'bearer'
-    )
+    return _auth_response(200, 'Xác thực OTP thành công.', user_data, access_token, refresh_token)
 
 
 @router.post("/api/register")
@@ -403,10 +392,6 @@ async def logout(request: Request, req: Optional[RefreshRequest] = None):
     if refresh_token_val:
         await db_service.delete_refresh_token(refresh_token_val)
     raw_token = request.cookies.get(ACCESS_COOKIE_NAME)
-    if not raw_token:
-        auth_header = request.headers.get('Authorization', '')
-        if auth_header.startswith('Bearer '):
-            raw_token = auth_header[7:].strip()
     if raw_token:
         try:
             decoded = jwt.decode(raw_token, JWT_SECRET, algorithms=['HS256'])
