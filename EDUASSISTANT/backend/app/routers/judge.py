@@ -31,7 +31,9 @@ def _benchmark_summary():
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     result_path = os.path.join(project_root, 'benchmark', 'results', 'latest.json')
     default = {
-        'benchmarkType': 'DETERMINISTIC_DECISION_BENCHMARK', 'aiCallsPerformed': False,
+        'benchmarkType': 'GEMINI_ASSISTED_END_TO_END_BENCHMARK', 'aiCallsPerformed': False,
+        'aiMode': None, 'aiProvider': None, 'aiModel': None, 'aiApiCalls': 0,
+        'aiCasesProcessed': 0, 'fallbackCases': 0, 'aiFallbackReason': None,
         'totalCases': None, 'decisionAccuracy': None, 'automationRate': None,
         'escalationRate': None, 'missedEscalationRate': None,
         'unnecessaryEscalationRate': None,
@@ -44,6 +46,8 @@ def _benchmark_summary():
         result = dict(default)
         result['benchmarkType'] = data.get('benchmarkType', default['benchmarkType'])
         result['aiCallsPerformed'] = data.get('aiCallsPerformed', False)
+        for key in ('aiMode', 'aiProvider', 'aiModel', 'aiApiCalls', 'aiCasesProcessed', 'fallbackCases', 'aiFallbackReason'):
+            result[key] = data.get(key, default[key])
         result['benchmarkRunId'] = data.get('benchmarkRunId')
         result['timestamp'] = data.get('timestamp')
         result['executionTimeSec'] = data.get('executionTimeSec')

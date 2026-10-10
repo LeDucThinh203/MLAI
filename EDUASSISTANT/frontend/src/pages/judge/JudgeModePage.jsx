@@ -71,6 +71,13 @@ export default function JudgeModePage({ onNavigateTab }) {
             executionTimeSec: result.executionTimeSec,
             benchmarkType: result.benchmarkType,
             aiCallsPerformed: result.aiCallsPerformed,
+            aiMode: result.aiMode,
+            aiProvider: result.aiProvider,
+            aiModel: result.aiModel,
+            aiApiCalls: result.aiApiCalls,
+            aiCasesProcessed: result.aiCasesProcessed,
+            fallbackCases: result.fallbackCases,
+            aiFallbackReason: result.aiFallbackReason,
           },
         }) : current);
       }
@@ -462,21 +469,23 @@ export default function JudgeModePage({ onNavigateTab }) {
           {runningBenchmark ? 'Đang chạy 18 tình huống…' : 'Chạy lại 18 tình huống'}
         </button>
         <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
-          Kết quả từ bộ kiểm chuẩn quyết định NVQS độc lập. Bộ kiểm chuẩn không gọi Gemini và không sinh số giả.
+          Mỗi lượt chạy gửi 18 tình huống tổng hợp cho Gemini để đọc địa chỉ; nếu Gemini không phản hồi hợp lệ, hệ thống dùng dữ liệu mẫu dự phòng. Bộ quy tắc vẫn là phần quyết định kết quả xử lý.
         </p>
 
         {metrics?.benchmark?.totalCases && <div style={{ margin: '0 0 16px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.20)', color: '#cbd5e1', fontSize: '0.78rem' }}>
           <strong style={{ color: '#38bdf8' }}>Kết quả đang hiển thị:</strong> {metrics.benchmark.totalCases} tình huống độc lập · Mã chạy {metrics.benchmark.benchmarkRunId || '—'} · Cập nhật {metrics.benchmark.timestamp ? new Date(metrics.benchmark.timestamp).toLocaleString('vi-VN') : '—'}.
+          {metrics.benchmark.aiMode && <div style={{ marginTop: '4px' }}>Nguồn phân tích: <strong>{metrics.benchmark.aiMode === 'GEMINI_LIVE' ? `Gemini live${metrics.benchmark.aiModel ? ` · ${metrics.benchmark.aiModel}` : ''}` : 'Dữ liệu mẫu dự phòng'}</strong> · Số ca dùng Gemini: {metrics.benchmark.aiCasesProcessed || 0} · Số ca dự phòng: {metrics.benchmark.fallbackCases || 0}</div>}
         </div>}
 
         {benchmarkRunResults?.results && <div style={{ overflowX: 'auto', marginBottom: '16px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
             <thead><tr style={{ textAlign: 'left', color: '#94a3b8', borderBottom: '1px solid #334155' }}>
-              <th style={{ padding: '8px' }}>Kết quả</th><th style={{ padding: '8px' }}>Tình huống</th><th style={{ padding: '8px' }}>Kỳ vọng</th><th style={{ padding: '8px' }}>Thực tế</th><th style={{ padding: '8px' }}>Lý do</th>
+              <th style={{ padding: '8px' }}>Kết quả</th><th style={{ padding: '8px' }}>Tình huống</th><th style={{ padding: '8px' }}>AI</th><th style={{ padding: '8px' }}>Kỳ vọng</th><th style={{ padding: '8px' }}>Thực tế</th><th style={{ padding: '8px' }}>Lý do</th>
             </tr></thead>
             <tbody>{benchmarkRunResults.results.map((item) => <tr key={item.id} style={{ borderBottom: '1px solid #1e293b' }}>
               <td style={{ padding: '8px', color: item.isCorrect ? '#34d399' : '#ef4444', fontWeight: 700 }}>{item.isCorrect ? 'PASS' : 'FAIL'}</td>
               <td style={{ padding: '8px' }}>{item.name}<div style={{ color: '#64748b', fontSize: '0.7rem' }}>{item.id}</div></td>
+              <td style={{ padding: '8px' }}>{item.aiModeUsed === 'live' ? 'Gemini' : 'Dữ liệu mẫu'}</td>
               <td style={{ padding: '8px' }}>{item.expectedDecision}{item.expectedReason ? ` \u00b7 ${item.expectedReason}` : ''}</td>
               <td style={{ padding: '8px' }}>{item.actualDecision}{item.actualReason ? ` \u00b7 ${item.actualReason}` : ''}</td>
               <td style={{ padding: '8px' }}><code>{item.ruleMatched}</code></td>
