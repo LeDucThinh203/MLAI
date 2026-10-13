@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import PageSkeleton from '../../components/common/PageSkeleton';
 import { safeImageUrl } from '../../utils/security';
+import { USER_ROLE_LABELS, labelFor } from '../../utils/displayLabels';
 
 const PRESET_AVATARS = [
   { label: 'Avatar 1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' },
@@ -209,7 +210,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
                 color: user?.role === 'ADMIN' ? '#f43f5e' : (user?.role === 'REVIEWER' ? '#fbbf24' : '#38bdf8'),
                 border: `1px solid ${user?.role === 'ADMIN' ? 'rgba(244, 63, 94, 0.4)' : (user?.role === 'REVIEWER' ? 'rgba(251, 191, 36, 0.4)' : 'rgba(56, 189, 248, 0.4)')}`
               }}>
-                {user?.role}
+                {labelFor(user?.role, USER_ROLE_LABELS, 'Tài khoản')}
               </span>
             </h2>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-sub)', margin: 0 }}>

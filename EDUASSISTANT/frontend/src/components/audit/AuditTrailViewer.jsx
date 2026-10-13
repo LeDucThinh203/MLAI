@@ -5,14 +5,15 @@ import {
 } from 'lucide-react';
 import { API_BASE } from '../../api/client';
 import { openSafeWindow } from '../../utils/security';
+import { auditActionLabel, USER_ROLE_LABELS, labelFor } from '../../utils/displayLabels';
 
 const AuditTrailViewer = ({
   audits = [],
   token,
   onRefresh,
   loading = false,
-  title = 'Nhật Ký Hoạt Động Toàn Trường (Audit Trail)',
-  subtitle = 'Theo dõi minh bạch toàn bộ các hành động trên hệ thống theo ngày',
+  title = 'Nhật ký hoạt động toàn trường',
+  subtitle = 'Theo dõi các thay đổi trên hệ thống theo thời gian',
   showRoleFilter = true,
   isStudentView = false
 }) => {
@@ -338,9 +339,9 @@ const AuditTrailViewer = ({
               onChange={e => setRoleFilter(e.target.value)}
             >
               <option value="ALL">👤 Tất cả vai trò</option>
-              <option value="STUDENT">🎓 Sinh Viên</option>
-              <option value="REVIEWER">🔍 Cán Bộ Thẩm Định</option>
-              <option value="ADMIN">🛡️ Quản Trị Viên</option>
+              <option value="STUDENT">Sinh viên</option>
+              <option value="REVIEWER">Cán bộ xử lý hồ sơ</option>
+              <option value="ADMIN">Quản trị viên</option>
               <option value="GUEST">🌐 Khách / Vãng lai</option>
             </select>
           )}
@@ -355,7 +356,7 @@ const AuditTrailViewer = ({
             <option value="ALL">⚡ Tất cả hành động</option>
             <option value="CASE_SUBMITTED">📝 Khởi tạo hồ sơ</option>
             <option value="CASE_STATUS_APPROVED">✅ Duyệt chấp thuận</option>
-            <option value="CASE_STATUS_REJECTED">❌ Từ chối hồ sơ</option>
+            <option value="CASE_STATUS_REJECTED">❌ Hồ sơ chưa được chấp thuận nội bộ</option>
             <option value="CASE_STATUS_REQUIRES_SUPPLEMENT">🔄 Yêu cầu bổ sung</option>
             <option value="CASE_AUTO_APPROVED">⚡ Hồ sơ đủ điều kiện xử lý tự động</option>
             <option value="CASE_ESCALATED">🚨 Hồ sơ cần cán bộ xem xét</option>
@@ -456,7 +457,7 @@ const AuditTrailViewer = ({
                               border: `1px solid ${badge.border}`,
                               fontFamily: 'monospace'
                             }}>
-                              {a.action}
+              {auditActionLabel(a.action)}
                             </span>
 
                             {/* Case Link if available */}
@@ -492,7 +493,7 @@ const AuditTrailViewer = ({
                                 color: a.actor?.role === 'ADMIN' ? '#f43f5e' : (a.actor?.role === 'REVIEWER' ? '#fbbf24' : '#38bdf8'),
                                 fontWeight: 700
                               }}>
-                                [{a.actor?.role || 'SYSTEM'}]
+                                [{labelFor(a.actor?.role, { ...USER_ROLE_LABELS, SYSTEM: 'Hệ thống' }, 'Hệ thống')}]
                               </span>
                             </div>
                           </div>
@@ -543,7 +544,7 @@ const AuditTrailViewer = ({
                         border: `1px solid ${badge.border}`,
                         fontFamily: 'monospace'
                       }}>
-                        {a.action}
+                        {auditActionLabel(a.action)}
                       </span>
                       {a.caseId && <span style={{ color: '#38bdf8', fontSize: '0.78rem', fontWeight: 700 }}>({a.caseId})</span>}
                     </div>
@@ -552,7 +553,7 @@ const AuditTrailViewer = ({
                     </span>
                   </div>
                   <p style={{ fontSize: '0.84rem', color: 'var(--text-main)', margin: 0 }}>
-                    <strong>{a.actor?.name || a.actor?.username}</strong> ({a.actor?.role}): {a.reason}
+                    <strong>{a.actor?.name || a.actor?.username}</strong> ({labelFor(a.actor?.role, USER_ROLE_LABELS, 'Hệ thống')}): {a.reason}
                   </p>
                 </div>
               </div>

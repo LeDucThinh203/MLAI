@@ -4,31 +4,32 @@ import { Bot, MessageCircle, Minus, Plus, Send, X } from 'lucide-react';
 import { API_BASE } from '../../api/client';
 import AgentMessage from './AgentMessage';
 import './AgentChatWidget.css';
+import { USER_ROLE_LABELS, labelFor } from '../../utils/displayLabels';
 
 const prompts = {
   STUDENT: [
-    'Hồ sơ của tôi đang ở trạng thái nào?',
-    'Tôi cần chuẩn bị gì để nộp hồ sơ?',
-    'Kiểm tra địa chỉ này giúp tôi.',
-    'Xem thông tin SIS của tôi.'
+    'Hồ sơ của tôi đang được xử lý đến đâu?',
+    'Tôi cần chuẩn bị giấy tờ gì để nộp hồ sơ?',
+    'Kiểm tra cách viết địa chỉ giúp tôi.',
+    'Xem thông tin sinh viên nhà trường đang lưu.'
   ],
   REVIEWER: [
     'Hồ sơ nào đang chờ tôi xử lý?',
     'Tóm tắt hồ sơ CASE-2026-1234.',
-    'Giải thích vì sao hồ sơ CASE-2026-1234 bị escalation.',
-    'Đánh giá lại Rule Engine cho CASE-2026-1234.'
+    'Giải thích vì sao hồ sơ CASE-2026-1234 cần cán bộ kiểm tra thêm.',
+    'Kiểm tra lại hồ sơ CASE-2026-1234.'
   ],
   ADMIN: [
-    'Tình trạng hệ thống hiện tại?',
-    'Liệt kê SIS chưa xác minh.',
-    'Giải thích policy đang áp dụng.',
-    'Xem thay đổi adaptive threshold.'
+    'Tình trạng hệ thống hiện nay?',
+    'Liệt kê dữ liệu sinh viên mẫu chưa được xác nhận.',
+    'Giải thích quy định đang áp dụng.',
+    'Xem mức tin cậy hiện tại.'
   ]
 };
 
 function responsePayload(response) {
   if (response?.data?.success) return response.data.data;
-  throw new Error(response?.data?.message || 'Không thể kết nối với EDUASSISTANT Agent.');
+  throw new Error(response?.data?.message || 'Không thể kết nối với trợ lý EDUASSISTANT.');
 }
 
 export default function AgentChatWidget({ user, onOpenCase }) {
@@ -177,17 +178,17 @@ export default function AgentChatWidget({ user, onOpenCase }) {
   return (
     <>
       {!open && (
-        <button type="button" className="agent-launcher" onClick={() => { setOpen(true); setMinimized(false); }} aria-label="Mở EDUASSISTANT AI Agent">
-          <MessageCircle size={21} aria-hidden="true" /><span>AI Agent</span>
+        <button type="button" className="agent-launcher" onClick={() => { setOpen(true); setMinimized(false); }} aria-label="Mở trợ lý EDUASSISTANT">
+          <MessageCircle size={21} aria-hidden="true" /><span>Trợ lý</span>
         </button>
       )}
       {open && (
-        <section className={`agent-widget ${minimized ? 'is-minimized' : ''}`} role="dialog" aria-modal="false" aria-label="EDUASSISTANT AI Agent">
+        <section className={`agent-widget ${minimized ? 'is-minimized' : ''}`} role="dialog" aria-modal="false" aria-label="Trợ lý EDUASSISTANT">
           <header className="agent-widget-header">
             <div className="agent-avatar"><Bot size={20} aria-hidden="true" /></div>
             <div className="agent-header-copy">
-              <strong>EDUASSISTANT AI Agent</strong>
-              <span>RAG + dữ liệu hệ thống · {user?.role || 'Tài khoản'}</span>
+              <strong>Trợ lý EDUASSISTANT</strong>
+              <span>{labelFor(user?.role, USER_ROLE_LABELS, 'Tài khoản')} · Hỗ trợ hồ sơ và quy trình của trường</span>
             </div>
             <div className="agent-header-actions">
               <button type="button" onClick={startConversation} aria-label="Tạo hội thoại mới" title="Hội thoại mới"><Plus size={17} /></button>
@@ -210,7 +211,7 @@ export default function AgentChatWidget({ user, onOpenCase }) {
                   <div className="agent-welcome">
                     <div className="agent-welcome-icon"><Bot size={26} /></div>
                     <h2>Xin chào{user?.fullName ? ` ${user.fullName}` : ''}</h2>
-                    <p>Mình hỗ trợ workflow nội bộ, tra cứu policy và dữ liệu bạn được phép xem.</p>
+                    <p>Mình có thể tra cứu thông tin bạn được phép xem, giải thích các bước xử lý và hỗ trợ chuẩn bị hồ sơ.</p>
                     <div className="agent-quick-prompts">
                       {(prompts[user?.role] || prompts.STUDENT).map(prompt => (
                         <button type="button" key={prompt} onClick={() => sendMessage(prompt)} disabled={loading}>{prompt}</button>
@@ -219,10 +220,10 @@ export default function AgentChatWidget({ user, onOpenCase }) {
                   </div>
                 )}
                 {messages.map(item => <AgentMessage key={item.id} item={item} onConfirm={confirmAction} onCancel={cancelAction} busy={actionBusy} />)}
-                {loading && <div className="agent-loading" role="status"><span className="agent-loading-dot" />Agent đang kiểm tra dữ liệu…</div>}
+                {loading && <div className="agent-loading" role="status"><span className="agent-loading-dot" />Đang kiểm tra thông tin…</div>}
                 {error && <div className="agent-error" role="alert">{error}</div>}
                 {messages.some(item => item.metadata?.uiActions?.length) && messages.flatMap(item => item.metadata?.uiActions || []).map(action => (
-                  <button type="button" className="agent-open-case" key={`${action.type}-${action.caseId}`} onClick={() => openUiAction(action)}>
+                    <button type="button" className="agent-open-case" key={`${action.type}-${action.caseId}`} onClick={() => openUiAction(action)}>
                     Mở hồ sơ {action.caseId}
                   </button>
                 ))}
@@ -230,9 +231,9 @@ export default function AgentChatWidget({ user, onOpenCase }) {
               </div>
               <div className="agent-compose-wrap">
                 <form className="agent-compose" onSubmit={event => { event.preventDefault(); sendMessage(); }}>
-                  <label className="sr-only" htmlFor="agent-message-input">Tin nhắn cho AI Agent</label>
+                  <label className="sr-only" htmlFor="agent-message-input">Tin nhắn cho trợ lý EDUASSISTANT</label>
                   <textarea id="agent-message-input" ref={textareaRef} value={draft} rows={1} maxLength={6000}
-                    placeholder="Hỏi về hồ sơ, policy hoặc workflow…" disabled={loading}
+                    placeholder="Hỏi về hồ sơ hoặc quy trình của trường…" disabled={loading}
                     onChange={event => setDraft(event.target.value)}
                     onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} />
                   <button type="submit" aria-label="Gửi tin nhắn" disabled={loading || !draft.trim()}><Send size={18} /></button>

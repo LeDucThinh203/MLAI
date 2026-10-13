@@ -288,7 +288,7 @@ const AuthPage = () => {
         )}
 
         {!twoFactorChallenge && <div style={{ marginBottom: '16px', padding: '10px 12px', borderRadius: '9px', background: 'rgba(2, 132, 199, 0.10)', border: '1px solid rgba(2, 132, 199, 0.22)', color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.5 }}>
-          Tài khoản sinh viên được quản trị viên cấp và hệ thống tự tạo hồ sơ SIS tương ứng. Vui lòng liên hệ quản trị viên nếu cần cấp tài khoản.
+          Tài khoản sinh viên do quản trị viên cấp; hệ thống sẽ tạo phần thông tin sinh viên tương ứng. Vui lòng liên hệ quản trị viên nếu bạn cần tài khoản.
         </div>}
 
         {/* 2FA OTP CHALLENGE MODAL */}

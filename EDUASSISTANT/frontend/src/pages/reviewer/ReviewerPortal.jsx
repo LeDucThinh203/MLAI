@@ -10,24 +10,12 @@ import {
 import { API_BASE, SERVER_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { getSlaDeadlineMs, renderSlaBadge } from '../../utils/formatters';
+import { ACADEMIC_STATUS_LABELS, CASE_STATUS_LABELS, REVIEW_REASON_LABELS, USER_ROLE_LABELS, labelFor } from '../../utils/displayLabels';
 import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
 import PaginationControls from '../../components/common/PaginationControls';
 import { openSafeWindow, safeImageUrl } from '../../utils/security';
-
-const CATEGORY_LABELS = {
-  MILITARY_SERVICE_CONFIRMATION: 'Cấp giấy xác nhận sinh viên tạm hoãn NVQS'
-};
-const PRIORITY_LABELS = { URGENT: 'Khẩn cấp', HIGH: 'Cao', MEDIUM: 'Trung bình', LOW: 'Thấp' };
-const ESCALATION_LABELS = {
-  OWNERSHIP_UNCLEAR: 'Thông tin sinh viên chưa khớp',
-  FACT_UNKNOWN: 'Thiếu thông tin hoặc giấy tờ cần thiết',
-  DATA_CONFLICT: 'Thông tin kê khai chưa khớp hồ sơ nhà trường',
-  AUTHORITY_REQUIRED: 'Cần người có thẩm quyền xem xét',
-  POLICY_OUT_OF_SCOPE: 'Yêu cầu cần được xem xét riêng',
-  HUMAN_REVIEW: 'Cần cán bộ thẩm định xem xét'
-};
 
 const displayCaseTitle = (title) => (title || 'Yêu cầu học vụ').replace(/\s*-\s*AUTO APPROVE DEMO\b/gi, '');
 
@@ -264,20 +252,20 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const renderStatus = (status) => {
     switch (status) {
       case 'SUBMITTED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8' }}>Chờ thẩm định</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8' }}>{CASE_STATUS_LABELS[status]}</span>;
       case 'UNDER_REVIEW':
         return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(217, 119, 6, 0.15)', color: '#fbbf24' }}>Đang xử lý</span>;
       case 'APPROVED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(5, 150, 105, 0.15)', color: '#34d399' }}>Đã duyệt</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(5, 150, 105, 0.15)', color: '#34d399' }}>Đã chấp thuận nội bộ</span>;
       case 'REJECTED':
-        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(225, 29, 72, 0.15)', color: '#f87171' }}>Đã từ chối</span>;
+        return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(225, 29, 72, 0.15)', color: '#f87171' }}>Không chấp thuận yêu cầu nội bộ</span>;
       case 'REQUIRES_SUPPLEMENT':
       case 'INFO_REQUESTED':
         return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)' }}>Cần bổ sung hồ sơ</span>;
       case 'RESUBMITTED':
         return <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc' }}>Đã bổ sung (Chờ duyệt lại)</span>;
       default:
-        return <span>{status}</span>;
+        return <span>{labelFor(status, CASE_STATUS_LABELS)}</span>;
     }
   };
 
@@ -289,7 +277,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
     if (isAuto) {
       return (
         <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-          ⚡ Đủ điều kiện xử lý tự động
+          ⚡ Có thể tiếp tục xử lý tự động
         </span>
       );
     }
@@ -436,7 +424,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   onChange={e => setEscalationFilter(e.target.value)}
                 >
                   <option value="ALL">⚖️ Tất cả lý do cần xem xét</option>
-                  <option value="AUTO_APPROVE">⚡ Đủ điều kiện xử lý tự động</option>
+                  <option value="AUTO_APPROVE">⚡ Được hệ thống xử lý tự động (nội bộ)</option>
                   <option value="OWNERSHIP_UNCLEAR">🔒 Thông tin sinh viên chưa khớp</option>
                   <option value="FACT_UNKNOWN">🚨 Thiếu hoặc khó đọc minh chứng</option>
                   <option value="DATA_CONFLICT">⚠️ Thông tin kê khai chưa khớp</option>
@@ -468,7 +456,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     <option value="SUBMITTED">⏳ Chờ duyệt</option>
                     <option value="UNDER_REVIEW">⚠️ Đang xử lý</option>
                     <option value="REQUIRES_SUPPLEMENT">🔄 Cần bổ sung</option>
-                    <option value="APPROVED">✅ Đã duyệt</option>
+                    <option value="APPROVED">✅ Đã chấp thuận nội bộ</option>
                     <option value="REJECTED">❌ Đã từ chối</option>
                   </select>
                 </div>
@@ -547,7 +535,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                         width: 'fit-content'
                       }}>
                         <UserCheck size={11} />
-                        <span>{c.status === 'APPROVED' ? 'Duyệt bởi: ' : (c.status === 'REJECTED' ? 'Từ chối bởi: ' : 'Xử lý bởi: ')}<strong>{c.reviewResult.reviewerName}</strong></span>
+                        <span>{c.status === 'APPROVED' ? 'Chấp thuận nội bộ bởi: ' : (c.status === 'REJECTED' ? 'Chưa chấp thuận bởi: ' : 'Xử lý bởi: ')}<strong>{c.reviewResult.reviewerName}</strong></span>
                       </div>
                     )}
 
@@ -599,9 +587,9 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(selectedCase.id)}/export-decision`)}
                     className="btn-primary shimmer-button"
                     style={{ padding: '4px 10px', fontSize: '0.75rem', background: 'linear-gradient(135deg, #059669, #10b981)' }}
-                    title="Xem bản ghi workflow nội bộ có mã QR kiểm tra toàn vẹn HMAC"
+                    title="In biên bản xử lý nội bộ. Đây không phải giấy xác nhận chính thức."
                   >
-                    📄 In bản ghi workflow (PDF)
+                    📄 In biên bản xử lý (PDF)
                   </button>
                   <button onClick={() => setSelectedCase(null)} className="btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
                     Đóng
@@ -658,7 +646,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       background: selectedCase.institutionalFacts?.academicStatus === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                       color: selectedCase.institutionalFacts?.academicStatus === 'ACTIVE' ? '#34d399' : '#f87171'
                     }}>
-                      {selectedCase.institutionalFacts?.academicStatus === 'ACTIVE' ? 'Đang học' : (selectedCase.institutionalFacts?.academicStatus || 'Chưa xác minh')}
+                      {labelFor(selectedCase.institutionalFacts?.academicStatus, ACADEMIC_STATUS_LABELS, 'Chưa được nhà trường xác nhận')}
                     </span>
                   </div>
                   <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>
@@ -684,7 +672,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 <div style={{ background: '#0f172a', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <strong style={{ fontSize: '0.8rem', color: '#d8b4fe' }}>Thông tin địa chỉ được nhận diện</strong>
+                      <strong style={{ fontSize: '0.8rem', color: '#d8b4fe' }}>Địa chỉ được hệ thống nhận diện</strong>
                     </div>
                     <span style={{ fontSize: '0.68rem', color: '#c084fc', background: 'rgba(192, 132, 252, 0.15)', padding: '1px 6px', borderRadius: '4px' }}>
                       Độ tin cậy: {Math.round(((selectedCase.addressAnalysis?.confidence || selectedCase.ruleEngine?.confidence || 0.95)) * 100)}%
@@ -735,7 +723,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     background: selectedCase.status === 'APPROVED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                     color: selectedCase.status === 'APPROVED' ? '#34d399' : '#f87171'
                   }}>
-                    {selectedCase.status === 'APPROVED' ? 'Đã chấp thuận' : (ESCALATION_LABELS[selectedCase.escalation?.reason] || 'Cần cán bộ xem xét')}
+                    {selectedCase.status === 'APPROVED' ? 'Đã chấp thuận trong quy trình nội bộ' : (REVIEW_REASON_LABELS[selectedCase.escalation?.reason] || 'Cần cán bộ xem xét')}
                   </span>
                 </div>
 
@@ -843,7 +831,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>{selectedCase.reviewResult.reviewerName}</span>
                         <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: '#334155', color: '#93c5fd', fontWeight: 600 }}>
-                          {selectedCase.reviewResult.reviewerRole || 'Cán bộ'}
+                          {labelFor(selectedCase.reviewResult.reviewerRole, USER_ROLE_LABELS, 'Cán bộ')}
                         </span>
                       </div>
                       <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
@@ -877,7 +865,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   </h4>
                   {user && (
                     <span style={{ fontSize: '0.72rem', color: '#93c5fd', background: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                      👤 Cán bộ: <strong>{user.fullName || user.username}</strong> ({user.department || user.role})
+                      👤 Cán bộ: <strong>{user.fullName || user.username}</strong> ({user.department || labelFor(user.role, USER_ROLE_LABELS, 'Cán bộ')})
                     </span>
                   )}
                 </div>
@@ -969,7 +957,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       gap: '4px'
                     }}
                   >
-                    <ThumbsDown size={14} /> Từ chối
+                    <ThumbsDown size={14} /> Không chấp thuận nội bộ
                   </button>
                 </div>
 
@@ -1000,7 +988,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   <button
                     onClick={() => handleReviewAction('STOP')}
                     disabled={reviewing}
-                    title="Dừng toàn bộ quy trình tự động hóa của hồ sơ này (STOPPED)"
+                    title="Dừng xử lý nội bộ cho hồ sơ này."
                     style={{
                       background: '#475569',
                       color: '#ffffff',
@@ -1167,7 +1155,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <CheckCircle2 size={18} color="#34d399" />
                     <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#34d399' }}>
-                      Bản ghi workflow nội bộ đã được lưu
+                      Biên bản xử lý nội bộ đã được lưu; đây không phải giấy xác nhận chính thức.
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
@@ -1176,7 +1164,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       className="btn-primary shimmer-button"
                       style={{ background: 'linear-gradient(135deg, #059669, #10b981)', fontSize: '0.76rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      <Printer size={13} /> In / Lưu bản ghi workflow PDF
+                      <Printer size={13} /> In / lưu biên bản xử lý PDF
                     </button>
                     <button
                       onClick={() => openSafeWindow(`/verify?caseId=${encodeURIComponent(selectedCase.id)}`)}
@@ -1241,7 +1229,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                           </span>
                           {f.isOptimized && (
                             <span style={{ fontSize: '0.68rem', background: 'rgba(5, 150, 105, 0.2)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                              ⚡ Sharp WebP
+                              Ảnh đã giảm dung lượng
                             </span>
                           )}
                         </div>
@@ -1306,7 +1294,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                                 <strong>{f.metadata.originalSize}</strong>
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#34d399' }}>
-                                <span>Sau nén (Sharp WebP):</span>
+                                <span>Dung lượng sau khi tối ưu:</span>
                                 <strong>{f.metadata.compressedSize} ({f.metadata.savedRatio})</strong>
                               </div>
                               {f.metadata.dimensions && (
@@ -1433,7 +1421,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 </h4>
                 {previewModalImg.metadata && (
                   <span style={{ fontSize: '0.74rem', color: '#34d399' }}>
-                    ⚡ Nén Sharp WebP: {previewModalImg.metadata.compressedSize} (Tiết kiệm {previewModalImg.metadata.savedRatio}) • {previewModalImg.metadata.dimensions}
+                    Dung lượng sau khi tối ưu: {previewModalImg.metadata.compressedSize} (giảm {previewModalImg.metadata.savedRatio}) • {previewModalImg.metadata.dimensions}
                   </span>
                 )}
               </div>

@@ -13,10 +13,33 @@ import PageSkeleton from '../../components/common/PageSkeleton';
 import PaginationControls from '../../components/common/PaginationControls';
 import AnalyticsCharts from '../../components/admin/AnalyticsCharts';
 import { openSafeWindow } from '../../utils/security';
+import { SIS_SOURCE_LABELS, SIS_VERIFICATION_LABELS, USER_ROLE_LABELS, labelFor } from '../../utils/displayLabels';
 
 const CATEGORY_LABELS = {
-  MILITARY_SERVICE_CONFIRMATION: 'Cấp giấy xác nhận sinh viên tạm hoãn NVQS'
+  MILITARY_SERVICE_CONFIRMATION: 'Yêu cầu xác nhận tình trạng sinh viên (hỗ trợ hồ sơ NVQS)'
 };
+
+const sisVerificationLabel = (record) => {
+  if (record?.sourceType === 'INTERNAL_DEMO_SIS' && record?.verificationStatus === 'ADMIN_VERIFIED_DEMO') {
+    return 'Quản trị viên đã kiểm tra dữ liệu mẫu';
+  }
+  return labelFor(record?.verificationStatus, SIS_VERIFICATION_LABELS, 'Chưa được xác nhận');
+};
+
+const sisDetailRows = (record) => [
+  ['Nguồn dữ liệu', labelFor(record.sourceType || record.source, SIS_SOURCE_LABELS)],
+  ['Mức xác nhận', sisVerificationLabel(record)],
+  ['Người kiểm tra', record.verifiedBy || 'Chưa có thông tin'],
+  ['Ngày kiểm tra', record.verifiedAt ? new Date(record.verifiedAt).toLocaleString('vi-VN') : 'Chưa có thông tin'],
+  ['Tình trạng học tập', ACADEMIC_STATUS_LABELS[record.academicStatus] || 'Chưa xác định'],
+  ['Tình trạng bản ghi', SIS_RECORD_STATUS_LABELS[record.recordStatus] || 'Đang sử dụng'],
+  ['Khoa / đơn vị', record.faculty || 'Chưa cập nhật'],
+  ['Thời gian khóa học', `${record.courseStartDate || '—'} → ${record.courseEndDate || '—'}`],
+  ['Đang học kỳ hiện tại', record.currentTermActive ? 'Có' : 'Không'],
+  ['Đã có thời khóa biểu', record.hasCurrentSchedule ? 'Có' : 'Không'],
+  ['Địa chỉ thường trú', record.registeredPermanentAddress || 'Chưa cập nhật'],
+  ['Cập nhật lần cuối', record.updatedAt ? new Date(record.updatedAt).toLocaleString('vi-VN') : 'Chưa có thông tin']
+];
 
 const SIS_FACULTIES = [
   'Khoa Công Nghệ Thông Tin', 'Khoa Kinh Tế', 'Khoa Quản Trị Kinh Doanh',
@@ -42,10 +65,10 @@ const POLICY_DISPLAY = {
   'POL-NVQS-007': 'Kiểm tra độ tin cậy của AI',
   'POL-NVQS-008': 'Kiểm tra thời gian khóa học',
   'POL-NVQS-009': 'Kiểm tra địa chỉ thường trú đã xác minh',
-  'POL-NVQS-010': 'Đủ điều kiện xử lý tự động',
-  'POL-NVQS-011': 'Inactive SIS record status',
-  'POL-NVQS-012': 'Current date outside course dates',
-  'POL-NVQS-013': 'Authenticated institutional SIS source required',
+  'POL-NVQS-010': 'Hồ sơ đủ điều kiện qua bước kiểm tra tự động',
+  'POL-NVQS-011': 'Tình trạng thông tin sinh viên không còn hiệu lực',
+  'POL-NVQS-012': 'Thời gian hiện tại nằm ngoài thời gian khóa học',
+  'POL-NVQS-013': 'Chưa có dữ liệu được nhà trường xác nhận',
 };
 
 const POLICY_CATEGORY_LABELS = { IDENTITY: 'Danh tính', POLICY_SCOPE: 'Phạm vi quy trình', ACADEMIC: 'Thông tin học vụ', ADDRESS: 'Địa chỉ', AI_SAFETY: 'An toàn AI', AUTOMATION: 'Xử lý tự động' };
@@ -64,9 +87,9 @@ const POLICY_GUIDANCE = {
   'POL-NVQS-008': { trigger: 'Ngày bắt đầu/kết thúc khóa học bị thiếu, không hợp lệ hoặc ngoài thời gian đào tạo.', action: 'Kiểm tra lại thời gian khóa học của sinh viên.' },
   'POL-NVQS-009': { trigger: 'Hồ sơ sinh viên chưa có địa chỉ thường trú đã được xác minh để đối chiếu.', action: 'Cập nhật và xác nhận địa chỉ thường trú trước khi tiếp tục xử lý.' },
   'POL-NVQS-010': { trigger: 'Thông tin danh tính, học vụ, địa chỉ và an toàn AI đều đạt yêu cầu.', action: 'Hệ thống tiếp tục xử lý; chỉ cần cán bộ can thiệp nếu phát sinh vấn đề sau đó.' },
-  'POL-NVQS-011': { trigger: 'The SIS record is not active.', action: 'Verify the record status with the data owner.' },
-  'POL-NVQS-012': { trigger: 'Today is outside the verified course date range.', action: 'Verify enrollment and course dates.' },
-  'POL-NVQS-013': { trigger: 'Student data source is not an authenticated institutional SIS.', action: 'Verify the facts against the institution data source.' },
+  'POL-NVQS-011': { trigger: 'Thông tin sinh viên không còn ở trạng thái đang sử dụng.', action: 'Kiểm tra lại tình trạng thông tin với đơn vị quản lý.' },
+  'POL-NVQS-012': { trigger: 'Ngày hiện tại nằm ngoài thời gian khóa học đã ghi nhận.', action: 'Kiểm tra lại tình trạng học tập và thời gian khóa học.' },
+  'POL-NVQS-013': { trigger: 'Thông tin hiện có chưa được kết nối hoặc xác nhận bởi nhà trường.', action: 'Đối chiếu thông tin với dữ liệu do nhà trường xác nhận.' },
 };
 
 const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
@@ -181,7 +204,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
       const res = sisEditorMode === 'create'
         ? await axios.post(`${API_BASE}/admin/sis`, payload)
         : await axios.put(`${API_BASE}/admin/sis/${editingSis.id}`, payload);
-      if (!res.data?.success) throw new Error(res.data?.message || 'Cập nhật SIS thất bại.');
+      if (!res.data?.success) throw new Error(res.data?.message || 'Cập nhật thông tin sinh viên thất bại.');
       setEditingSis(null);
       if (sisEditorMode === 'create') {
         setSisTotal(total => total + 1);
@@ -190,21 +213,21 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
       } else {
         setSisRecords(items => items.map(item => item.id === res.data.data.record.id ? res.data.data.record : item));
       }
-      setAdminMessage({ type: 'success', text: sisEditorMode === 'create' ? 'Đã thêm hồ sơ SIS.' : 'Cập nhật hồ sơ SIS thành công.' });
+      setAdminMessage({ type: 'success', text: sisEditorMode === 'create' ? 'Đã thêm thông tin sinh viên.' : 'Cập nhật thông tin sinh viên thành công.' });
     } catch (err) {
-      setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể cập nhật hồ sơ SIS.' });
+      setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể cập nhật thông tin sinh viên.' });
     } finally {
       setSisSaving(false);
     }
   };
 
   const verifyDemoSis = async (record) => {
-    const warning = 'Chỉ xác nhận record nội bộ cho mục đích demo EDUASSISTANT. Đây không phải xác thực từ SIS thật của trường.';
+    const warning = 'Chỉ đánh dấu đã kiểm tra dữ liệu mẫu nội bộ của EDUASSISTANT. Thao tác này không xác nhận dữ liệu với hệ thống chính thức của nhà trường.';
     if (!window.confirm(warning)) return;
     setSisSaving(true);
     try {
       const res = await axios.post(`${API_BASE}/admin/sis/${record.id}/verify-demo`, {
-        reason: 'Admin confirmed this internal record for the EDUASSISTANT demo workflow; this does not verify data against a university SIS.'
+        reason: 'Quản trị viên đã kiểm tra dữ liệu mẫu nội bộ; thao tác này không xác nhận dữ liệu với hệ thống chính thức của nhà trường.'
       });
       if (!res.data?.success) throw new Error(res.data?.message || 'Không thể xác nhận dữ liệu demo.');
       const updated = res.data.data.record;
@@ -237,7 +260,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
         faculty: student.faculty || null, recordStatus: 'ACTIVE'
       });
     } catch (err) {
-      setAdminMessage({ type: 'error', text: err.response?.data?.message || 'Không thể tải danh sách sinh viên chưa có SIS.' });
+      setAdminMessage({ type: 'error', text: err.response?.data?.message || 'Không thể tải danh sách sinh viên chưa có thông tin.' });
     } finally {
       setSisSaving(false);
     }
@@ -247,10 +270,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
     setSisViewingLoading(true);
     try {
       const res = await axios.get(`${API_BASE}/admin/sis/${record.id}`);
-      if (!res.data?.success) throw new Error(res.data?.message || 'Không thể tải hồ sơ SIS.');
+      if (!res.data?.success) throw new Error(res.data?.message || 'Không thể tải thông tin sinh viên.');
       setViewingSis(res.data.data.record);
     } catch (err) {
-      setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể tải hồ sơ SIS.' });
+      setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể tải thông tin sinh viên.' });
     } finally {
       setSisViewingLoading(false);
     }
@@ -344,8 +367,8 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
       )}
 
       {activeTab === 'admin_policies' && <section className="card-panel" style={{ padding: '24px' }}>
-        <h2>Danh mục quy tắc nghiệp vụ <small style={{ fontWeight: 500 }}>(Policy Registry)</small></h2>
-        <p>Tất cả quy tắc dưới đây được hệ thống xét duyệt tự động sử dụng khi kiểm tra hồ sơ <span>(Rule Engine)</span>. Trang này chỉ dùng để theo dõi, không thay đổi quy tắc.</p>
+        <h2>Danh mục quy tắc kiểm tra hồ sơ</h2>
+        <p>Các bước dưới đây cho biết hệ thống tự động kiểm tra những gì và khi nào hồ sơ cần cán bộ xem xét. Trang này chỉ dùng để theo dõi, không thay đổi quy tắc.</p>
         {policyRuntime && <div style={{ margin: '16px 0', padding: '12px 14px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.10)', fontSize: '0.88rem' }}>
           <strong>Thiết lập đang áp dụng:</strong> Độ tin cậy tối thiểu để hệ thống tự xử lý là <strong>{Math.round(Number(policyRuntime.currentThreshold || 0) * 100)}%</strong> <span>(currentThreshold)</span>; chỉ được điều chỉnh trong khoảng {Math.round(Number(policyRuntime.minThreshold || 0) * 100)}%–{Math.round(Number(policyRuntime.maxThreshold || 0) * 100)}%.
         </div>}
@@ -353,24 +376,24 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
           {policies.map((policy, index) => {
             const guidance = POLICY_GUIDANCE[policy.id];
             const reason = policy.escalationReason
-              ? `${POLICY_REASON_LABELS[policy.escalationReason] || policy.escalationReason} (${policy.escalationReason})`
+              ? (POLICY_REASON_LABELS[policy.escalationReason] || 'Cần kiểm tra thêm')
               : 'Không áp dụng';
             return <article key={policy.id} style={{ padding: '18px', border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-secondary)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <div>
                   <small style={{ color: 'var(--text-muted)', fontWeight: 700 }}>BƯỚC {index + 1} · {policy.id}</small>
-                  <h3 style={{ margin: '5px 0 0', fontSize: '1rem' }}>{POLICY_DISPLAY[policy.id] || policy.name} <small style={{ fontWeight: 500, color: 'var(--text-muted)' }}>({policy.name})</small></h3>
+                  <h3 style={{ margin: '5px 0 0', fontSize: '1rem' }}>{POLICY_DISPLAY[policy.id] || policy.name}</h3>
                 </div>
-                <span style={{ padding: '4px 9px', borderRadius: '999px', background: 'rgba(22, 163, 74, 0.12)', color: '#15803d', fontSize: '0.78rem', fontWeight: 700 }}>{POLICY_STATUS_LABELS[policy.status] || policy.status} ({policy.status})</span>
+                <span style={{ padding: '4px 9px', borderRadius: '999px', background: 'rgba(22, 163, 74, 0.12)', color: '#15803d', fontSize: '0.78rem', fontWeight: 700 }}>{POLICY_STATUS_LABELS[policy.status] || 'Chưa xác định'}</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '12px', marginTop: '14px', fontSize: '0.88rem' }}>
                 <div><small style={{ color: 'var(--text-muted)', display: 'block' }}>Khi nào kiểm tra</small><span>{guidance?.trigger || policy.trigger}</span></div>
-                <div><small style={{ color: 'var(--text-muted)', display: 'block' }}>Hệ thống sẽ làm gì</small><strong>{POLICY_ACTION_LABELS[policy.systemAction] || policy.systemAction} ({policy.systemAction})</strong></div>
-                <div><small style={{ color: 'var(--text-muted)', display: 'block' }}>Lý do chuyển cán bộ</small><span>{reason}</span></div>
+                <div><small style={{ color: 'var(--text-muted)', display: 'block' }}>Hệ thống sẽ làm gì</small><strong>{POLICY_ACTION_LABELS[policy.systemAction] || 'Chuyển cán bộ xem xét'}</strong></div>
+                <div><small style={{ color: 'var(--text-muted)', display: 'block' }}>Lý do cần cán bộ xem xét</small><span>{reason}</span></div>
                 <div><small style={{ color: 'var(--text-muted)', display: 'block' }}>Việc cần thực hiện</small><span>{guidance?.action || policy.humanAction}</span></div>
               </div>
               <div style={{ marginTop: '13px', paddingTop: '12px', borderTop: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                Mã quy tắc thực thi: <strong>{policy.ruleCode}</strong> · Nhóm: {POLICY_CATEGORY_LABELS[policy.category] || policy.category} ({policy.category}) · Phiên bản: {policy.version}
+                Mã quy tắc nội bộ: <strong>{policy.ruleCode}</strong> · Nhóm: {POLICY_CATEGORY_LABELS[policy.category] || 'Khác'} · Phiên bản: {policy.version}
               </div>
             </article>;
           })}
@@ -380,21 +403,21 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
       {activeTab === 'admin_sis' && <section className="card-panel" style={{ padding: '24px', overflow: 'hidden' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: '20px' }}>
           <div>
-            <h2 style={{ marginBottom: '6px' }}>Dữ liệu SIS sinh viên</h2>
-            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Registry nội bộ của EDUASSISTANT; không kết nối SIS đại học bên ngoài. Tổng cộng: <strong>{sisTotal}</strong> bản ghi.</p>
+            <h2 style={{ marginBottom: '6px' }}>Thông tin sinh viên</h2>
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Thông tin do quản trị viên quản lý trong EDUASSISTANT; hiện chưa kết nối với hệ thống dữ liệu chính thức của nhà trường. Có <strong>{sisTotal}</strong> hồ sơ.</p>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" className="btn-secondary" onClick={() => setSisPage(1)} disabled={sisLoading}>
               <RefreshCw size={15} className={sisLoading ? 'animate-spin' : ''} /> Làm mới
             </button>
             <button type="button" className="btn-primary" onClick={() => setSisNoAvailableStudent(true)}>
-              Thêm hồ sơ SIS
+              Thêm thông tin sinh viên
             </button>
           </div>
         </div>
 
         <div role="note" style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, .35)', background: 'rgba(245, 158, 11, .08)', color: 'var(--text-primary)', fontSize: '.82rem' }}>
-          Xác nhận demo chỉ xác minh record nội bộ cho workflow EDUASSISTANT. Việc này không xác thực dữ liệu từ SIS thật của trường.
+          Việc đánh dấu đã kiểm tra chỉ áp dụng cho dữ liệu mẫu nội bộ; thao tác này không xác nhận dữ liệu với hệ thống chính thức của nhà trường.
         </div>
 
         <div style={{ display: 'flex', gap: '10px', marginBottom: '18px', flexWrap: 'wrap' }}>
@@ -413,7 +436,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               <th style={{ padding: '12px' }}>STT</th><th style={{ padding: '12px' }}>Sinh viên</th><th style={{ padding: '12px' }}>Học vụ</th><th style={{ padding: '12px' }}>Khoa</th><th style={{ padding: '12px' }}>Khóa học</th><th style={{ padding: '12px' }}>Nguồn và xác minh</th><th style={{ padding: '12px', textAlign: 'right' }}>Thao tác</th>
             </tr></thead>
             <tbody>
-              {sisLoading && <tr><td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải dữ liệu SIS...</td></tr>}
+              {sisLoading && <tr><td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải thông tin sinh viên...</td></tr>}
               {!sisLoading && sisRecords.length === 0 && <tr><td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Không có sinh viên phù hợp với bộ lọc.</td></tr>}
               {!sisLoading && sisRecords.map((record, index) => <tr key={record.id} style={{ borderTop: '1px solid var(--border-color)' }}>
                 <td style={{ padding: '14px 12px', color: 'var(--text-muted)' }}>{(sisPage - 1) * 20 + index + 1}</td>
@@ -422,10 +445,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 <td style={{ padding: '14px 12px' }}>{record.faculty || 'Chưa cập nhật'}</td>
                 <td style={{ padding: '14px 12px' }}>{record.courseStartDate || '—'} <span style={{ color: 'var(--text-muted)' }}>→</span> {record.courseEndDate || '—'}</td>
                 <td style={{ padding: '14px 12px', fontSize: '.76rem' }}>
-                  <div><strong>Source Type:</strong> {record.sourceType || 'LEGACY_ACCOUNT'}</div>
-                  <div><strong>Verification Status:</strong> {record.sourceType === 'INTERNAL_DEMO_SIS' && record.verificationStatus === 'ADMIN_VERIFIED_DEMO' ? 'Admin Verified – Demo' : (!record.verificationStatus || record.verificationStatus === 'UNVERIFIED' ? 'Unverified' : record.verificationStatus)}</div>
-                  <div><strong>Verified By:</strong> {record.verifiedBy || '—'}</div>
-                  <div><strong>Verified At:</strong> {record.verifiedAt || '—'}</div>
+                  <div><strong>Nguồn dữ liệu:</strong> {labelFor(record.sourceType || record.source, SIS_SOURCE_LABELS)}</div>
+                  <div><strong>Mức xác nhận:</strong> {sisVerificationLabel(record)}</div>
+                  {record.verifiedBy && <div><strong>Người kiểm tra:</strong> {record.verifiedBy}</div>}
+                  {record.verifiedAt && <div><strong>Ngày kiểm tra:</strong> {new Date(record.verifiedAt).toLocaleString('vi-VN')}</div>}
                 </td>
                 <td style={{ padding: '14px 12px', textAlign: 'right' }}>
                   <div style={{ display: 'inline-flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -440,12 +463,12 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>Hiển thị {sisRecords.length} / {sisTotal} sinh viên · Trang {sisPage} / {Math.max(1, Math.ceil(sisTotal / 20))}</span>
-          <PaginationControls page={sisPage} totalItems={sisTotal} pageSize={20} onPageChange={setSisPage} label="sinh viên SIS" />
+          <PaginationControls page={sisPage} totalItems={sisTotal} pageSize={20} onPageChange={setSisPage} label="sinh viên" />
         </div>
 
         {editingSis && <div role="dialog" aria-modal="true" aria-labelledby="sis-update-title" onClick={closeSisModal} style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <form onClick={e => e.stopPropagation()} onSubmit={e => { e.preventDefault(); saveSis(); }} className="card-panel" style={{ width: 'min(860px, 100%)', maxHeight: '90vh', overflowY: 'auto', padding: '28px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}><div><h3 id="sis-update-title" style={{ margin: 0 }}>{sisEditorMode === 'create' ? 'Thêm hồ sơ SIS' : 'Cập nhật hồ sơ SIS'}</h3><small style={{ color: 'var(--text-muted)' }}>SIS là nguồn facts được snapshot vào hồ sơ và đối chiếu bởi Rule Engine.</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setEditingSis(null)}><X size={18} /></button></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}><div><h3 id="sis-update-title" style={{ margin: 0 }}>{sisEditorMode === 'create' ? 'Thêm thông tin sinh viên' : 'Cập nhật thông tin sinh viên'}</h3><small style={{ color: 'var(--text-muted)' }}>Thông tin này được lưu kèm hồ sơ để đối chiếu tình trạng học tập, thời gian khóa học và địa chỉ.</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setEditingSis(null)}><X size={18} /></button></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px 22px' }}>
               {sisEditorMode === 'create' && <label style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '7px', fontWeight: 700 }}>Tài khoản sinh viên<select style={{ width: '100%', boxSizing: 'border-box' }} value={editingSis.userId} onChange={e => { const student = availableStudents.find(item => item.id === e.target.value); setEditingSis({ ...editingSis, userId: e.target.value, studentCode: student?.studentCode || '', fullName: student?.fullName || '', faculty: student?.faculty || null, academicStatus: student?.academicStatus || 'UNKNOWN' }); }}><option value="">Chọn sinh viên</option>{availableStudents.map(student => <option key={student.id} value={student.id}>{student.studentCode || 'Chưa có MSSV'} — {student.fullName}</option>)}</select></label>}
               <label style={{ display: 'flex', flexDirection: 'column', gap: '7px', fontWeight: 700 }}>MSSV<input style={{ width: '100%', boxSizing: 'border-box' }} value={editingSis.studentCode || ''} onChange={e => setEditingSis({ ...editingSis, studentCode: e.target.value || null })} /></label>
@@ -463,11 +486,11 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
         </div>}
         {viewingSis && <div role="dialog" aria-modal="true" aria-labelledby="sis-view-title" onClick={closeSisModal} style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.66)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()} className="card-panel" style={{ width: 'min(680px, 100%)', padding: '24px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}><div><h3 id="sis-view-title" style={{ margin: 0 }}>Hồ sơ SIS: {viewingSis.fullName}</h3><small style={{ color: 'var(--text-muted)' }}>{viewingSis.studentCode || 'Chưa có MSSV'} · Nguồn: {viewingSis.source || 'INTERNAL_SIS_DEMO'}</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setViewingSis(null)}><X size={18} /></button></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}><div><h3 id="sis-view-title" style={{ margin: 0 }}>Thông tin sinh viên: {viewingSis.fullName}</h3><small style={{ color: 'var(--text-muted)' }}>{viewingSis.studentCode || 'Chưa có MSSV'} · Nguồn: {labelFor(viewingSis.sourceType || viewingSis.source, SIS_SOURCE_LABELS)}</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setViewingSis(null)}><X size={18} /></button></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '20px' }}>
-              {[['Source Type', viewingSis.sourceType || 'LEGACY_ACCOUNT'], ['Verification Status', viewingSis.sourceType === 'INTERNAL_DEMO_SIS' && viewingSis.verificationStatus === 'ADMIN_VERIFIED_DEMO' ? 'Admin Verified – Demo' : (!viewingSis.verificationStatus || viewingSis.verificationStatus === 'UNVERIFIED' ? 'Unverified' : viewingSis.verificationStatus)], ['Verified By', viewingSis.verifiedBy || '—'], ['Verified At', viewingSis.verifiedAt || '—'], ['Trạng thái học vụ', ACADEMIC_STATUS_LABELS[viewingSis.academicStatus] || 'Chưa xác định'], ['Trạng thái bản ghi', SIS_RECORD_STATUS_LABELS[viewingSis.recordStatus] || 'Đang sử dụng'], ['Khoa / đơn vị', viewingSis.faculty || 'Chưa cập nhật'], ['Khóa học', `${viewingSis.courseStartDate || '—'} → ${viewingSis.courseEndDate || '—'}`], ['Học kỳ hoạt động', viewingSis.currentTermActive ? 'Có' : 'Không'], ['Thời khóa biểu', viewingSis.hasCurrentSchedule ? 'Có' : 'Không'], ['Địa chỉ thường trú', viewingSis.registeredPermanentAddress || 'Chưa cập nhật'], ['Cập nhật lần cuối', viewingSis.updatedAt || '—']].map(([label, value]) => <div key={label} style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '8px' }}><small style={{ color: 'var(--text-muted)', display: 'block' }}>{label}</small><strong style={{ fontSize: '0.88rem' }}>{value}</strong></div>)}
+              {sisDetailRows(viewingSis).map(([label, value]) => <div key={label} style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '8px' }}><small style={{ color: 'var(--text-muted)', display: 'block' }}>{label}</small><strong style={{ fontSize: '0.88rem' }}>{value}</strong></div>)}
             </div>
-            <div style={{ marginTop: '18px', padding: '12px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.10)', fontSize: '0.84rem' }}><strong>Vai trò trong thẩm định:</strong> SIS là dữ liệu xác thực do quản trị viên quản lý. Khi sinh viên nộp hồ sơ NVQS, hệ thống snapshot dữ liệu SIS hiện có vào hồ sơ để Rule Engine đối chiếu danh tính, học vụ, thời hạn khóa học và địa chỉ. AI chỉ hỗ trợ phân tích, không thay thế dữ liệu SIS.</div>
+            <div style={{ marginTop: '18px', padding: '12px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.10)', fontSize: '0.84rem' }}><strong>Thông tin này được dùng như thế nào?</strong> Dữ liệu sinh viên do quản trị viên quản lý sẽ được lưu kèm hồ sơ để đối chiếu danh tính, tình trạng học tập, thời gian khóa học và địa chỉ. Dữ liệu mẫu nội bộ không kết nối với hệ thống chính thức của nhà trường; công cụ tự động chỉ hỗ trợ kiểm tra, không thay thế dữ liệu do nhà trường xác nhận.</div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}><button type="button" className="btn-primary" onClick={() => { setViewingSis(null); setSisEditorMode('edit'); setEditingSis({ ...viewingSis, recordStatus: viewingSis.recordStatus || 'ACTIVE' }); }}>Cập nhật hồ sơ</button></div>
           </div>
         </div>}
@@ -549,7 +572,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               </div>
               <h3 style={{ fontSize: '2rem', fontWeight: 800, marginTop: '8px', color: '#34d399' }}>{stats.approvalRate}%</h3>
               <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-                Đã duyệt: <strong style={{ color: '#34d399' }}>{stats.approvedCases}</strong> • Từ chối: <strong style={{ color: '#f87171' }}>{stats.rejectedCases}</strong>
+                Đã chấp thuận nội bộ: <strong style={{ color: '#34d399' }}>{stats.approvedCases}</strong> • Chưa chấp thuận: <strong style={{ color: '#f87171' }}>{stats.rejectedCases}</strong>
               </p>
             </div>
 
@@ -572,15 +595,15 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
           {/* HÀNG BỔ SUNG: ESCALATION REFEREE, OVERRIDE & BENCHMARK METRICS */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
             <div className="card-panel" style={{ padding: '16px', background: '#0a0e17', border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase' }}>Mức chuyển hồ sơ để xem xét</div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase' }}>Mức tin cậy để chuyển cán bộ xem xét</div>
               <h4 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f59e0b', margin: '6px 0 2px 0' }}>
                 {stats.currentEscalationThreshold || '0.75'}
               </h4>
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Mức hệ thống chuyển hồ sơ sang cán bộ kiểm tra [0.65 - 0.90]</p>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>Hồ sơ có mức tin cậy thấp hơn ngưỡng này sẽ được chuyển cho cán bộ kiểm tra. Phạm vi điều chỉnh: 0,65–0,90.</p>
             </div>
 
             <div className="card-panel" style={{ padding: '16px', background: '#0a0e17', border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase' }}>Cán bộ điều chỉnh quyết định</div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-sub)', fontWeight: 700, textTransform: 'uppercase' }}>Cán bộ điều chỉnh kết quả xử lý</div>
               <h4 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#8b5cf6', margin: '6px 0 2px 0' }}>
                 {stats.totalHumanOverrides || 0} lần
               </h4>
@@ -593,7 +616,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 {stats.totalReviewerFeedback || 0} lượt
               </h4>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
-                Sót: <strong>{stats.missedEscalationFeedbackCount || 0}</strong> • Thừa: <strong>{stats.unnecessaryEscalationFeedbackCount || 0}</strong>
+                Chưa chuyển cán bộ khi cần: <strong>{stats.missedEscalationFeedbackCount || 0}</strong> • Chuyển cán bộ chưa cần thiết: <strong>{stats.unnecessaryEscalationFeedbackCount || 0}</strong>
               </p>
             </div>
 
@@ -683,7 +706,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 </div>
 
                 <div style={{ background: '#0f172a', padding: '12px', borderRadius: '8px', borderLeft: '4px solid #34d399' }}>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Đã duyệt</div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-sub)' }}>Đã chấp thuận nội bộ</div>
                   <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#34d399', marginTop: '2px' }}>
                     {stats.statusBreakdown?.APPROVED || 0}
                     <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 500 }}>
@@ -708,15 +731,15 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             {/* 2. Chỉ số Điều Phối & Ngưỡng Thích Ứng NVQS */}
             <div className="card-panel" style={{ padding: '24px' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <SlidersHorizontal size={18} color="#818cf8" /> Hiệu Suất Escalation Referee (NVQS)
+                <SlidersHorizontal size={18} color="#818cf8" /> Kết quả xử lý hồ sơ NVQS
               </h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {[
-                  { label: '⚡ Tự Động Phê Duyệt (Auto Approved)', count: stats.autoApprovedCases || 0, color: '#10b981' },
-                  { label: '🚨 Chuyển Cán Bộ Thẩm Định (Escalated)', count: stats.escalatedCases || 0, color: '#f59e0b' },
-                  { label: '🛡️ Can Thiệp Đặc Cách (Human Overrides)', count: stats.totalHumanOverrides || 0, color: '#8b5cf6' },
-                  { label: '⛔ Hồ Sơ Tạm Dừng Xử Lý (Stopped)', count: stats.stoppedCases || 0, color: '#ef4444' }
+                  { label: 'Được hệ thống xử lý tự động', count: stats.autoApprovedCases || 0, color: '#10b981' },
+                  { label: 'Chuyển cán bộ xem xét', count: stats.escalatedCases || 0, color: '#f59e0b' },
+                  { label: 'Kết quả được cán bộ điều chỉnh', count: stats.totalHumanOverrides || 0, color: '#8b5cf6' },
+                  { label: 'Đã dừng xử lý', count: stats.stoppedCases || 0, color: '#ef4444' }
                 ].map((item, idx) => {
                   const pct = stats.totalCases > 0 ? Math.round((item.count / stats.totalCases) * 100) : 0;
                   return (
@@ -735,19 +758,19 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
               {/* Ngưỡng tin cậy thích ứng */}
               <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <span>Ngưỡng tin cậy thích ứng: <strong style={{ color: '#818cf8' }}>{(stats.currentThreshold !== undefined ? stats.currentThreshold : 0.75)}</strong></span>
+                <span>Mức tin cậy cần đạt để xử lý tự động: <strong style={{ color: '#818cf8' }}>{(stats.currentThreshold !== undefined ? stats.currentThreshold : 0.75)}</strong></span>
                 <span>Chờ duyệt: <strong style={{ color: '#38bdf8' }}>{stats.pendingCases || 0}</strong></span>
               </div>
             </div>
 
           </div>
 
-          {/* PHÂN TÍCH HIỆU QUẢ RULE ENGINE & 5 NGUYÊN NHÂN LEO THANG NGHIỆP VỤ */}
+          {/* Phân tích kết quả kiểm tra tự động và lý do cần cán bộ xem xét */}
           <div className="card-panel" style={{ padding: '24px', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
               <div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', color: '#818cf8' }}>
-                  <Cpu size={20} color="#818cf8" /> Phân Tích 5 Nguyên Nhân Leo Thang Thẩm Định NVQS
+                  <Cpu size={20} color="#818cf8" /> Vì sao hồ sơ cần cán bộ xem xét?
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '2px' }}>
                   Hệ thống phân tách rành mạch 3 tầng dữ liệu và kích hoạt chuyển người duyệt chính xác khi có nghi vấn hoặc vượt thẩm quyền.
@@ -767,7 +790,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
               <div style={{ background: '#090d16', borderLeft: '4px solid #ef4444', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#f87171', fontWeight: 700 }}>🔒 OWNERSHIP_UNCLEAR</span>
+                  <span style={{ fontSize: '0.76rem', color: '#f87171', fontWeight: 700 }}>Thông tin sinh viên chưa khớp</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f87171' }}>{stats.escalationReasonsBreakdown?.OWNERSHIP_UNCLEAR || 0}</span>
                 </div>
                 <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Nghi vấn quyền sở hữu: MSSV hoặc họ tên không khớp hồ sơ gốc</p>
@@ -775,7 +798,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #f97316', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#fb923c', fontWeight: 700 }}>🚨 FACT_UNKNOWN</span>
+                  <span style={{ fontSize: '0.76rem', color: '#fb923c', fontWeight: 700 }}>Thiếu thông tin xác nhận</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fb923c' }}>{stats.escalationReasonsBreakdown?.FACT_UNKNOWN || 0}</span>
                 </div>
                 <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Thiếu dữ kiện xác thực / Địa chỉ chưa đủ thành phần bắt buộc</p>
@@ -783,7 +806,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #eab308', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#facc15', fontWeight: 700 }}>⚠️ DATA_CONFLICT</span>
+                  <span style={{ fontSize: '0.76rem', color: '#facc15', fontWeight: 700 }}>Thông tin chưa khớp</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#facc15' }}>{stats.escalationReasonsBreakdown?.DATA_CONFLICT || 0}</span>
                 </div>
                 <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Xung đột dữ liệu: Chọn tạm trú hoặc khác thường trú lưu trữ</p>
@@ -791,7 +814,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #8b5cf6', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#c084fc', fontWeight: 700 }}>👑 AUTHORITY_REQUIRED</span>
+                  <span style={{ fontSize: '0.76rem', color: '#c084fc', fontWeight: 700 }}>Cần cán bộ có thẩm quyền</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#c084fc' }}>{stats.escalationReasonsBreakdown?.AUTHORITY_REQUIRED || 0}</span>
                 </div>
                 <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Vượt thẩm quyền: Sinh viên đình chỉ, bảo lưu, thôi học hoặc thiếu TKB</p>
@@ -799,7 +822,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
               <div style={{ background: '#090d16', borderLeft: '4px solid #06b6d4', padding: '12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.76rem', color: '#22d3ee', fontWeight: 700 }}>📋 POLICY_OUT_OF_SCOPE</span>
+                  <span style={{ fontSize: '0.76rem', color: '#22d3ee', fontWeight: 700 }}>Yêu cầu cần xem xét riêng</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#22d3ee' }}>{stats.escalationReasonsBreakdown?.POLICY_OUT_OF_SCOPE || 0}</span>
                 </div>
                 <p style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '4px' }}>Ngoài phạm vi chính sách: Có yêu cầu cứu xét đặc cách cá biệt</p>
@@ -837,8 +860,8 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                         <td style={{ padding: '10px 8px', color: 'var(--text-main)' }}>{c.title}</td>
                         <td style={{ padding: '10px 8px', color: 'var(--text-muted)', fontSize: '0.78rem' }}>{CATEGORY_LABELS[c.category] || c.category}</td>
                         <td style={{ padding: '10px 8px' }}>
-                          {c.status === 'APPROVED' && <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(5, 150, 105, 0.15)', color: '#34d399' }}>Đã duyệt</span>}
-                          {c.status === 'REJECTED' && <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(225, 29, 72, 0.15)', color: '#f87171' }}>Từ chối</span>}
+                          {c.status === 'APPROVED' && <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(5, 150, 105, 0.15)', color: '#34d399' }}>Đã chấp thuận nội bộ</span>}
+                          {c.status === 'REJECTED' && <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(225, 29, 72, 0.15)', color: '#f87171' }}>Chưa chấp thuận nội bộ</span>}
                           {c.status === 'SUBMITTED' && <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(2, 132, 199, 0.15)', color: '#38bdf8' }}>Chờ duyệt</span>}
                           {c.status === 'UNDER_REVIEW' && <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(217, 119, 6, 0.15)', color: '#fbbf24' }}>Đang xử lý</span>}
                           {c.status === 'REQUIRES_SUPPLEMENT' && <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }}>Cần bổ sung</span>}
@@ -888,16 +911,16 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
-                  Vai trò cấp quyền (Role) *
+                  Vai trò được cấp quyền *
                 </label>
                 <select
                   className="form-input"
                   value={newRole}
                   onChange={e => setNewRole(e.target.value)}
                 >
-                  <option value="REVIEWER">🔍 REVIEWER (Ban Thẩm định hồ sơ)</option>
-                  <option value="ADMIN">🛡️ ADMIN (Quản trị viên cấp cao)</option>
-                  <option value="STUDENT">🎓 STUDENT (Học sinh / Sinh viên)</option>
+                  <option value="REVIEWER">Cán bộ xử lý hồ sơ</option>
+                  <option value="ADMIN">Quản trị viên</option>
+                  <option value="STUDENT">Sinh viên</option>
                 </select>
               </div>
 
@@ -919,7 +942,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '4px' }}>
-                  Tên đăng nhập (Username) *
+                  Tên đăng nhập *
                 </label>
                 <input
                   type="text"
@@ -1053,7 +1076,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       <td style={{ padding: '10px 8px', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>{u.username}</td>
                       <td style={{ padding: '10px 8px', color: 'var(--text-muted)', fontSize: '0.78rem' }}>{u.department}</td>
                       <td style={{ padding: '10px 8px' }}>
-                        <span className={`badge badge-${u.role.toLowerCase()}`}>{u.role}</span>
+                        <span className={`badge badge-${u.role.toLowerCase()}`}>{labelFor(u.role, USER_ROLE_LABELS, 'Tài khoản')}</span>
                       </td>
                       <td style={{ padding: '10px 8px' }}>
                         <select
@@ -1062,9 +1085,9 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                           value={u.role}
                           onChange={e => handleChangeUserRole(u.id, e.target.value)}
                         >
-                          <option value="STUDENT">STUDENT</option>
-                          <option value="REVIEWER">REVIEWER</option>
-                          <option value="ADMIN">ADMIN</option>
+                          <option value="STUDENT">Sinh viên</option>
+                          <option value="REVIEWER">Cán bộ xử lý hồ sơ</option>
+                          <option value="ADMIN">Quản trị viên</option>
                         </select>
                       </td>
                     </tr>

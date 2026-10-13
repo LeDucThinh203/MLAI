@@ -178,7 +178,7 @@ async def prepare_action(name: str, args: dict, user: dict) -> tuple[dict, dict]
         preview.update({'title': args['title'], 'category': 'MILITARY_SERVICE_CONFIRMATION',
                        'addressType': args.get('addressType', 'PERMANENT'),
                        'rawAddress': args['rawAddress'],
-                       'note': 'Rule Engine sẽ xác định tuyến xử lý khi hồ sơ được nộp.'})
+                       'note': 'Sau khi bạn gửi, hệ thống sẽ kiểm tra thông tin và chuyển hồ sơ đến bộ phận phù hợp. Đây không phải giấy xác nhận chính thức hay quyết định tạm hoãn nghĩa vụ quân sự.'})
     elif name in ('supplement_case', 'add_case_comment', 'review_case_approve', 'review_case_reject',
                   'review_case_request_info', 'review_case_stop', 'review_case_override', 'reroute_case',
                   'submit_reviewer_feedback'):
@@ -196,7 +196,7 @@ async def prepare_action(name: str, args: dict, user: dict) -> tuple[dict, dict]
             is_override = name == 'review_case_override'
             valid, error = validate_status_transition(case.get('status'), destination, user.get('role'), is_admin_override=is_override and user.get('role') == 'ADMIN')
             if not valid:
-                raise ToolInputError(error or 'Workflow không cho phép chuyển trạng thái này.')
+                raise ToolInputError(error or 'Hồ sơ chưa thể chuyển sang trạng thái này theo quy trình hiện tại.')
             preview.update({'newStatus': destination, 'reason': args.get('reason'),
                             'systemRecommendation': (case.get('ruleEngine') or {}).get('decision') if isinstance(case.get('ruleEngine'), dict) else None})
         elif name == 'reroute_case':
@@ -209,10 +209,12 @@ async def prepare_action(name: str, args: dict, user: dict) -> tuple[dict, dict]
             preview.update({'feedbackType': args.get('type'), 'note': args.get('note')})
     elif name in ('mark_notification_read', 'mark_all_notifications_read'):
         if name == 'mark_notification_read':
-            own_ids = {item.get('id') for item in await db_service.get_notifications(user.get('id'))}
+            own_notifications = await db_service.get_notifications(user.get('id'))
+            own_ids = {item.get('id') for item in own_notifications}
             if args['notificationId'] not in own_ids:
                 raise ToolAccessError('Thông báo không thuộc tài khoản hiện tại.')
-            preview.update({'notificationId': args['notificationId']})
+            notification = next((item for item in own_notifications if item.get('id') == args['notificationId']), {})
+            preview.update({'notificationTitle': notification.get('title') or notification.get('message') or 'Thông báo đã chọn'})
     elif name in ('create_sis_record', 'update_sis_record', 'verify_demo_sis_record'):
         if name != 'create_sis_record':
             record = get_one('SELECT id,userId,studentCode,fullName,verificationStatus,sourceType,updatedAt FROM sis_student_records WHERE id=?', (args['recordId'],))
@@ -224,8 +226,12 @@ async def prepare_action(name: str, args: dict, user: dict) -> tuple[dict, dict]
             preview.update({'recordId': record['id'], 'studentCode': record.get('studentCode'),
                             'verificationStatus': record.get('verificationStatus'), 'sourceType': record.get('sourceType')})
         else:
-            preview.update({'userId': args['userId'], 'fullName': args['fullName'], 'verificationStatus': 'UNVERIFIED', 'sourceType': 'INTERNAL_DEMO_SIS'})
-        preview['warning'] = 'Đây là registry demo nội bộ, không phải kết nối SIS của trường.'
+            student = await db_service.get_user_by_id(args['userId'])
+            if not student or student.get('role') != 'STUDENT':
+                raise ToolInputError('Không tìm thấy tài khoản sinh viên đã chọn.')
+            preview.update({'studentCode': student.get('studentCode'), 'fullName': student.get('fullName') or args['fullName'],
+                            'verificationStatus': 'UNVERIFIED', 'sourceType': 'INTERNAL_DEMO_SIS'})
+        preview['warning'] = 'Đây là dữ liệu mẫu để minh họa; thông tin này chưa được kết nối hoặc xác nhận bởi nhà trường.'
     elif name == 'update_user_role':
         target = await db_service.get_user_by_id(args['userId'])
         if not target:

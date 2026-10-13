@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  PlusCircle, RefreshCw, Paperclip, UploadCloud, Sparkles,
+  PlusCircle, RefreshCw, Paperclip, UploadCloud,
   CheckCircle2, AlertTriangle, Printer, Send, Building2, AlertCircle, QrCode,
   MapPin, Shield, User, FileText, Check, AlertOctagon
 } from 'lucide-react';
 import { API_BASE, SERVER_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { renderSlaBadge } from '../../utils/formatters';
+import { ACADEMIC_STATUS_LABELS, CASE_STATUS_LABELS, SIS_RECORD_STATUS_LABELS, labelFor } from '../../utils/displayLabels';
 import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
-import { openSafeWindow, safeImageUrl } from '../../utils/security';
+import { openSafeWindow } from '../../utils/security';
 
 const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) => {
   const { token, user } = useAuth();
@@ -184,7 +184,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
 
     try {
       const res = await axios.post(`${API_BASE}/cases`, {
-        title: 'Yêu cầu cấp Giấy xác nhận sinh viên phục vụ tạm hoãn NVQS',
+        title: 'Yêu cầu xác nhận tình trạng sinh viên phục vụ hồ sơ NVQS',
         category: 'MILITARY_SERVICE_CONFIRMATION',
         priority: 'MEDIUM',
         description: rawAddress,
@@ -202,7 +202,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
         setToastMessage({
           type: 'success',
           text: isAuto
-            ? `🎉 Hồ sơ #${createdCase.id} đã được tự động duyệt thành công! Bạn có thể xem và in Giấy xác nhận ngay.`
+            ? `Hồ sơ #${createdCase.id} đã được hệ thống xử lý tự động. Đây là kết quả nội bộ, không phải giấy xác nhận chính thức hoặc quyết định tạm hoãn.`
             : `Đã gửi yêu cầu #${createdCase.id} thành công! Hệ thống đang chuyển cán bộ thẩm định.`
         });
         setRawAddress('');
@@ -259,7 +259,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
       case 'INFO_REQUESTED':
         return <span className="student-case__status student-case__status--supplement">Cần bổ sung thông tin</span>;
       default:
-        return <span>{status}</span>;
+        return <span>{labelFor(status, CASE_STATUS_LABELS)}</span>;
     }
   };
 
@@ -294,13 +294,13 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
               <Shield size={14} /> Nộp giấy tờ trực tuyến
             </div>
             <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.3, margin: '4px 0' }}>
-              Xin giấy xác nhận sinh viên
+              Gửi yêu cầu xác nhận tình trạng sinh viên
             </h1>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#94a3b8', margin: 0 }}>
-              Phục vụ hồ sơ nghĩa vụ quân sự
+              Thông tin cần thiết cho hồ sơ nghĩa vụ quân sự
             </h2>
             <p role="note" style={{ margin: '8px 0 0', color: '#fbbf24', fontSize: '0.8rem' }}>
-              Đây là workflow nội bộ; hệ thống không cấp giấy xác nhận chính thức hoặc quyết định tạm hoãn.
+              Hệ thống tiếp nhận và kiểm tra yêu cầu nội bộ; trang này không cấp giấy xác nhận chính thức và không quyết định việc được tạm hoãn.
             </p>
           </div>
 
@@ -316,11 +316,11 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                   <div><span>Họ và tên</span><br /><strong>{sisRecord.fullName || 'Chưa có thông tin'}</strong></div>
                   <div><span>Mã sinh viên</span><br /><strong>{sisRecord.studentCode || 'Chưa có thông tin'}</strong></div>
                   <div><span>Khoa</span><br /><strong>{sisRecord.faculty || 'Chưa có thông tin'}</strong></div>
-                  <div><span>Tình trạng học</span><br /><strong>{sisRecord.academicStatus === 'ACTIVE' ? 'Đang học' : sisRecord.academicStatus === 'SUSPENDED' ? 'Tạm dừng học' : sisRecord.academicStatus === 'WITHDRAWN' ? 'Đã thôi học' : sisRecord.academicStatus === 'GRADUATED' ? 'Đã tốt nghiệp' : sisRecord.academicStatus === 'LEAVE_OF_ABSENCE' ? 'Đang bảo lưu' : 'Chưa có thông tin'}</strong></div>
+                  <div><span>Tình trạng học</span><br /><strong>{labelFor(sisRecord.academicStatus, ACADEMIC_STATUS_LABELS)}</strong></div>
                   <div><span>Thời gian học</span><br /><strong>{sisRecord.courseStartDate || 'Chưa có thông tin'} - {sisRecord.courseEndDate || 'Chưa có thông tin'}</strong></div>
                   <div><span>Đang tham gia học kỳ hiện tại</span><br /><strong>{sisRecord.currentTermActive === true ? 'Rồi' : sisRecord.currentTermActive === false ? 'Chưa' : 'Chưa rõ'}</strong></div>
                   <div><span>Đã có thời khóa biểu</span><br /><strong>{sisRecord.hasCurrentSchedule === true ? 'Rồi' : sisRecord.hasCurrentSchedule === false ? 'Chưa' : 'Chưa rõ'}</strong></div>
-                  <div><span>Tình trạng hồ sơ</span><br /><strong>{sisRecord.recordStatus === 'ACTIVE' ? 'Đang sử dụng' : sisRecord.recordStatus === 'SUSPENDED' ? 'Tạm khóa' : 'Chưa rõ'}</strong></div>
+                  <div><span>Tình trạng thông tin</span><br /><strong>{labelFor(sisRecord.recordStatus, SIS_RECORD_STATUS_LABELS)}</strong></div>
                   <div style={{ gridColumn: '1 / -1' }}><span>Địa chỉ thường trú nhà trường đang lưu</span><br /><strong>{sisRecord.registeredPermanentAddress || 'Chưa có thông tin'}</strong></div>
                 </div>
               </> : <p role="status">Chưa có thông tin sinh viên do nhà trường cung cấp. Vui lòng liên hệ nhà trường để cập nhật.</p>}
@@ -334,7 +334,7 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
               <input
                 type="text"
                 className="form-input"
-                value="Xác nhận sinh viên để bổ sung vào hồ sơ nghĩa vụ quân sự"
+                value="Xác nhận tình trạng sinh viên để bổ sung vào hồ sơ nghĩa vụ quân sự"
                 readOnly
                 style={{ background: '#1e293b', color: '#cbd5e1', cursor: 'not-allowed' }}
               />
@@ -422,13 +422,14 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <MapPin size={14} /> Kiểm tra địa chỉ:
+                      <MapPin size={14} /> Gợi ý sắp xếp địa chỉ
                     </span>
                     {normalizing && <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Đang kiểm tra địa chỉ...</span>}
                   </div>
 
                   {normalizedPreview ? (
                     <div>
+                      <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.74rem' }}>Gợi ý này chỉ kiểm tra cách ghi địa chỉ, không xác minh nơi cư trú thực tế.</p>
                       <div style={{ fontSize: '0.84rem', color: '#f8fafc', fontWeight: 600 }}>
                         {normalizedPreview.normalizedAddress || rawAddress}
                       </div>

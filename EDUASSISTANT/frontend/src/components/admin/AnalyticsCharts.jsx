@@ -1,8 +1,8 @@
 import React from 'react';
 
 const STATUS = [
-  ['Chờ duyệt', 'SUBMITTED', '#38bdf8'], ['Đang xử lý', 'UNDER_REVIEW', '#fbbf24'],
-  ['Bổ sung', 'REQUIRES_SUPPLEMENT', '#f97316'], ['Đã duyệt', 'APPROVED', '#34d399'], ['Từ chối', 'REJECTED', '#f87171']
+  ['Chờ xem xét', 'SUBMITTED', '#38bdf8'], ['Đang xử lý', 'UNDER_REVIEW', '#fbbf24'],
+  ['Cần bổ sung', 'REQUIRES_SUPPLEMENT', '#f97316'], ['Đã chấp thuận nội bộ', 'APPROVED', '#34d399'], ['Chưa chấp thuận nội bộ', 'REJECTED', '#f87171']
 ];
 const REASONS = [
   ['OWNERSHIP_UNCLEAR', 'Thông tin sinh viên chưa khớp', '#ef4444'],
@@ -26,7 +26,7 @@ export default function AnalyticsCharts({ stats }) {
       <div className="donut-layout">
         <svg className="donut-chart" viewBox="0 0 140 140" role="img" aria-label="Biểu đồ trạng thái hồ sơ">
           <circle cx="70" cy="70" r={radius} fill="none" stroke="#e7edf4" strokeWidth="16" />
-          {STATUS.map(([label, key, color]) => {
+          {STATUS.map(([, key, color]) => {
             const portion = total ? (status[key] || 0) / total : 0;
             const dash = portion * circumference;
             const circle = <circle key={key} cx="70" cy="70" r={radius} fill="none" stroke={color} strokeWidth="16" strokeDasharray={`${dash} ${circumference - dash}`} strokeDashoffset={-offset} transform="rotate(-90 70 70)" />;
