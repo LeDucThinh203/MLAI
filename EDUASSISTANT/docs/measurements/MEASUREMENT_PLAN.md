@@ -4,7 +4,7 @@
 
 ### Track A Decision Benchmark
 
-`benchmark/run_benchmark.py` evaluates the escalation decision policy on 18 fixed synthetic scenarios from `benchmark/held_out_cases.json`. It uses address-analysis, AI provenance, institutional facts, and student-claim fixtures. It calls no AI provider, uses no network or database, and writes only local result artifacts.
+`benchmark/run_benchmark.py` evaluates the escalation decision policy on 18 fixed synthetic scenarios from `benchmark/fixed_synthetic_cases.json`. It uses address-analysis, AI provenance, institutional facts, and student-claim fixtures. It calls no AI provider, uses no network or database, and writes only local result artifacts.
 
 Metadata must report:
 

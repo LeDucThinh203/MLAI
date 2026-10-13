@@ -60,8 +60,8 @@ async function createDemoEvidenceImage(fileName, title, subTitle, badgeColor) {
       <text x="100" y="520" font-family="Arial, sans-serif" font-size="13" fill="#475569">Cơ quan cấp chứng nhận:</text>
       <text x="450" y="520" font-family="Arial, sans-serif" font-size="13" fill="#1e293b">Hội đồng Khảo thí &amp; Đào tạo</text>
       
-      <text x="100" y="565" font-family="Arial, sans-serif" font-size="13" fill="#475569">Chữ ký số &amp; Mã hóa:</text>
-      <text x="450" y="565" font-family="Courier, monospace" font-size="11" fill="#64748b">SHA-256: e83b1a9f...9c2e01</text>
+      <text x="100" y="565" font-family="Arial, sans-serif" font-size="13" fill="#475569">HMAC-SHA256 integrity check:</text>
+      <text x="450" y="565" font-family="Courier, monospace" font-size="11" fill="#64748b">HMAC-SHA256: e83b1a9f...9c2e01</text>
       
       <text x="100" y="610" font-family="Arial, sans-serif" font-size="13" fill="#475569">Đánh giá tiêu chí xét duyệt:</text>
       <text x="450" y="610" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#059669">ĐẠT YÊU CẦU 100%</text>

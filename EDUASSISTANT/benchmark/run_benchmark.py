@@ -90,7 +90,7 @@ def build_evaluation_input(case):
 
 def run_benchmark():
     benchmark_dir = os.path.dirname(os.path.abspath(__file__))
-    cases_file = os.path.join(benchmark_dir, 'held_out_cases.json')
+    cases_file = os.path.join(benchmark_dir, 'fixed_synthetic_cases.json')
     results_dir = os.path.join(benchmark_dir, 'results')
     os.makedirs(results_dir, exist_ok=True)
 

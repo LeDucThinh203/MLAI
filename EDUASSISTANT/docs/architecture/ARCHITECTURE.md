@@ -63,7 +63,7 @@ flowchart LR
     Agent --> Audit[Audit trail]
 ```
 
-The Agent is an assistant/orchestrator, not the Rule Engine or a legal decision maker. Case queries use authorized live tools. RAG is limited to `docs/policies/student_service_policy.md`, `docs/SYSTEM_OVERVIEW.md`, `docs/architecture/ARCHITECTURE.md`, `RUNBOOK.md`, and the runtime `POLICY_REGISTRY`; it never indexes `.env`, uploads, user records, tests, or benchmark artifacts. Citations come only from retrieved chunks. Gemini embeddings are optional; the index remains usable through lexical ranking when no embedding model is configured.
+The Agent is an assistant/orchestrator, not the Rule Engine or a legal decision maker. Case queries use authorized live tools. RAG is limited to `docs/policies/student_service_policy.md`, `docs/SYSTEM_OVERVIEW.md`, `docs/architecture/ARCHITECTURE.md`, and the runtime `POLICY_REGISTRY`; it never indexes `.env`, uploads, user records, tests, or benchmark artifacts. Citations come only from retrieved chunks. Gemini embeddings are optional; the index remains usable through lexical ranking when no embedding model is configured.
 
 Every tool is allowlisted, schema-validated, and checked against the current role. Student case reads are scoped to the signed-in student. Write tools create a short-lived preview; confirmation rechecks ownership, role, expiration, action integrity, and live workflow state before invoking the existing route/service. Review transitions still pass through `workflow_guard`, and the deterministic Rule Engine and Verify/Track evaluation paths are not invoked by the chat widget.
 

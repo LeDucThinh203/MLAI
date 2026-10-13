@@ -1,7 +1,7 @@
 {
   "name": "eduassistant",
   "version": "3.0.0",
-  "description": "EduAssistant - Nền tảng thẩm định hồ sơ sinh viên thông minh kết hợp AI Multimodal OCR (Gemini), Rule Engine, PostgreSQL và Quy trình Ký số điện tử.",
+  "description": "EduAssistant - Nền tảng thẩm định hồ sơ sinh viên thông minh kết hợp AI Multimodal OCR (Gemini), Rule Engine, PostgreSQL và HMAC-SHA256 data integrity checks.",
   "main": "backend/server.py",
   "scripts": {
     "start": "python backend/server.py",

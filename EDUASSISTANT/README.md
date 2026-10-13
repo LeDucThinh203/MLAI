@@ -16,7 +16,7 @@
 6. [Track A Decision Benchmark (18 Kịch Bản Cố Định)](#6-track-a-decision-benchmark-18-kịch-bản-cố-định)
 7. [Hướng Dẫn Cài Đặt & Khởi Chạy (Quickstart)](#7-hướng-dẫn-cài-đặt--khởi-chạy-quickstart)
 8. [Tài Khoản Thử Nghiệm Mặc Định (Demo Accounts)](#8-tài-khoản-thử-nghiệm-mặc-định-demo-accounts)
-9. [Bộ Kiểm Thử Cuộc Thi (Competition Test Suite - 21/21 Pass)](#9-bộ-kiểm-thử-cuộc-thi-competition-test-suite---2121-pass)
+9. [Competition Test Suite](#9-competition-test-suite)
 10. [Bằng Chứng Thử Nghiệm Người Dùng (User Validation Evidence)](#10-bằng-chứng-thử-nghiệm-người-dùng-user-validation-evidence)
 
 ---
@@ -166,6 +166,8 @@ npm run dev
 
 ## 8. TÀI KHOẢN THỬ NGHIỆM MẶC ĐỊNH (DEMO ACCOUNTS)
 
+Demo credentials are for local/demo use only. Accounts are seeded only when `SEED_DEMO_DATA=true`; production must set it to `false`.
+
 | Vai Trò | Username | Password | Quyền Hạn & Tính Năng Nổi Bật |
 | :--- | :--- | :--- | :--- |
 | 🎓 **Sinh Viên** | `student1` | `password123` | Nộp đơn NVQS, xem dữ kiện học vụ, live preview chuẩn hóa địa chỉ AI, tra cứu mã QR. |
@@ -174,21 +176,13 @@ npm run dev
 
 ---
 
-## 9. BỘ KIỂM THỬ CUỘC THI (COMPETITION TEST SUITE - 21/21 PASS)
+## 9. COMPETITION TEST SUITE
 
 Chạy bộ kiểm thử tự động toàn diện:
 ```powershell
 python test/test_competition_features.py
 ```
-**Kết quả: `21 PASSED | 0 FAILED (100% ĐẠT CHUẨN)`**
-- ✅ Fail-Safe: Mock / Cache / Fallback chặn tự động duyệt (3/3 pass)
-- ✅ Human Review: Override lý do, Stop, từ chối action lạ (3/3 pass)
-- ✅ Workflow State Guard: Chặn thay đổi trạng thái từ terminal APPROVED (1/1 pass)
-- ✅ Audit Trail: Lưu trữ và trả về đầy đủ `input` và `result` qua API (1/1 pass)
-- ✅ Verify Harness: 9/9 kịch bản xác định đạt 100% pass (2/2 pass)
-- ✅ Adaptive Threshold: Tăng +0.02, giảm -0.02, kẹp giới hạn `[0.65, 0.90]` (5/5 pass)
-- ✅ Reviewer Feedback Endpoint: Chặn sinh viên 403, cho phép cán bộ 200 (2/2 pass)
-- ✅ Benchmark Formulas: Decision Accuracy, Missed Escalation, Unnecessary Escalation (3/3 pass)
+This integration suite requires the PostgreSQL-backed application environment. The database-free CI regressions and deterministic checks run separately.
 
 ---
 

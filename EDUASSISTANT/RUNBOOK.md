@@ -39,7 +39,7 @@ Mở terminal tại thư mục `EDUASSISTANT/`:
 
 ### Bước 2.1: Cài đặt thư viện Backend Python
 ```powershell
-python -m pip install -r backend/requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ### Bước 2.2: Cài đặt thư viện Frontend
@@ -56,6 +56,7 @@ cd ..
 Tạo `EDUASSISTANT/.env` từ các giá trị phù hợp với môi trường. Local development cần PostgreSQL:
 ```ini
 APP_ENV=development
+SEED_DEMO_DATA=true
 PORT=3001
 DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/eduassistant_db
 ALLOW_ADMIN_VERIFIED_DEMO_SIS=true
@@ -63,10 +64,10 @@ AI_MODE=live
 GEMINI_API_KEY=your_gemini_api_key
 JWT_SECRET=replace_with_a_random_secret
 REFRESH_SECRET=replace_with_a_random_secret
-SIGNATURE_KEY=replace_with_a_random_hmac_secret
+SIGNATURE_KEY=replace_with_a_random_hmac_secret_at_least_32_characters
 ```
 
-Keep secrets private. In production set `APP_ENV=production` and
+Demo accounts are seeded only when `SEED_DEMO_DATA=true`; set it to `false` in production. Keep secrets private. In production set `APP_ENV=production` and
 `ALLOW_ADMIN_VERIFIED_DEMO_SIS=false`. No Admin AI Mode selector exists; provider
 configuration is environment-based. Gemini is used when configured; OCR fallback
 does not invent document fields.

@@ -51,7 +51,7 @@
 | :--- | :--- |
 | **Mã Commit Before:** | `01f0fb94d724801db2e46231db4c2fb6b6d51081` (Baseline: Multi-category prototype) |
 | **Mã Commit After:** | `[Working Tree: Single-Domain NVQS Refactoring with 3 Fact Layers]` |
-| **Tệp tin đã thay đổi:** | `StudentPortal.jsx`, `ReviewerPortal.jsx`, `rule_engine.py`, `address_ai_service.py`, `verify_harness_service.py`, `held_out_cases.json` |
+| **Tệp tin đã thay đổi:** | `StudentPortal.jsx`, `ReviewerPortal.jsx`, `rule_engine.py`, `address_ai_service.py`, `verify_harness_service.py`, `fixed_synthetic_cases.json` |
 | **Tác động sau cải tiến:** | Hệ thống chuyên biệt hóa sâu cho xác nhận tạm hoãn NVQS: 3 lớp dữ kiện rõ ràng, tự động chuẩn hóa địa chỉ, 100% độ chính xác thẩm định, 0.0% bỏ sót leo thang. |
 
 ---

@@ -18,7 +18,7 @@ from benchmark.run_benchmark import build_evaluation_input
 class BenchmarkProvenanceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with open(os.path.join(PROJECT_ROOT, 'benchmark', 'held_out_cases.json'), encoding='utf-8') as source:
+        with open(os.path.join(PROJECT_ROOT, 'benchmark', 'fixed_synthetic_cases.json'), encoding='utf-8') as source:
             cls.cases = {case['id']: case for case in json.load(source)}
 
     def test_bench_01_marks_institutional_facts_as_test_verified(self):

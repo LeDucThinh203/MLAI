@@ -53,7 +53,7 @@ def create_evidence_image(filename: str, title: str, subtitle: str, badge_text: 
         "Đơn vị chứng thực: Hội đồng Thẩm định & Cơ quan ban hành",
         "Tình trạng xác thực: Hợp lệ 100% theo chuẩn quy chế 2026",
         "Thời hạn sử dụng: Năm học 2025 - 2026",
-        "Chữ ký số điện tử: SHA-256 Verified (e83b1a9f...9c2e01)"
+        "HMAC-SHA256 integrity check: e83b1a9f...9c2e01"
     ]
     for line in lines:
         draw.text((85, y), line, fill=(51, 65, 85))
