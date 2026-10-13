@@ -44,6 +44,8 @@ _KEYS = {
     "courseenddate": "courseEndDate", "currenttermactive": "currentTermActive",
     "hascurrentschedule": "hasCurrentSchedule", "registeredpermanentaddress": "registeredPermanentAddress",
     "faculty": "faculty", "recordstatus": "recordStatus", "updatedby": "updatedBy",
+    "sourcetype": "sourceType", "verificationstatus": "verificationStatus",
+    "verifiedby": "verifiedBy", "verifiedat": "verifiedAt",
     "currentthreshold": "currentThreshold", "minthreshold": "minThreshold",
     "maxthreshold": "maxThreshold", "stepsize": "stepSize",
     "oldthreshold": "oldThreshold", "newthreshold": "newThreshold",
@@ -326,6 +328,9 @@ CREATE TABLE IF NOT EXISTS sis_student_records (
     currentTermActive BOOLEAN, hasCurrentSchedule BOOLEAN,
     registeredPermanentAddress TEXT, faculty VARCHAR(255),
     source VARCHAR(100) NOT NULL DEFAULT 'INTERNAL_SIS_DEMO',
+    sourceType VARCHAR(100) NOT NULL DEFAULT 'INTERNAL_DEMO_SIS',
+    verificationStatus VARCHAR(50) NOT NULL DEFAULT 'UNVERIFIED',
+    verifiedBy VARCHAR(100), verifiedAt VARCHAR(100),
     recordStatus VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     createdAt VARCHAR(100) NOT NULL, updatedAt VARCHAR(100) NOT NULL, updatedBy VARCHAR(100)
 );
@@ -347,6 +352,10 @@ CREATE TABLE IF NOT EXISTS sis_student_records (
             'ALTER TABLE users ADD COLUMN IF NOT EXISTS registeredPermanentAddress TEXT',
             'ALTER TABLE users ADD COLUMN IF NOT EXISTS faculty VARCHAR(255)',
             'ALTER TABLE sis_student_records ADD COLUMN IF NOT EXISTS source VARCHAR(100) NOT NULL DEFAULT \'INTERNAL_SIS_DEMO\'',
+            'ALTER TABLE sis_student_records ADD COLUMN IF NOT EXISTS sourceType VARCHAR(100) NOT NULL DEFAULT \'INTERNAL_DEMO_SIS\'',
+            'ALTER TABLE sis_student_records ADD COLUMN IF NOT EXISTS verificationStatus VARCHAR(50) NOT NULL DEFAULT \'UNVERIFIED\'',
+            'ALTER TABLE sis_student_records ADD COLUMN IF NOT EXISTS verifiedBy VARCHAR(100)',
+            'ALTER TABLE sis_student_records ADD COLUMN IF NOT EXISTS verifiedAt VARCHAR(100)',
             'ALTER TABLE sis_student_records ADD COLUMN IF NOT EXISTS recordStatus VARCHAR(50) NOT NULL DEFAULT \'ACTIVE\'',
             'ALTER TABLE sis_student_records ADD COLUMN IF NOT EXISTS updatedBy VARCHAR(100)',
         ):

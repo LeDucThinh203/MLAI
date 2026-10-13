@@ -559,7 +559,7 @@ class DatabaseService:
 
         audit_action = 'CASE_AUTO_APPROVED' if created_case['status'] == 'APPROVED' else ('CASE_ESCALATED' if case_data.get('escalation') else 'CASE_SUBMITTED')
         audit_reason = (
-            f"[Rule Engine] Tự động phê duyệt hồ sơ #{created_case['id']} theo Quy chế Đào tạo"
+            'Internal workflow rule applied using the configured criteria.'
             if created_case['status'] == 'APPROVED'
             else (
                 f"[Rule Engine] Leo thang xét duyệt hồ sơ #{created_case['id']} do [{case_data.get('escalation', {}).get('reason')}]: {case_data.get('escalation', {}).get('explanation')}"
@@ -578,7 +578,10 @@ class DatabaseService:
                 'priority': created_case['priority'],
                 'status': created_case['status'],
                 'escalationReason': case_data.get('escalation', {}).get('reason') if case_data.get('escalation') else None,
-                'assignedDepartment': created_case['assignedDepartment']
+                'assignedDepartment': created_case['assignedDepartment'],
+                'institutionalTrust': (case_data.get('ruleEngine') or {}).get('institutionalTrust'),
+                'institutionalSourceType': (case_data.get('institutionalFacts') or {}).get('sourceType'),
+                'institutionalVerificationStatus': (case_data.get('institutionalFacts') or {}).get('verificationStatus'),
             },
             'result': 'SUCCESS',
             'reason': audit_reason

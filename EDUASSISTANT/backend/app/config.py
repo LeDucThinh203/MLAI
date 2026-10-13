@@ -65,3 +65,9 @@ REDIS_KEY_PREFIX = os.environ.get('REDIS_KEY_PREFIX', 'eduassistant').strip() or
 
 # PostgreSQL is the sole supported database engine.
 DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
+
+# Admin-verified internal SIS records are trusted only in explicit demo modes.
+ALLOW_ADMIN_VERIFIED_DEMO_SIS = os.environ.get(
+    'ALLOW_ADMIN_VERIFIED_DEMO_SIS',
+    str(APP_ENV in ('development', 'demo')),
+).strip().lower() == 'true'

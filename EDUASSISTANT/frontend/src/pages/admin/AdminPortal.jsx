@@ -198,6 +198,26 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
     }
   };
 
+  const verifyDemoSis = async (record) => {
+    const warning = 'Chỉ xác nhận record nội bộ cho mục đích demo EDUASSISTANT. Đây không phải xác thực từ SIS thật của trường.';
+    if (!window.confirm(warning)) return;
+    setSisSaving(true);
+    try {
+      const res = await axios.post(`${API_BASE}/admin/sis/${record.id}/verify-demo`, {
+        reason: 'Admin confirmed this internal record for the EDUASSISTANT demo workflow; this does not verify data against a university SIS.'
+      });
+      if (!res.data?.success) throw new Error(res.data?.message || 'Không thể xác nhận dữ liệu demo.');
+      const updated = res.data.data.record;
+      setSisRecords(items => items.map(item => item.id === updated.id ? updated : item));
+      setViewingSis(current => current?.id === updated.id ? updated : current);
+      setAdminMessage({ type: 'success', text: 'Đã xác nhận dữ liệu nội bộ cho mục đích demo.' });
+    } catch (err) {
+      setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể xác nhận dữ liệu demo.' });
+    } finally {
+      setSisSaving(false);
+    }
+  };
+
   const openCreateSis = async () => {
     setSisSaving(true);
     try {
@@ -361,7 +381,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: '20px' }}>
           <div>
             <h2 style={{ marginBottom: '6px' }}>Dữ liệu SIS sinh viên</h2>
-            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Nguồn dữ liệu nội bộ cho hồ sơ sinh viên. Tổng cộng: <strong>{sisTotal}</strong> bản ghi.</p>
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Registry nội bộ của EDUASSISTANT; không kết nối SIS đại học bên ngoài. Tổng cộng: <strong>{sisTotal}</strong> bản ghi.</p>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" className="btn-secondary" onClick={() => setSisPage(1)} disabled={sisLoading}>
@@ -371,6 +391,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               Thêm hồ sơ SIS
             </button>
           </div>
+        </div>
+
+        <div role="note" style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, .35)', background: 'rgba(245, 158, 11, .08)', color: 'var(--text-primary)', fontSize: '.82rem' }}>
+          Xác nhận demo chỉ xác minh record nội bộ cho workflow EDUASSISTANT. Việc này không xác thực dữ liệu từ SIS thật của trường.
         </div>
 
         <div style={{ display: 'flex', gap: '10px', marginBottom: '18px', flexWrap: 'wrap' }}>
@@ -384,23 +408,30 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
         </div>
 
         <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
-          <table style={{ width: '100%', minWidth: '900px', borderCollapse: 'collapse', fontSize: '0.84rem', textAlign: 'left' }}>
+          <table style={{ width: '100%', minWidth: '1200px', borderCollapse: 'collapse', fontSize: '0.84rem', textAlign: 'left' }}>
             <thead><tr style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', fontSize: '0.73rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              <th style={{ padding: '12px' }}>STT</th><th style={{ padding: '12px' }}>Sinh viên</th><th style={{ padding: '12px' }}>Học vụ</th><th style={{ padding: '12px' }}>Khoa</th><th style={{ padding: '12px' }}>Khóa học</th><th style={{ padding: '12px', textAlign: 'right' }}>Thao tác</th>
+              <th style={{ padding: '12px' }}>STT</th><th style={{ padding: '12px' }}>Sinh viên</th><th style={{ padding: '12px' }}>Học vụ</th><th style={{ padding: '12px' }}>Khoa</th><th style={{ padding: '12px' }}>Khóa học</th><th style={{ padding: '12px' }}>Nguồn và xác minh</th><th style={{ padding: '12px', textAlign: 'right' }}>Thao tác</th>
             </tr></thead>
             <tbody>
-              {sisLoading && <tr><td colSpan="6" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải dữ liệu SIS...</td></tr>}
-              {!sisLoading && sisRecords.length === 0 && <tr><td colSpan="6" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Không có sinh viên phù hợp với bộ lọc.</td></tr>}
+              {sisLoading && <tr><td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải dữ liệu SIS...</td></tr>}
+              {!sisLoading && sisRecords.length === 0 && <tr><td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Không có sinh viên phù hợp với bộ lọc.</td></tr>}
               {!sisLoading && sisRecords.map((record, index) => <tr key={record.id} style={{ borderTop: '1px solid var(--border-color)' }}>
                 <td style={{ padding: '14px 12px', color: 'var(--text-muted)' }}>{(sisPage - 1) * 20 + index + 1}</td>
                 <td style={{ padding: '14px 12px' }}><strong>{record.fullName}</strong><br /><span style={{ color: 'var(--text-muted)' }}>{record.studentCode || 'Chưa có MSSV'}</span></td>
                 <td style={{ padding: '14px 12px' }}><strong>{ACADEMIC_STATUS_LABELS[record.academicStatus] || 'Chưa xác định'}</strong><br /><small style={{ color: 'var(--text-muted)' }}>{SIS_RECORD_STATUS_LABELS[record.recordStatus] || 'Đang sử dụng'}</small></td>
                 <td style={{ padding: '14px 12px' }}>{record.faculty || 'Chưa cập nhật'}</td>
                 <td style={{ padding: '14px 12px' }}>{record.courseStartDate || '—'} <span style={{ color: 'var(--text-muted)' }}>→</span> {record.courseEndDate || '—'}</td>
+                <td style={{ padding: '14px 12px', fontSize: '.76rem' }}>
+                  <div><strong>Source Type:</strong> {record.sourceType || 'LEGACY_ACCOUNT'}</div>
+                  <div><strong>Verification Status:</strong> {record.sourceType === 'INTERNAL_DEMO_SIS' && record.verificationStatus === 'ADMIN_VERIFIED_DEMO' ? 'Admin Verified – Demo' : (!record.verificationStatus || record.verificationStatus === 'UNVERIFIED' ? 'Unverified' : record.verificationStatus)}</div>
+                  <div><strong>Verified By:</strong> {record.verifiedBy || '—'}</div>
+                  <div><strong>Verified At:</strong> {record.verifiedAt || '—'}</div>
+                </td>
                 <td style={{ padding: '14px 12px', textAlign: 'right' }}>
-                  <div style={{ display: 'inline-flex', gap: '8px' }}>
+                  <div style={{ display: 'inline-flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     <button type="button" className="btn-secondary" onClick={() => openSisDetails(record)} disabled={sisViewingLoading}>Xem</button>
                     <button type="button" className="btn-secondary" onClick={() => { setSisEditorMode('edit'); setEditingSis({ ...record, recordStatus: record.recordStatus || 'ACTIVE' }); }}>Cập nhật</button>
+                    {record.sourceType === 'INTERNAL_DEMO_SIS' && record.verificationStatus !== 'ADMIN_VERIFIED_DEMO' && <button type="button" className="btn-primary" onClick={() => verifyDemoSis(record)} disabled={sisSaving}>Xác nhận dữ liệu demo</button>}
                   </div>
                 </td>
               </tr>)}
@@ -434,7 +465,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
           <div onClick={e => e.stopPropagation()} className="card-panel" style={{ width: 'min(680px, 100%)', padding: '24px', boxShadow: '0 24px 64px rgba(0,0,0,.35)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}><div><h3 id="sis-view-title" style={{ margin: 0 }}>Hồ sơ SIS: {viewingSis.fullName}</h3><small style={{ color: 'var(--text-muted)' }}>{viewingSis.studentCode || 'Chưa có MSSV'} · Nguồn: {viewingSis.source || 'INTERNAL_SIS_DEMO'}</small></div><button type="button" aria-label="Đóng" className="btn-secondary" onClick={() => setViewingSis(null)}><X size={18} /></button></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '20px' }}>
-              {[['Trạng thái học vụ', ACADEMIC_STATUS_LABELS[viewingSis.academicStatus] || 'Chưa xác định'], ['Trạng thái bản ghi', SIS_RECORD_STATUS_LABELS[viewingSis.recordStatus] || 'Đang sử dụng'], ['Khoa / đơn vị', viewingSis.faculty || 'Chưa cập nhật'], ['Khóa học', `${viewingSis.courseStartDate || '—'} → ${viewingSis.courseEndDate || '—'}`], ['Học kỳ hoạt động', viewingSis.currentTermActive ? 'Có' : 'Không'], ['Thời khóa biểu', viewingSis.hasCurrentSchedule ? 'Có' : 'Không'], ['Địa chỉ thường trú', viewingSis.registeredPermanentAddress || 'Chưa cập nhật'], ['Cập nhật lần cuối', viewingSis.updatedAt || '—']].map(([label, value]) => <div key={label} style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '8px' }}><small style={{ color: 'var(--text-muted)', display: 'block' }}>{label}</small><strong style={{ fontSize: '0.88rem' }}>{value}</strong></div>)}
+              {[['Source Type', viewingSis.sourceType || 'LEGACY_ACCOUNT'], ['Verification Status', viewingSis.sourceType === 'INTERNAL_DEMO_SIS' && viewingSis.verificationStatus === 'ADMIN_VERIFIED_DEMO' ? 'Admin Verified – Demo' : (!viewingSis.verificationStatus || viewingSis.verificationStatus === 'UNVERIFIED' ? 'Unverified' : viewingSis.verificationStatus)], ['Verified By', viewingSis.verifiedBy || '—'], ['Verified At', viewingSis.verifiedAt || '—'], ['Trạng thái học vụ', ACADEMIC_STATUS_LABELS[viewingSis.academicStatus] || 'Chưa xác định'], ['Trạng thái bản ghi', SIS_RECORD_STATUS_LABELS[viewingSis.recordStatus] || 'Đang sử dụng'], ['Khoa / đơn vị', viewingSis.faculty || 'Chưa cập nhật'], ['Khóa học', `${viewingSis.courseStartDate || '—'} → ${viewingSis.courseEndDate || '—'}`], ['Học kỳ hoạt động', viewingSis.currentTermActive ? 'Có' : 'Không'], ['Thời khóa biểu', viewingSis.hasCurrentSchedule ? 'Có' : 'Không'], ['Địa chỉ thường trú', viewingSis.registeredPermanentAddress || 'Chưa cập nhật'], ['Cập nhật lần cuối', viewingSis.updatedAt || '—']].map(([label, value]) => <div key={label} style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '8px' }}><small style={{ color: 'var(--text-muted)', display: 'block' }}>{label}</small><strong style={{ fontSize: '0.88rem' }}>{value}</strong></div>)}
             </div>
             <div style={{ marginTop: '18px', padding: '12px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.10)', fontSize: '0.84rem' }}><strong>Vai trò trong thẩm định:</strong> SIS là dữ liệu xác thực do quản trị viên quản lý. Khi sinh viên nộp hồ sơ NVQS, hệ thống snapshot dữ liệu SIS hiện có vào hồ sơ để Rule Engine đối chiếu danh tính, học vụ, thời hạn khóa học và địa chỉ. AI chỉ hỗ trợ phân tích, không thay thế dữ liệu SIS.</div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}><button type="button" className="btn-primary" onClick={() => { setViewingSis(null); setSisEditorMode('edit'); setEditingSis({ ...viewingSis, recordStatus: viewingSis.recordStatus || 'ACTIVE' }); }}>Cập nhật hồ sơ</button></div>

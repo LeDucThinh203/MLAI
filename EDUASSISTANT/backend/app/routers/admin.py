@@ -44,6 +44,10 @@ class SisCreateRequest(SisUpdateRequest):
     userId: str
 
 
+class SisDemoVerificationRequest(BaseModel):
+    reason: Optional[str] = None
+
+
 @router.get('/api/admin/policies')
 async def get_policy_registry(user: dict = Depends(require_roles('ADMIN'))):
     state = get_one('SELECT * FROM escalation_policy_state WHERE id = ?', ('GLOBAL_NVQS_POLICY',))
@@ -101,16 +105,17 @@ async def create_sis_record(req: SisCreateRequest, user: dict = Depends(require_
 
     record_id = f"SIS-{data['userId']}"
     now = datetime.utcnow().isoformat() + 'Z'
-    run_query('''INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,recordStatus,createdAt,updatedAt,updatedBy)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
+    run_query('''INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,sourceType,verificationStatus,recordStatus,createdAt,updatedAt,updatedBy)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
         record_id, data['userId'], data['studentCode'], data['fullName'], data.get('academicStatus'),
         data.get('courseStartDate'), data.get('courseEndDate'), data.get('currentTermActive'), data.get('hasCurrentSchedule'),
-        data.get('registeredPermanentAddress'), data.get('faculty'), 'INTERNAL_SIS_ADMIN', data.get('recordStatus') or 'ACTIVE', now, now, user.get('id')
+        data.get('registeredPermanentAddress'), data.get('faculty'), 'INTERNAL_SIS_ADMIN', 'INTERNAL_DEMO_SIS',
+        'UNVERIFIED', data.get('recordStatus') or 'ACTIVE', now, now, user.get('id')
     ))
     record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
     await db_service.log_audit({'action': 'ADMIN_SIS_RECORD_CREATED', 'actor': user, 'caseId': None,
         'input': {'recordId': record_id, 'userId': data['userId'], 'studentCode': data['studentCode']},
-        'result': 'SUCCESS', 'reason': 'Admin created an authoritative internal SIS record.'})
+        'result': 'SUCCESS', 'reason': 'Admin created an unverified record in the internal demo SIS registry.'})
     return api_response(201, True, 'SIS record created.', {'record': record})
 
 
@@ -139,11 +144,61 @@ async def update_sis_record(record_id: str, req: SisUpdateRequest, user: dict = 
         if duplicate: return api_response(409, False, 'Student code already exists.', None, 'DUPLICATE_STUDENT_CODE')
     changed = {key: {'old': record.get(key), 'new': value} for key, value in data.items() if record.get(key) != value}
     if changed:
-        values = [data[k] for k in data] + [datetime.utcnow().isoformat()+'Z', user.get('id'), record_id]
-        run_query('UPDATE sis_student_records SET studentCode=?, fullName=?, academicStatus=?, courseStartDate=?, courseEndDate=?, currentTermActive=?, hasCurrentSchedule=?, registeredPermanentAddress=?, faculty=?, recordStatus=?, updatedAt=?, updatedBy=? WHERE id=?', tuple(values))
-        await db_service.log_audit({'action':'ADMIN_SIS_RECORD_UPDATED','actor':user,'caseId':None,'input':{'recordId':record_id,'studentCode':data['studentCode'],'changedFields':changed},'result':'SUCCESS','reason':'Admin updated authoritative institutional SIS record.'})
+        updated_at = datetime.utcnow().isoformat() + 'Z'
+        old_verification_status = record.get('verificationStatus') or 'UNVERIFIED'
+        if old_verification_status != 'UNVERIFIED':
+            changed['verificationStatus'] = {
+                'old': old_verification_status,
+                'new': 'UNVERIFIED',
+            }
+        if record.get('verifiedBy'):
+            changed['verifiedBy'] = {'old': record['verifiedBy'], 'new': None}
+        if record.get('verifiedAt'):
+            changed['verifiedAt'] = {'old': record['verifiedAt'], 'new': None}
+        run_query('''UPDATE sis_student_records SET studentCode=?, fullName=?, academicStatus=?, courseStartDate=?, courseEndDate=?, currentTermActive=?, hasCurrentSchedule=?, registeredPermanentAddress=?, faculty=?, recordStatus=?, verificationStatus='UNVERIFIED', verifiedBy=NULL, verifiedAt=NULL, updatedAt=?, updatedBy=? WHERE id=?''', tuple([data[k] for k in data] + [updated_at, user.get('id'), record_id]))
+        await db_service.log_audit({'action':'ADMIN_SIS_RECORD_UPDATED','actor':user,'caseId':None,'input':{'recordId':record_id,'studentCode':data['studentCode'],'changedFields':changed},'result':'SUCCESS','reason':'Admin edited internal demo SIS facts; any previous demo verification was cleared.'})
     updated = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
     return api_response(200, True, 'SIS record updated.', {'record': updated})
+
+
+@router.post('/api/admin/sis/{record_id}/verify-demo')
+async def verify_demo_sis_record(
+    record_id: str,
+    req: SisDemoVerificationRequest,
+    user: dict = Depends(require_roles('ADMIN')),
+):
+    record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    if not record:
+        return api_response(404, False, 'SIS record not found.', None, 'NOT_FOUND')
+    if record.get('sourceType') != 'INTERNAL_DEMO_SIS':
+        return api_response(400, False, 'Only internal demo SIS records can receive demo verification.', None, 'INVALID_SIS_SOURCE')
+
+    verified_at = datetime.utcnow().isoformat() + 'Z'
+    old_status = record.get('verificationStatus') or 'UNVERIFIED'
+    reason = (req.reason or '').strip() or (
+        'Admin confirmed this internal record for the EDUASSISTANT demo workflow; '
+        'this does not verify data against a university SIS.'
+    )
+    run_query('''UPDATE sis_student_records
+        SET verificationStatus='ADMIN_VERIFIED_DEMO', verifiedBy=?, verifiedAt=?, updatedAt=?, updatedBy=?
+        WHERE id=?''', (user.get('id'), verified_at, verified_at, user.get('id'), record_id))
+    await db_service.log_audit({
+        'action': 'ADMIN_SIS_RECORD_VERIFIED_DEMO',
+        'actor': user,
+        'caseId': None,
+        'input': {
+            'recordId': record_id,
+            'studentCode': record.get('studentCode'),
+            'oldVerificationStatus': old_status,
+            'newVerificationStatus': 'ADMIN_VERIFIED_DEMO',
+            'verifiedAt': verified_at,
+            'reason': reason,
+        },
+        'result': 'SUCCESS',
+        'reason': reason,
+    })
+    updated = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    return api_response(200, True, 'Internal SIS record marked as verified for demo use.', {'record': updated})
 
 @router.get("/api/admin/users")
 async def get_admin_users(user: dict = Depends(require_roles('ADMIN'))):
@@ -175,11 +230,11 @@ async def admin_create_user(req: CreateAdminUserRequest, user: dict = Depends(re
     created = await db_service.create_user(req.dict())
     if created and created.get('role') == 'STUDENT':
         now = datetime.utcnow().isoformat() + 'Z'
-        run_query('''INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,recordStatus,createdAt,updatedAt,updatedBy)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (userId) DO NOTHING''', (
+        run_query('''INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,sourceType,verificationStatus,recordStatus,createdAt,updatedAt,updatedBy)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (userId) DO NOTHING''', (
             f"SIS-{created['id']}", created['id'], created.get('studentCode'), created['fullName'], None,
             None, None, False, False, None, created.get('department'), 'ADMIN_ACCOUNT_PROVISIONING',
-            'ACTIVE', now, now, user.get('id')
+            'INTERNAL_DEMO_SIS', 'UNVERIFIED', 'ACTIVE', now, now, user.get('id')
         ))
         await db_service.log_audit({
             'action': 'ADMIN_SIS_RECORD_PROVISIONED', 'actor': user, 'caseId': None,
@@ -272,7 +327,7 @@ async def get_system_metrics(user: dict = Depends(require_roles('ADMIN'))):
                 total_upload_size += os.path.getsize(fp)
 
     # Đếm Human Overrides & Reviewer Feedback từ Audit Trail
-    # Đọc kết quả benchmark thật nếu có (không bịa số)
+    # Đọc kết quả Track A deterministic benchmark nếu có.
     bm_json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'benchmark', 'results', 'latest.json')
     benchmark_metrics = {
         'decisionAccuracy': 'Not measured yet',

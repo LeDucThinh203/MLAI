@@ -27,7 +27,8 @@ import math
 import unicodedata
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-from app.services.escalation_policy_service import get_confidence_threshold
+from app.config import ALLOW_ADMIN_VERIFIED_DEMO_SIS
+from app.services.escalation_policy_service import DEFAULT_THRESHOLD, get_confidence_threshold
 from app.services.address_ai_service import (
     deterministic_parse_address,
     are_addresses_materially_conflicting,
@@ -58,7 +59,7 @@ ESCALATION_CONFIG = {
         'badgeColor': '#eab308',
         'badgeBg': 'rgba(234, 179, 8, 0.15)',
         'icon': '⚠️',
-        'description': 'Sinh viên kê khai địa chỉ tạm trú (quy định bắt buộc thường trú) hoặc địa chỉ thường trú mâu thuẫn trọng yếu với dữ liệu nhà trường đã lưu.'
+        'description': 'Claim uses an address type outside the configured workflow or materially conflicts with the address stored in the internal record.'
     },
     'AUTHORITY_REQUIRED': {
         'code': 'AUTHORITY_REQUIRED',
@@ -90,11 +91,44 @@ def normalize_str(s: str) -> str:
     return re.sub(r'\s+', ' ', clean).strip()
 
 
-def evaluate_case(
+def is_trusted_institutional_record(
+    inst_facts: Optional[dict],
+    evaluation_context: Optional[dict] = None,
+) -> Optional[str]:
+    """Return the explicit trust label for an allowed institutional record."""
+    facts = inst_facts if isinstance(inst_facts, dict) else {}
+    context = evaluation_context if isinstance(evaluation_context, dict) else {}
+    source_type = str(facts.get('sourceType') or '').upper()
+    verification_status = str(facts.get('verificationStatus') or '').upper()
+
+    if source_type == 'EXTERNAL_INSTITUTIONAL_SIS' and verification_status == 'EXTERNAL_VERIFIED':
+        return 'EXTERNAL_VERIFIED'
+
+    allow_demo_sis = context.get('allowAdminVerifiedDemoSIS', ALLOW_ADMIN_VERIFIED_DEMO_SIS) is True
+    if (
+        source_type == 'INTERNAL_DEMO_SIS'
+        and verification_status == 'ADMIN_VERIFIED_DEMO'
+        and allow_demo_sis
+    ):
+        return 'ADMIN_VERIFIED_DEMO'
+
+    if (
+        source_type == 'SYNTHETIC_TEST_SIS'
+        and verification_status == 'TEST_VERIFIED'
+        and context.get('evaluationMode') == 'DETERMINISTIC_TEST'
+        and context.get('allowSyntheticVerifiedInstitutionalFacts') is True
+    ):
+        return 'TEST_VERIFIED'
+
+    return None
+
+
+def _evaluate_case_impl(
     case_data: dict,
     ocr_data: Optional[dict] = None,
     student_user: Optional[dict] = None,
-    ai_context: Optional[dict] = None
+    ai_context: Optional[dict] = None,
+    evaluation_context: Optional[dict] = None,
 ) -> dict:
     """
     Đánh giá hồ sơ Cấp giấy xác nhận sinh viên phục vụ tạm hoãn NVQS
@@ -104,14 +138,42 @@ def evaluate_case(
     if student_user is None:
         student_user = {}
 
+    evaluation_ctx = evaluation_context if isinstance(evaluation_context, dict) else {}
     discrepancies: List[Dict[str, Any]] = []
-    current_threshold = get_confidence_threshold()
+    current_threshold = DEFAULT_THRESHOLD
 
     # =========================================================================
     # LỚP 1: AUTHORITATIVE INSTITUTIONAL FACTS (Dữ liệu gốc nhà trường)
     # TUYỆT ĐỐI KHÔNG SỬ DỤNG FALLBACK GIẢ (ACTIVE, 2023-09-01, địa chỉ mẫu...)
     # =========================================================================
     inst_facts = case_data.get('authoritativeInstitutionalFacts') or case_data.get('institutionalFacts') or {}
+    institutional_trust = is_trusted_institutional_record(inst_facts, evaluation_ctx)
+    if institutional_trust is None:
+        return {
+            'decision': 'ESCALATE_TO_HUMAN',
+            'status': 'UNDER_REVIEW',
+            'escalationReason': 'FACT_UNKNOWN',
+            'escalationConfig': ESCALATION_CONFIG['FACT_UNKNOWN'],
+            'ruleMatched': 'RULE_FAILSAFE_UNVERIFIED_INSTITUTIONAL_RECORD',
+            'explanation': 'Institutional facts are missing an allowed source and verification status. Human review is required.',
+            'discrepancies': [{
+                'field': 'Institutional record provenance',
+                'studentClaim': 'Institutional facts required',
+                'institutionalFact': {
+                    'sourceType': inst_facts.get('sourceType'),
+                    'verificationStatus': inst_facts.get('verificationStatus'),
+                },
+                'match': False,
+                'note': 'Unverified, legacy, or synthetic facts cannot establish a production institutional record.',
+            }],
+            'institutionalTrust': 'UNVERIFIED',
+            'confidence': None,
+            'thresholdUsed': current_threshold,
+            'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
+            'suggestedAction': 'Verify the internal demo record or connect an institutionally verified source before automated processing.',
+        }
+    if evaluation_ctx.get('evaluationMode') != 'DETERMINISTIC_TEST':
+        current_threshold = get_confidence_threshold()
     student_id = inst_facts.get('studentId') or student_user.get('id')
     # A login name is not an authoritative student code unless the identity
     # system has explicitly stored it in studentCode.
@@ -390,9 +452,9 @@ def evaluate_case(
         discrepancies.append({
             'field': 'Loại địa chỉ cư trú',
             'studentClaim': 'TẠM TRÚ (TEMPORARY)',
-            'institutionalFact': 'Quy định tạm hoãn NVQS bắt buộc khai báo địa chỉ THƯỜNG TRÚ',
+            'institutionalFact': 'Internal workflow is configured to compare the registered permanent address.',
             'match': False,
-            'note': 'Sinh viên nhập nhầm địa chỉ tạm trú thay vì thường trú'
+            'note': 'The declared address type differs from the current workflow configuration.'
         })
         return {
             'decision': 'ESCALATE_TO_HUMAN',
@@ -400,13 +462,13 @@ def evaluate_case(
             'escalationReason': 'DATA_CONFLICT',
             'escalationConfig': ESCALATION_CONFIG['DATA_CONFLICT'],
             'ruleMatched': 'RULE_CONFLICT_01_TEMPORARY_ADDRESS_NOT_ALLOWED',
-            'explanation': 'Mâu thuẫn loại địa chỉ: Sinh viên chọn loại địa chỉ "Tạm trú", trong khi thủ tục cấp Giấy xác nhận tạm hoãn NVQS bắt buộc phải dùng địa chỉ "Thường trú".',
+            'explanation': 'Mâu thuẫn loại địa chỉ: Workflow nội bộ hiện được cấu hình để đối chiếu địa chỉ "Thường trú".',
             'discrepancies': discrepancies,
             'confidence': confidence_score,
             'thresholdUsed': current_threshold,
             'normalizedAddress': normalized_addr,
             'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
-            'suggestedAction': 'Hướng dẫn sinh viên đổi sang khai báo địa chỉ thường trú để gửi cơ quan quân sự'
+            'suggestedAction': 'Yêu cầu cán bộ xem xét loại địa chỉ theo cấu hình workflow nội bộ.'
         }
 
     # =========================================================================
@@ -531,8 +593,18 @@ def evaluate_case(
         and not is_synthetic
         and mode_used == 'live'
     )
+    ai_provider = str(ctx.get('provider') or ai_meta.get('provider') or '')
+    is_allowed_test_fixture = (
+        evaluation_ctx.get('evaluationMode') == 'DETERMINISTIC_TEST'
+        and evaluation_ctx.get('allowSyntheticAIAnalysis') is True
+        and mode_used == 'fixture'
+        and is_live is False
+        and not is_fallback
+        and is_synthetic is True
+        and ai_provider == 'FIXED_TEST_FIXTURE'
+    )
 
-    if not is_safe_live:
+    if not is_safe_live and not is_allowed_test_fixture:
         reason_detail = "mock" if (is_synthetic or mode_used == "mock") else ("cache" if mode_used == "cache" else "fallback/non-live")
         discrepancies.append({
             'field': 'Xác thực nguồn gốc AI (Provenance Fail-Safe)',
@@ -564,21 +636,6 @@ def evaluate_case(
         }
 
 
-    sis_source = str(inst_facts.get('source') or '').strip().upper()
-    if sis_source != 'VERIFIED_INSTITUTIONAL_SIS':
-        return {
-            'decision': 'ESCALATE_TO_HUMAN',
-            'status': 'UNDER_REVIEW',
-            'escalationReason': 'FACT_UNKNOWN',
-            'escalationConfig': ESCALATION_CONFIG['FACT_UNKNOWN'],
-            'ruleMatched': 'RULE_FAILSAFE_UNVERIFIED_SIS',
-            'explanation': 'The student record source is not an authenticated institutional SIS integration.',
-            'discrepancies': discrepancies,
-            'confidence': confidence_score,
-            'thresholdUsed': current_threshold,
-            'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
-            'suggestedAction': 'Verify the student facts against an authenticated institutional system before processing.'
-        }
     # =========================================================================
     # TẤT CẢ TIÊU CHÍ THỎA MÃN & SAFE LIVE -> AUTO_APPROVE
     # =========================================================================
@@ -604,10 +661,41 @@ def evaluate_case(
         'provenance': {
             'modeUsed': mode_used,
             'isLive': is_live,
-            'isFallback': False,
-            'isSynthetic': False,
-            'confidence': confidence_score
+            'isFallback': is_fallback,
+            'isSynthetic': is_synthetic,
+            'provider': ai_provider or None,
+            'apiCallPerformed': bool(ctx.get('apiCallPerformed', ai_meta.get('apiCallPerformed', False))),
+            'testFixtureAccepted': is_allowed_test_fixture,
+            'confidence': confidence_score,
         },
+        'institutionalTrust': institutional_trust,
         'evaluatedAt': datetime.utcnow().isoformat() + 'Z',
         'suggestedAction': 'Hệ thống đã tự động xử lý theo workflow nội bộ và tạo mã xác thực toàn vẹn HMAC-SHA256.'
     }
+
+
+def evaluate_case(
+    case_data: dict,
+    ocr_data: Optional[dict] = None,
+    student_user: Optional[dict] = None,
+    ai_context: Optional[dict] = None,
+    evaluation_context: Optional[dict] = None,
+) -> dict:
+    """Evaluate a case and include the institutional trust provenance used."""
+    verdict = _evaluate_case_impl(
+        case_data,
+        ocr_data,
+        student_user,
+        ai_context,
+        evaluation_context,
+    )
+    facts = (
+        case_data.get('authoritativeInstitutionalFacts')
+        or case_data.get('institutionalFacts')
+        or {}
+    ) if isinstance(case_data, dict) else {}
+    verdict.setdefault(
+        'institutionalTrust',
+        is_trusted_institutional_record(facts, evaluation_context) or 'UNVERIFIED',
+    )
+    return verdict

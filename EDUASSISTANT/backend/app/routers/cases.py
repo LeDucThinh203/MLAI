@@ -198,8 +198,12 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
         'registeredPermanentAddress': authoritative.get('registeredPermanentAddress') if sis_record else student_user.get('registeredPermanentAddress'),
         'faculty': authoritative.get('faculty') if sis_record else student_user.get('faculty'),
         'recordStatus': authoritative.get('recordStatus') if sis_record else None,
-        'source': authoritative.get('source') if sis_record else 'LEGACY_ACCOUNT'
+        'sourceType': authoritative.get('sourceType') if sis_record else 'LEGACY_ACCOUNT',
+        'verificationStatus': authoritative.get('verificationStatus') if sis_record else 'UNVERIFIED',
+        'verifiedBy': authoritative.get('verifiedBy') if sis_record else None,
+        'verifiedAt': authoritative.get('verifiedAt') if sis_record else None,
     }
+    student_facts_for_evaluation = {**inst_facts, 'id': user['id']}
     case_dict['institutionalFacts'] = inst_facts
     case_dict['authoritativeInstitutionalFacts'] = inst_facts
 
@@ -249,7 +253,12 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
     files = case_dict.get('evidenceFiles') or []
     factual_ocr = files[0].get('ocrData') if (files and isinstance(files[0], dict)) else None
 
-    rule_verdict = evaluate_case(case_dict, factual_ocr, student_user)
+    rule_verdict = evaluate_case(
+        case_dict,
+        factual_ocr,
+        student_facts_for_evaluation,
+        ai_context=case_dict.get('aiMetadata'),
+    )
     case_dict['ruleEngine'] = rule_verdict
     case_dict['status'] = rule_verdict['status']
 

@@ -126,6 +126,11 @@ def run_tests():
             "studentCode": "SV001",
             "fullName": "Nguyen Van A"
         }
+        deterministic_test_context = {
+            "evaluationMode": "DETERMINISTIC_TEST",
+            "allowSyntheticVerifiedInstitutionalFacts": True,
+            "allowSyntheticAIAnalysis": True,
+        }
 
         valid_case_dict = {
             "title": "Đơn đề nghị cấp Giấy xác nhận tạm hoãn NVQS",
@@ -140,6 +145,8 @@ def run_tests():
                 "addressType": "PERMANENT"
             },
             "institutionalFacts": {
+                "sourceType": "SYNTHETIC_TEST_SIS",
+                "verificationStatus": "TEST_VERIFIED",
                 "academicStatus": "ACTIVE",
                 "courseStartDate": "2022-09-05",
                 "courseEndDate": "2027-06-30",
@@ -187,7 +194,7 @@ def run_tests():
         # 1. Explicit mock provenance (no mutation of global AI mode)
         res_mock = evaluate_case(valid_case_dict, student_user=stu_user_dict, ai_context={
             "modeUsed": "mock", "isLive": False, "isFallback": False, "isSynthetic": True
-        })
+        }, evaluation_context=deterministic_test_context)
         record_assertion(
             "Valid evidence nhưng AI mode=mock -> ESCALATE_TO_HUMAN & FACT_UNKNOWN",
             res_mock["decision"] == "ESCALATE_TO_HUMAN" and res_mock["escalationReason"] == "FACT_UNKNOWN" and "mock" in res_mock["explanation"].lower()
@@ -196,7 +203,7 @@ def run_tests():
         # 2. Explicit cache provenance
         res_cache = evaluate_case(valid_case_dict, student_user=stu_user_dict, ai_context={
             "modeUsed": "cache", "isLive": False, "isFallback": False, "isSynthetic": False
-        })
+        }, evaluation_context=deterministic_test_context)
         record_assertion(
             "Valid evidence nhưng AI mode=cache -> ESCALATE_TO_HUMAN & FACT_UNKNOWN",
             res_cache["decision"] == "ESCALATE_TO_HUMAN" and res_cache["escalationReason"] == "FACT_UNKNOWN" and "cache" in res_cache["explanation"].lower()
@@ -207,7 +214,7 @@ def run_tests():
         case_fallback["aiMetadata"] = {"fallbackOccurred": True}
         res_fallback = evaluate_case(case_fallback, student_user=stu_user_dict, ai_context={
             "modeUsed": "live", "isLive": True, "isFallback": True, "isSynthetic": False
-        })
+        }, evaluation_context=deterministic_test_context)
         record_assertion(
             "AI mode=live nhưng fallbackOccurred -> ESCALATE_TO_HUMAN & FACT_UNKNOWN",
             res_fallback["decision"] == "ESCALATE_TO_HUMAN" and res_fallback["escalationReason"] == "FACT_UNKNOWN"
