@@ -89,7 +89,10 @@ function MainApp() {
         </Routes>
       </main>
 
-      {user && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/verify') && !location.pathname.startsWith('/judge') && (
+      {user?.role === 'STUDENT'
+        && !location.pathname.startsWith('/login')
+        && !location.pathname.startsWith('/verify')
+        && !location.pathname.startsWith('/judge') && (
         <AgentChatWidget user={user} onOpenCase={handleOpenCase} />
       )}
 

@@ -40,6 +40,8 @@ jobs:
           test/test_agent_tool_privacy.py
           test/test_agent_rag.py
           test/test_agent_security.py
+          test/test_student_agent_only.py
+          test/test_agent_conversation_delete.py
           test/test_production_safety.py
           test/test_rule_engine_hardening.py
           test/test_judge_summary.py

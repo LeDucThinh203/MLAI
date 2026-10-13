@@ -45,16 +45,16 @@ The adaptive threshold remains 0.75 by default, bounded by 0.65 and 0.90 with a 
 
 HMAC-SHA256 authenticates the integrity of stored case fields using a shared secret. It is not a PKI signature or legal digital signature. The public `/verify` page checks the HMAC value and displays whether the stored data matches.
 
-## Role-aware AI Agent
+## Student AI Agent
 
 ```mermaid
 flowchart LR
-    User[Authenticated user] --> Agent[FastAPI Agent router]
+    Student[Authenticated student] --> Agent[FastAPI Agent router]
     Agent --> Planner[Gemini planner]
     Planner -->|Unavailable| Router[OpenRouter fallback]
     Agent --> RAG[Allowlisted RAG knowledge base]
     RAG --> Docs[Workflow policy and project docs]
-    Agent --> Tools[Role-scoped typed tool registry]
+    Agent --> Tools[Student-only typed tool registry]
     Tools --> Data[User-scoped live application data]
     Tools --> Existing[Existing case and Admin services]
     Existing --> Rules[Existing Rule Engine and workflow guard]
@@ -63,8 +63,8 @@ flowchart LR
     Agent --> Audit[Audit trail]
 ```
 
-The Agent is an assistant/orchestrator, not the Rule Engine or a legal decision maker. Case queries use authorized live tools. RAG is limited to `docs/policies/student_service_policy.md`, `docs/SYSTEM_OVERVIEW.md`, `docs/architecture/ARCHITECTURE.md`, and the runtime `POLICY_REGISTRY`; it never indexes `.env`, uploads, user records, tests, or benchmark artifacts. Citations come only from retrieved chunks. Gemini embeddings are optional; the index remains usable through lexical ranking when no embedding model is configured.
+The Agent is an assistant/orchestrator available only to authenticated students, not the Rule Engine or a legal decision maker. Reviewer and Admin accounts cannot use Agent chat, conversations, actions, or tools; Admin access is limited to the separate RAG maintenance endpoints. Student case queries use ownership-scoped live tools. RAG is limited to `docs/policies/student_service_policy.md`, `docs/SYSTEM_OVERVIEW.md`, `docs/architecture/ARCHITECTURE.md`, and the runtime `POLICY_REGISTRY`; it never indexes `.env`, uploads, user records, tests, or benchmark artifacts. Citations come only from retrieved chunks. Gemini embeddings are optional; the index remains usable through lexical ranking when no embedding model is configured.
 
 Every tool is allowlisted, schema-validated, and checked against the current role. Student case reads are scoped to the signed-in student. Write tools create a short-lived preview; confirmation rechecks ownership, role, expiration, action integrity, and live workflow state before invoking the existing route/service. Review transitions still pass through `workflow_guard`, and the deterministic Rule Engine and Verify/Track evaluation paths are not invoked by the chat widget.
 
-Conversations and messages are scoped by authenticated user. Provider, model, fallback, call-attempt, duration, retrieved citations, and tool status are retained with assistant messages. Passwords and other credentials are excluded from model context, conversation storage, and Agent audit payloads.
+Conversations and messages are scoped by authenticated student. A student may delete one conversation; its messages and pending actions are removed through foreign-key cascades. A transactional `AGENT_CONVERSATION_DELETED` audit record stores the student, conversation ID, and deleted counts without chat content. Cases, SIS records, workflow audits, RAG knowledge, and accounts are preserved. Deletion is serialized with confirmation claims and returns `409 CONVERSATION_BUSY` while an action is executing. Provider, model, fallback, call-attempt, duration, retrieved citations, and tool status are retained with assistant messages. Passwords and other credentials are excluded from model context, conversation storage, and Agent audit payloads.

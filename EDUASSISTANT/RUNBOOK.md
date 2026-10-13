@@ -72,7 +72,7 @@ Demo accounts are seeded only when `SEED_DEMO_DATA=true`; set it to `false` in p
 configuration is environment-based. Gemini is used when configured; OCR fallback
 does not invent document fields.
 
-The optional authenticated AI Agent uses `AGENT_ENABLED=true`, `AGENT_MAX_TOOL_STEPS=4`,
+The optional authenticated Student AI Agent is available only to `STUDENT` accounts and uses `AGENT_ENABLED=true`, `AGENT_MAX_TOOL_STEPS=4`,
 `AGENT_RAG_TOP_K=5`, `AGENT_HISTORY_MESSAGES=12`, `AGENT_ACTION_TTL_SECONDS=300`,
 and `AGENT_MAX_MESSAGE_CHARS=6000`. It reuses `GEMINI_API_KEY` as the primary planner
 and `OPENROUTER_API_KEY` as fallback. `GEMINI_EMBEDDING_MODEL` is optional; without
@@ -81,7 +81,7 @@ policy and project documentation described in `docs/architecture/ARCHITECTURE.md
 
 After startup, an empty RAG index is populated locally without an embedding API call.
 An Admin can inspect it at `GET /api/admin/agent/rag/status` and explicitly enrich or
-rebuild it with `POST /api/admin/agent/rag/reindex`. Agent writes are first stored as
+rebuild it with `POST /api/admin/agent/rag/reindex`; these are RAG maintenance endpoints and do not grant Admin Agent chat or tools. Agent writes are first stored as
 short-lived pending actions and are not applied until the user selects **Xác nhận**.
 Expired, cancelled, stale, or role-changed actions cannot be executed.
 

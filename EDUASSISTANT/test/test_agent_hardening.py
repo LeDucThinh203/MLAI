@@ -28,10 +28,10 @@ def test_legal_eligibility_guard_uses_user_intent_without_blocking_status():
     assert agent_service._safe_final_message('H\u1ed3 s\u01a1 \u0111ang \u0111\u01b0\u1ee3c ki\u1ec3m tra.', status_question) == 'H\u1ed3 s\u01a1 \u0111ang \u0111\u01b0\u1ee3c ki\u1ec3m tra.'
 
 
-def test_policy_registry_result_counts_as_policy_evidence():
-    result = {'policies': [{'id': 'POL-TEST'}]}
+def test_student_policy_search_result_counts_as_policy_evidence():
+    result = {'chunks': [{'source': {'sourceKey': 'student_service_policy'}, 'content': 'policy evidence'}]}
     assert agent_service._has_policy_evidence(
-        {'chunks': []}, [{'name': 'get_policy_registry', 'result': result}])
+        {'chunks': []}, [{'name': 'search_policy', 'result': result}])
 
 
 def test_model_context_redacts_credentials_from_retrieved_and_tool_text():

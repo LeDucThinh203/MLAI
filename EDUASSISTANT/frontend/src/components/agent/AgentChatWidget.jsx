@@ -1,31 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { Bot, MessageCircle, Minus, Plus, Send, X } from 'lucide-react';
+import { Bot, MessageCircle, Minus, Plus, Send, Trash2, X } from 'lucide-react';
 import { API_BASE } from '../../api/client';
 import AgentMessage from './AgentMessage';
 import './AgentChatWidget.css';
-import { USER_ROLE_LABELS, labelFor } from '../../utils/displayLabels';
 
-const prompts = {
-  STUDENT: [
-    'Hồ sơ của tôi đang được xử lý đến đâu?',
-    'Tôi cần chuẩn bị giấy tờ gì để nộp hồ sơ?',
-    'Kiểm tra cách viết địa chỉ giúp tôi.',
-    'Xem thông tin sinh viên nhà trường đang lưu.'
-  ],
-  REVIEWER: [
-    'Hồ sơ nào đang chờ tôi xử lý?',
-    'Tóm tắt hồ sơ CASE-2026-1234.',
-    'Giải thích vì sao hồ sơ CASE-2026-1234 cần cán bộ kiểm tra thêm.',
-    'Kiểm tra lại hồ sơ CASE-2026-1234.'
-  ],
-  ADMIN: [
-    'Tình trạng hệ thống hiện nay?',
-    'Liệt kê dữ liệu sinh viên mẫu chưa được xác nhận.',
-    'Giải thích quy định đang áp dụng.',
-    'Xem mức tin cậy hiện tại.'
-  ]
-};
+const STUDENT_PROMPTS = [
+  'Hồ sơ của tôi đang được xử lý đến đâu?',
+  'Tôi cần chuẩn bị giấy tờ gì để nộp hồ sơ?',
+  'Kiểm tra cách viết địa chỉ giúp tôi.',
+  'Xem thông tin sinh viên nhà trường đang lưu.'
+];
 
 function responsePayload(response) {
   if (response?.data?.success) return response.data.data;
@@ -41,6 +26,8 @@ export default function AgentChatWidget({ user, onOpenCase }) {
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState('');
   const endRef = useRef(null);
   const textareaRef = useRef(null);
@@ -132,12 +119,11 @@ export default function AgentChatWidget({ user, onOpenCase }) {
     }
   };
 
-  const confirmAction = async (action, secureFields) => {
+  const confirmAction = async (action) => {
     setActionBusy(true);
     setError('');
     try {
-      const data = responsePayload(await axios.post(`${API_BASE}/agent/actions/${encodeURIComponent(action.actionId)}/confirm`,
-        secureFields ? { secureFields } : {}));
+      const data = responsePayload(await axios.post(`${API_BASE}/agent/actions/${encodeURIComponent(action.actionId)}/confirm`, {}));
       setMessages(current => [
         ...current.map(item => item.metadata?.pendingAction?.actionId === action.actionId
           ? { ...item, metadata: { ...item.metadata, pendingAction: { ...item.metadata.pendingAction, status: 'EXECUTED' } } }
@@ -171,6 +157,49 @@ export default function AgentChatWidget({ user, onOpenCase }) {
     }
   };
 
+  const deleteConversation = async () => {
+    if (!conversationId || loading || actionBusy || deleteBusy) return;
+    const deletedId = conversationId;
+    setDeleteBusy(true);
+    setError('');
+    try {
+      const result = responsePayload(await axios.delete(
+        `${API_BASE}/agent/conversations/${encodeURIComponent(deletedId)}`));
+      if (result?.deleted !== true) throw new Error('Không thể xác nhận trạng thái xóa cuộc trò chuyện.');
+
+      let remaining = conversations.filter(item => item.id !== deletedId);
+      try {
+        const latest = responsePayload(await axios.get(`${API_BASE}/agent/conversations`));
+        remaining = latest?.conversations || remaining;
+      } catch {
+        // The successful deletion is final; use the current list if refresh is unavailable.
+      }
+      setConversations(remaining);
+      setMessages([]);
+      setDraft('');
+      setError('');
+      setConversationId(remaining[0]?.id || null);
+      setConfirmDelete(false);
+
+      if (remaining[0]?.id) {
+        try {
+          const data = responsePayload(await axios.get(
+            `${API_BASE}/agent/conversations/${encodeURIComponent(remaining[0].id)}`));
+          setMessages(data?.conversation?.messages || []);
+        } catch (err) {
+          setError(err.response?.data?.message || err.message || 'Không thể tải cuộc trò chuyện tiếp theo.');
+        }
+      }
+    } catch (err) {
+      const code = err.response?.data?.error;
+      setError(code === 'CONVERSATION_BUSY'
+        ? 'Cuộc trò chuyện đang có thao tác được thực hiện. Hãy đợi thao tác hoàn tất rồi xóa lại.'
+        : err.response?.data?.message || err.message || 'Không thể xóa cuộc trò chuyện. Vui lòng thử lại.');
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
   const openUiAction = (action) => {
     if (action?.type === 'OPEN_CASE' && /^[A-Z0-9_-]{1,100}$/i.test(action.caseId || '')) onOpenCase?.(action.caseId);
   };
@@ -188,20 +217,38 @@ export default function AgentChatWidget({ user, onOpenCase }) {
             <div className="agent-avatar"><Bot size={20} aria-hidden="true" /></div>
             <div className="agent-header-copy">
               <strong>Trợ lý EDUASSISTANT</strong>
-              <span>{labelFor(user?.role, USER_ROLE_LABELS, 'Tài khoản')} · Hỗ trợ hồ sơ và quy trình của trường</span>
+              <span>Sinh viên · Hỗ trợ hồ sơ và quy trình của trường</span>
             </div>
             <div className="agent-header-actions">
-              <button type="button" onClick={startConversation} aria-label="Tạo hội thoại mới" title="Hội thoại mới"><Plus size={17} /></button>
+              <button type="button" onClick={startConversation} aria-label="Tạo hội thoại mới" title="Hội thoại mới"
+                disabled={loading || actionBusy || deleteBusy || confirmDelete}><Plus size={17} /></button>
+              <button type="button" onClick={() => setConfirmDelete(true)} aria-label="Xóa cuộc trò chuyện hiện tại"
+                title="Xóa cuộc trò chuyện" disabled={!conversationId || loading || actionBusy || deleteBusy}>
+                <Trash2 size={17} />
+              </button>
               <button type="button" onClick={() => setMinimized(value => !value)} aria-label={minimized ? 'Mở rộng chat' : 'Thu nhỏ chat'} title={minimized ? 'Mở rộng' : 'Thu nhỏ'}><Minus size={17} /></button>
               <button type="button" onClick={() => setOpen(false)} aria-label="Đóng chat" title="Đóng"><X size={17} /></button>
             </div>
           </header>
           {!minimized && (
             <>
+              {confirmDelete && (
+                <div className="agent-delete-confirm" role="alertdialog" aria-modal="false"
+                  aria-labelledby="agent-delete-title" aria-describedby="agent-delete-description">
+                  <strong id="agent-delete-title">Xóa cuộc trò chuyện?</strong>
+                  <p id="agent-delete-description">Toàn bộ tin nhắn và thao tác AI đang chờ trong cuộc trò chuyện này sẽ bị xóa khỏi cơ sở dữ liệu. Hành động này không thể hoàn tác.</p>
+                  <div>
+                    <button type="button" className="agent-delete-cancel" onClick={() => setConfirmDelete(false)} disabled={deleteBusy}>Hủy</button>
+                    <button type="button" className="agent-delete-submit" onClick={deleteConversation} disabled={deleteBusy}>
+                      {deleteBusy ? 'Đang xóa…' : 'Xóa cuộc trò chuyện'}
+                    </button>
+                  </div>
+                </div>
+              )}
               {conversations.length > 0 && (
                 <div className="agent-history-row">
                   <label htmlFor="agent-conversation-select">Hội thoại</label>
-                  <select id="agent-conversation-select" value={conversationId || ''} onChange={selectConversation}>
+                  <select id="agent-conversation-select" value={conversationId || ''} onChange={selectConversation} disabled={deleteBusy || confirmDelete}>
                     {conversations.map(item => <option key={item.id} value={item.id}>{item.title || 'Cuộc trò chuyện'}</option>)}
                   </select>
                 </div>
@@ -213,7 +260,7 @@ export default function AgentChatWidget({ user, onOpenCase }) {
                     <h2>Xin chào{user?.fullName ? ` ${user.fullName}` : ''}</h2>
                     <p>Mình có thể tra cứu thông tin bạn được phép xem, giải thích các bước xử lý và hỗ trợ chuẩn bị hồ sơ.</p>
                     <div className="agent-quick-prompts">
-                      {(prompts[user?.role] || prompts.STUDENT).map(prompt => (
+                      {STUDENT_PROMPTS.map(prompt => (
                         <button type="button" key={prompt} onClick={() => sendMessage(prompt)} disabled={loading}>{prompt}</button>
                       ))}
                     </div>

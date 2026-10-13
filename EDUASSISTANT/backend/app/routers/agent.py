@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.core.dependencies import get_current_user, require_roles
+from app.core.dependencies import require_roles
 from app.core.responses import api_response
 from app.schemas.agent import AgentActionRequest, AgentChatRequest, AgentConversationCreate
 from app.services import agent_rag_service, agent_service
@@ -14,7 +14,7 @@ def _error(exc: agent_service.AgentError):
 
 
 @router.post('/api/agent/chat')
-async def chat(request: AgentChatRequest, user: dict = Depends(get_current_user)):
+async def chat(request: AgentChatRequest, user: dict = Depends(require_roles('STUDENT'))):
     try:
         result = await agent_service.chat(user, request.message, request.conversationId)
         return api_response(200, True, 'Agent đã xử lý yêu cầu.', result)
@@ -23,19 +23,25 @@ async def chat(request: AgentChatRequest, user: dict = Depends(get_current_user)
 
 
 @router.get('/api/agent/conversations')
-async def list_conversations(user: dict = Depends(get_current_user)):
-    return api_response(200, True, 'Đã tải danh sách hội thoại.',
-                        {'conversations': agent_service.list_conversations(user)})
+async def list_conversations(user: dict = Depends(require_roles('STUDENT'))):
+    try:
+        return api_response(200, True, 'Đã tải danh sách hội thoại.',
+                            {'conversations': agent_service.list_conversations(user)})
+    except agent_service.AgentError as exc:
+        return _error(exc)
 
 
 @router.post('/api/agent/conversations')
-async def create_conversation(request: AgentConversationCreate, user: dict = Depends(get_current_user)):
-    conversation = await agent_service.create_conversation(user, request.title)
-    return api_response(201, True, 'Đã tạo hội thoại.', {'conversation': conversation})
+async def create_conversation(request: AgentConversationCreate, user: dict = Depends(require_roles('STUDENT'))):
+    try:
+        conversation = await agent_service.create_conversation(user, request.title)
+        return api_response(201, True, 'Đã tạo hội thoại.', {'conversation': conversation})
+    except agent_service.AgentError as exc:
+        return _error(exc)
 
 
 @router.get('/api/agent/conversations/{conversation_id}')
-async def get_conversation(conversation_id: str, user: dict = Depends(get_current_user)):
+async def get_conversation(conversation_id: str, user: dict = Depends(require_roles('STUDENT'))):
     try:
         return api_response(200, True, 'Đã tải hội thoại.',
                             {'conversation': agent_service.conversation_detail(conversation_id, user)})
@@ -44,25 +50,25 @@ async def get_conversation(conversation_id: str, user: dict = Depends(get_curren
 
 
 @router.delete('/api/agent/conversations/{conversation_id}')
-async def delete_conversation(conversation_id: str, user: dict = Depends(get_current_user)):
+async def delete_conversation(conversation_id: str, user: dict = Depends(require_roles('STUDENT'))):
     try:
-        agent_service.delete_conversation(conversation_id, user)
-        return api_response(200, True, 'Đã xóa hội thoại.', {'conversationId': conversation_id})
+        result = await agent_service.delete_conversation(conversation_id, user)
+        return api_response(200, True, 'Đã xóa hội thoại.', result)
     except agent_service.AgentError as exc:
         return _error(exc)
 
 
 @router.post('/api/agent/actions/{action_id}/confirm')
-async def confirm_action(action_id: str, request: AgentActionRequest, user: dict = Depends(get_current_user)):
+async def confirm_action(action_id: str, request: AgentActionRequest, user: dict = Depends(require_roles('STUDENT'))):
     try:
-        result = await agent_service.confirm_action(action_id, user, request.secureFields)
+        result = await agent_service.confirm_action(action_id, user)
         return api_response(200, True, 'Thao tác đã được xác nhận.', result)
     except agent_service.AgentError as exc:
         return _error(exc)
 
 
 @router.post('/api/agent/actions/{action_id}/cancel')
-async def cancel_action(action_id: str, user: dict = Depends(get_current_user)):
+async def cancel_action(action_id: str, user: dict = Depends(require_roles('STUDENT'))):
     try:
         await agent_service.cancel_action(action_id, user)
         return api_response(200, True, 'Đã hủy thao tác chờ xác nhận.', {'actionId': action_id, 'status': 'CANCELLED'})

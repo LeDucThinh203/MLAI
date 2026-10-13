@@ -65,6 +65,14 @@
 .agent-history-row { display: flex; align-items: center; gap: 8px; padding: 7px 14px; border-bottom: 1px solid #eef1f6; }
 .agent-history-row label { color: var(--agent-muted); font-size: 11px; }
 .agent-history-row select { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--agent-ink); font-family: inherit; font-size: 12px; font-weight: 600; }
+.agent-delete-confirm { display: grid; gap: 7px; margin: 10px 12px; border: 1px solid #e6b6b6; border-radius: 12px; padding: 11px; background: #fff7f7; color: #492a2a; }
+.agent-delete-confirm strong { font-size: 13px; }
+.agent-delete-confirm p { margin: 0; font-size: 12px; line-height: 1.45; }
+.agent-delete-confirm > div { display: flex; justify-content: flex-end; gap: 7px; }
+.agent-delete-confirm button { border: 0; border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.agent-delete-confirm button:disabled { opacity: .55; cursor: not-allowed; }
+.agent-delete-cancel { background: #fff; color: #4b5873; }
+.agent-delete-submit { background: #a92f37; color: #fff; }
 
 .agent-chat-messages { flex: 1; overflow-y: auto; padding: 16px 14px 10px; scroll-behavior: smooth; }
 .agent-welcome { padding: 10px 2px 18px; text-align: center; }

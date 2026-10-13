@@ -1,6 +1,6 @@
 from typing import Any, Dict, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class StrictModel(BaseModel):
@@ -18,15 +18,6 @@ class AgentConversationCreate(StrictModel):
 
 class AgentActionRequest(StrictModel):
     reason: Optional[str] = Field(default=None, max_length=1000)
-    # For secure confirmation forms only; never persisted or sent to the model.
-    secureFields: Optional[Dict[str, str]] = None
-
-    @field_validator('secureFields')
-    @classmethod
-    def validate_secure_fields(cls, value):
-        if value is not None and (set(value) != {'password'} or len(value['password']) > 256):
-            raise ValueError('Only a bounded password field is accepted by secure confirmation forms.')
-        return value
 
 
 class PlannerToolCall(StrictModel):

@@ -53,8 +53,41 @@ def list_conversations(user_id: str, limit: int = 50) -> list[dict]:
                    (user_id, max(1, min(100, limit))))
 
 
-def delete_conversation(conversation_id: str, user_id: str) -> bool:
-    return bool(run_query('DELETE FROM agent_conversations WHERE id = ? AND user_id = ?', (conversation_id, user_id))['changes'])
+def delete_conversation(conversation_id: str, user_id: str, actor: dict) -> dict | None:
+    """Delete one owned conversation, cascading only Agent rows and auditing atomically."""
+    with get_db_connection() as connection, connection.cursor() as cursor:
+        cursor.execute('SELECT id FROM agent_conversations WHERE id=%s AND user_id=%s FOR UPDATE',
+                       (conversation_id, user_id))
+        if not cursor.fetchone():
+            return None
+
+        # Confirmation claims lock the same parent row before setting EXECUTING,
+        # so a delete cannot race between this check and a business write.
+        cursor.execute('''SELECT id FROM agent_pending_actions
+            WHERE conversation_id=%s AND status='EXECUTING' FOR UPDATE''', (conversation_id,))
+        if cursor.fetchone():
+            return {'conversationId': conversation_id, 'deleted': False, 'busy': True,
+                    'messagesDeleted': 0, 'pendingActionsDeleted': 0}
+
+        cursor.execute('SELECT COUNT(*) AS count FROM agent_messages WHERE conversation_id=%s', (conversation_id,))
+        messages_deleted = int(cursor.fetchone()['count'])
+        cursor.execute('SELECT COUNT(*) AS count FROM agent_pending_actions WHERE conversation_id=%s',
+                       (conversation_id,))
+        pending_actions_deleted = int(cursor.fetchone()['count'])
+        cursor.execute('DELETE FROM agent_conversations WHERE id=%s AND user_id=%s', (conversation_id, user_id))
+        if cursor.rowcount != 1:
+            return None
+
+        now = _now()
+        summary = {'conversationId': conversation_id, 'deleted': True,
+                   'messagesDeleted': messages_deleted, 'pendingActionsDeleted': pending_actions_deleted}
+        cursor.execute('''INSERT INTO audits
+            (id,action,caseId,actorId,actorName,actorRole,actorUsername,inputData,result,reason,timestamp)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
+            (new_id('audit'), 'AGENT_CONVERSATION_DELETED', None, user_id,
+             actor.get('fullName'), 'STUDENT', actor.get('username'), _json(summary), 'SUCCESS',
+             'Student deleted their own Agent conversation.', now))
+        return summary
 
 
 def add_message(conversation_id: str, user_id: str, role: str, content: str, metadata: dict | None = None) -> dict:
@@ -111,10 +144,26 @@ def get_pending_action(action_id: str, user_id: str) -> dict | None:
 def claim_pending_action(action_id: str, user_id: str) -> dict | None:
     """Atomically claim one action; concurrent/double confirmation can execute once only."""
     now = _now()
-    result = run_query('''UPDATE agent_pending_actions SET status='EXECUTING',updated_at=?
-        WHERE id=? AND user_id=? AND status='PENDING' AND expires_at > ?''',
-        (now, action_id, user_id, now))
-    return get_pending_action(action_id, user_id) if result['changes'] else None
+    with get_db_connection() as connection, connection.cursor() as cursor:
+        cursor.execute('''SELECT c.id FROM agent_pending_actions p
+            INNER JOIN agent_conversations c ON c.id=p.conversation_id
+            WHERE p.id=%s AND p.user_id=%s AND c.user_id=%s FOR UPDATE OF c''',
+            (action_id, user_id, user_id))
+        if not cursor.fetchone():
+            return None
+        cursor.execute('''UPDATE agent_pending_actions SET status='EXECUTING',updated_at=%s
+            WHERE id=%s AND user_id=%s AND status='PENDING' AND expires_at > %s''',
+            (now, action_id, user_id, now))
+        if cursor.rowcount != 1:
+            return None
+        cursor.execute('SELECT * FROM agent_pending_actions WHERE id=%s AND user_id=%s', (action_id, user_id))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        row = dict(row)
+        row['arguments'] = _decode(row.get('arguments'), {})
+        row['preview'] = _decode(row.get('preview'), {})
+        return row
 
 
 def set_action_status(action_id: str, user_id: str, status: str) -> None:

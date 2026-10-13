@@ -35,9 +35,9 @@ def test_planner_prompt_treats_document_and_tool_text_as_untrusted():
 
 
 def test_action_hash_covers_tool_and_arguments():
-    first = agent_repository.arguments_hash('review_case_approve', {'caseId': 'CASE-1', '_expectedStatus': 'UNDER_REVIEW'})
-    changed = agent_repository.arguments_hash('review_case_approve', {'caseId': 'CASE-1', '_expectedStatus': 'APPROVED'})
-    other_tool = agent_repository.arguments_hash('review_case_reject', {'caseId': 'CASE-1', '_expectedStatus': 'UNDER_REVIEW'})
+    first = agent_repository.arguments_hash('supplement_case', {'caseId': 'CASE-1', '_expectedStatus': 'UNDER_REVIEW'})
+    changed = agent_repository.arguments_hash('supplement_case', {'caseId': 'CASE-1', '_expectedStatus': 'APPROVED'})
+    other_tool = agent_repository.arguments_hash('add_case_comment', {'caseId': 'CASE-1', '_expectedStatus': 'UNDER_REVIEW'})
     assert first != changed
     assert first != other_tool
 
@@ -140,13 +140,14 @@ def test_policy_answer_without_retrieved_evidence_is_replaced_with_safe_fallback
 def test_confirm_is_one_shot_and_audits_confirmation(monkeypatch):
     from app.services import agent_tool_service
 
-    user = {'id': 'reviewer-1', 'role': 'REVIEWER', 'username': 'reviewer'}
-    arguments = {'caseId': 'CASE-2026-1234', 'reason': 'Đã đối chiếu hồ sơ.', '_expectedStatus': 'UNDER_REVIEW'}
+    user = {'id': 'student-1', 'role': 'STUDENT', 'username': 'student'}
+    arguments = {'caseId': 'CASE-2026-1234', 'additionalDescription': 'Đã cập nhật thông tin.',
+                 '_expectedStatus': 'UNDER_REVIEW'}
     now = datetime.now(timezone.utc)
     pending = {'id': 'action-1', 'user_id': user['id'], 'conversation_id': 'conv-1',
-               'tool_name': 'review_case_approve', 'arguments': arguments,
-               'arguments_hash': agent_repository.arguments_hash('review_case_approve', arguments),
-               'preview': {}, 'role_at_request': 'REVIEWER', 'status': 'PENDING',
+               'tool_name': 'supplement_case', 'arguments': arguments,
+               'arguments_hash': agent_repository.arguments_hash('supplement_case', arguments),
+               'preview': {}, 'role_at_request': 'STUDENT', 'status': 'PENDING',
                'expires_at': (now + timedelta(minutes=5)).isoformat().replace('+00:00', 'Z')}
     state = {'status': 'PENDING'}
     executions, audit_actions = [], []
@@ -192,24 +193,11 @@ def test_confirm_is_one_shot_and_audits_confirmation(monkeypatch):
 
 
 def test_role_change_blocks_confirmation(monkeypatch):
-    from app.services import agent_tool_service
-    user = {'id': 'reviewer-1', 'role': 'REVIEWER'}
-    arguments = {'caseId': 'CASE-2026-1234', 'reason': 'Reason', '_expectedStatus': 'UNDER_REVIEW'}
-    pending = {'id': 'action-2', 'user_id': user['id'], 'conversation_id': 'conv-1',
-               'tool_name': 'review_case_approve', 'arguments': arguments,
-               'arguments_hash': agent_repository.arguments_hash('review_case_approve', arguments),
-               'preview': {}, 'role_at_request': 'ADMIN', 'status': 'PENDING',
-               'expires_at': (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat().replace('+00:00', 'Z')}
-    statuses, executions = [], []
-    monkeypatch.setattr(agent_repository, 'get_pending_action', lambda *_args: pending)
-    monkeypatch.setattr(agent_repository, 'set_action_status', lambda *_args: statuses.append(_args[-1]))
-    monkeypatch.setattr(agent_tool_service, 'execute_action', lambda *_args: executions.append('called'))
-    async def log_audit(_row):
-        return None
-    monkeypatch.setattr(agent_service.db_service, 'log_audit', log_audit)
+    user = {'id': 'student-1', 'role': 'REVIEWER'}
+    action_lookups = []
+    monkeypatch.setattr(agent_repository, 'get_pending_action', lambda *_args: action_lookups.append(_args))
 
     with pytest.raises(agent_service.AgentError) as exc:
         __import__('asyncio').run(agent_service.confirm_action('action-2', user))
-    assert exc.value.error == 'ACTION_ROLE_CHANGED'
-    assert statuses == ['FAILED']
-    assert not executions
+    assert exc.value.error == 'STUDENT_AGENT_ONLY'
+    assert not action_lookups

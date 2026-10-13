@@ -203,10 +203,10 @@ Verify Harness: 9 deterministic cases · Track benchmark: 18 fixed scenarios · 
 
 **EDUASSISTANT Team 1 - MLAI Hackathon 2026** — Internal student-service confirmation workflow. HMAC-SHA256 is an integrity authentication token, not a PKI or legal digital signature.
 
-## Role-aware AI Agent
+## Student AI Agent
 
-An authenticated chat assistant combines Gemini planning, OpenRouter fallback, allowlisted RAG over project policy and documentation, and role-scoped tools over existing application services. The internal SIS registry is demo data; this feature does not add an external university SIS connector or make legal eligibility decisions.
+The authenticated Student AI Agent combines Gemini planning, OpenRouter fallback, allowlisted RAG over project policy and documentation, and student-scoped tools over existing application services. Reviewer and Admin accounts do not have Agent chat or Agent tools. The internal SIS registry is demo data; this feature does not add an external university SIS connector or make legal eligibility decisions.
 
-Agent conversations are private to their owner. Student case reads are ownership-scoped. Data-changing tools show a preview and require explicit confirmation; the backend then rechecks the user's current role and live workflow state before calling the existing business route. Review transitions continue to use the workflow guard and Rule Engine behavior.
+Agent conversations are private to their student owner. Students may delete one conversation; its messages and pending Agent actions are deleted with it. Cases, SIS records, workflow audits, RAG knowledge, and account data remain. Student case reads are ownership-scoped. Data-changing tools show a preview and require explicit confirmation; the backend then rechecks the student's current role and live workflow state before calling existing business routes. Review transitions continue to use the workflow guard and Rule Engine behavior.
 
 RAG indexing is lexical at startup and can optionally add Gemini embeddings when `GEMINI_EMBEDDING_MODEL` is configured. Admins can inspect `GET /api/admin/agent/rag/status` and request an index refresh with `POST /api/admin/agent/rag/reindex`. See `docs/architecture/ARCHITECTURE.md` for source allowlists and security boundaries. Provider API keys remain server-side.
