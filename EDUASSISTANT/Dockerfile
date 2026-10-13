@@ -4,6 +4,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     APP_ENV=production \
     NODE_ENV=production \
+    SEED_DEMO_DATA=false \
     ALLOW_ADMIN_VERIFIED_DEMO_SIS=false
 
 WORKDIR /app

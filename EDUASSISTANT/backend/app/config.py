@@ -32,6 +32,15 @@ IS_PRODUCTION = 'production' in _environment_values
 APP_ENV = 'production' if IS_PRODUCTION else next((value for value in _environment_values if value), 'development')
 
 
+def _seed_demo_data_enabled(app_env: str, configured_value: str | None = None) -> bool:
+    if configured_value is None:
+        configured_value = str(app_env in ('development', 'demo'))
+    return configured_value.strip().lower() == 'true'
+
+
+SEED_DEMO_DATA = _seed_demo_data_enabled(APP_ENV, os.environ.get('SEED_DEMO_DATA'))
+
+
 def _secret(name: str, minimum_length: int = 32) -> str:
     value = os.environ.get(name, '').strip()
     if IS_PRODUCTION and len(value) < minimum_length:

@@ -163,7 +163,9 @@ class DatabaseService:
         username = data.get('username', '').strip()
         role = (data.get('role') or 'STUDENT').upper()
         is_student = role == 'STUDENT'
-        raw_password = data.get('password') or 'password123'
+        raw_password = data.get('password')
+        if not isinstance(raw_password, str) or not raw_password:
+            raise ValueError('A password is required when creating an account.')
         
         user_id = f"usr_{role.lower()}_{str(int(datetime.now().timestamp() * 1000))[-4:]}_{secrets.token_hex(2)}"
         

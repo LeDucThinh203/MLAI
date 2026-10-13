@@ -8,6 +8,8 @@ import { useAuth } from '../../context/AuthContext';
 import PageSkeleton from '../../components/common/PageSkeleton';
 
 const AuthPage = () => {
+  const showDemoAccounts = import.meta.env.VITE_SHOW_DEMO_ACCOUNTS === 'true'
+    && import.meta.env.MODE !== 'production';
   const [mode, setMode] = useState('login');
   
   // Login fields
@@ -384,7 +386,7 @@ const AuthPage = () => {
                 <input
                   type="password"
                   className="form-input"
-                  placeholder="Nhập mật khẩu (ví dụ: password123)..."
+                  placeholder="Nhập mật khẩu của bạn"
                   value={password}
                   onChange={e => { setPassword(e.target.value); setSelectedDemo(null); }}
                   style={{ paddingLeft: '38px', height: '42px' }}
@@ -533,7 +535,8 @@ const AuthPage = () => {
           </div>
         )}
 
-        {/* 3. INTERACTIVE QUICK DEMO ACCOUNT SELECTOR (CHỌN NHANH VAI TRÒ DEMO) */}
+        {showDemoAccounts && <>
+        {/* Demo shortcuts are only enabled for an explicitly configured non-production build. */}
         <div className="auth-demo-accounts" style={{
           marginTop: '22px',
           paddingTop: '18px',
@@ -612,6 +615,7 @@ const AuthPage = () => {
 
           </div>
         </div>
+        </>}
       </div>
     </div>
   );

@@ -38,7 +38,9 @@ def seed():
         # Nạp Users
         users = raw_data.get('users', [])
         for u in users:
-            raw_pwd = u.get('password', 'password123')
+            raw_pwd = u.get('password')
+            if not isinstance(raw_pwd, str) or not raw_pwd:
+                raise ValueError('Seeded demo accounts must define an explicit password.')
             if raw_pwd.startswith('$2a$') or raw_pwd.startswith('$2b$'):
                 hashed_pwd = raw_pwd
             else:

@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 import bcrypt
+from app.config import SEED_DEMO_DATA
 
 try:
     from psycopg import connect  # type: ignore
@@ -459,11 +460,15 @@ CREATE TABLE IF NOT EXISTS rag_chunks (
             ''', ('GLOBAL_NVQS_POLICY', 0.75, 0.65, 0.90, 0.02, now_iso, 'SYSTEM_INIT'))
 
         q.execute('SELECT EXISTS (SELECT 1 FROM users) AS has_users')
-        if not q.fetchone()['has_users']:
+        has_users = q.fetchone()['has_users']
+        if SEED_DEMO_DATA and not has_users:
+            # Demo accounts and their default credentials are never implicit in production.
             path = os.path.join(os.path.dirname(__file__), 'data.json')
             if os.path.exists(path):
                 for u in json.load(open(path, encoding='utf-8')).get('users', []):
-                    password = u.get('password', 'password123')
+                    password = u.get('password')
+                    if not isinstance(password, str) or not password:
+                        raise ValueError('Seeded demo accounts must define an explicit password.')
                     if not password.startswith(('$2a$', '$2b$')):
                         password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
                     now = datetime.utcnow().isoformat() + 'Z'
@@ -497,7 +502,7 @@ CREATE TABLE IF NOT EXISTS rag_chunks (
         # existed. Backfill only missing facts from the bundled demo source;
         # populated administrator values are never overwritten.
         seed_path = os.path.join(os.path.dirname(__file__), 'data.json')
-        if os.path.exists(seed_path):
+        if SEED_DEMO_DATA and os.path.exists(seed_path):
             for seeded_user in json.load(open(seed_path, encoding='utf-8')).get('users', []):
                 if seeded_user.get('role') != 'STUDENT':
                     continue
