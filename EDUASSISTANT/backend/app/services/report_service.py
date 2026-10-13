@@ -1,17 +1,18 @@
 """
 ============================================================================
-CASEFLOW AI - REPORT & EXPORT SERVICE (PYTHON MODULE)
+EDUASSISTANT - REPORT & EXPORT SERVICE (PYTHON MODULE)
 ============================================================================
 Module tạo báo cáo xuất khẩu:
   - CSV định dạng chuẩn UTF-8 BOM hiển thị chính xác tiếng Việt trong Excel
-  - Bảng tổng hợp danh sách hồ sơ học vụ chuẩn in ấn PDF / HTML
-  - Giấy Quyết định công nhận kết quả học vụ có mã xác thực QR và chữ ký điện tử
+  - Bảng nội bộ tổng hợp case workflow để in PDF / HTML
+  - Bản ghi workflow nội bộ có mã QR và HMAC-SHA256 integrity token
 ============================================================================
 """
 
 import io
 import json
 import base64
+from html import escape
 from urllib.parse import quote
 import qrcode
 from datetime import datetime
@@ -48,12 +49,7 @@ def generate_cases_csv(cases: list) -> str:
     ]
 
     category_labels = {
-        'MILITARY_SERVICE_CONFIRMATION': 'Cấp giấy xác nhận tạm hoãn NVQS',
-        'TUITION_DISCOUNT': 'Miễn giảm học phí',
-        'COMMUNITY_SERVICE': 'Điểm rèn luyện & CTXH',
-        'SCHOLARSHIP': 'Học bổng khuyến khích',
-        'GRADE_APPEAL': 'Phúc khảo điểm',
-        'GENERAL': 'Hồ sơ học vụ chung'
+        'MILITARY_SERVICE_CONFIRMATION': 'Xác nhận tình trạng sinh viên'
     }
 
     status_labels = {
@@ -187,13 +183,7 @@ def generate_cases_table_html(cases: list, filter_info: dict = None) -> str:
     pending = sum(1 for c in cases if c.get('status') in ('UNDER_REVIEW', 'SUBMITTED', 'RESUBMITTED'))
     rejected = sum(1 for c in cases if c.get('status') == 'REJECTED')
 
-    category_labels = {
-        'TUITION_DISCOUNT': 'Giảm học phí',
-        'COMMUNITY_SERVICE': 'Rèn luyện/MHX',
-        'SCHOLARSHIP': 'Học bổng',
-        'GRADE_APPEAL': 'Phúc khảo',
-        'GENERAL': 'Khác'
-    }
+    category_labels = {'MILITARY_SERVICE_CONFIRMATION': 'Xác nhận tình trạng sinh viên'}
 
     def status_badge(s):
         if s == 'APPROVED':
@@ -204,7 +194,7 @@ def generate_cases_table_html(cases: list, filter_info: dict = None) -> str:
             return '<span style="color:#f59e0b; font-weight:bold;">Cần bổ sung ⚠️</span>'
         elif s == 'REJECTED':
             return '<span style="color:#dc2626; font-weight:bold;">Từ chối ✗</span>'
-        return f"<span>{s}</span>"
+        return f"<span>{escape(str(s or ''))}</span>"
 
     table_rows = []
     for i, c in enumerate(cases):
@@ -216,7 +206,7 @@ def generate_cases_table_html(cases: list, filter_info: dict = None) -> str:
         rule_badge = '<span style="color:#059669; font-size:11px;">⚡ Tự động duyệt</span>'
         if not is_auto and esc:
             code = esc if isinstance(esc, str) else esc.get('reason', '')
-            rule_badge = f'<span style="color:#ea580c; font-size:11px;">🚨 {code}</span>'
+            rule_badge = f'<span style="color:#ea580c; font-size:11px;">🚨 {escape(str(code))}</span>'
 
         date_str = ''
         if c.get('createdAt'):
@@ -231,12 +221,12 @@ def generate_cases_table_html(cases: list, filter_info: dict = None) -> str:
         table_rows.append(f"""
         <tr style="border-bottom: 1px solid #e2e8f0; font-size: 12px;">
             <td style="padding: 6px 8px; text-align: center;">{i + 1}</td>
-            <td style="padding: 6px 8px; font-family: monospace; font-weight: bold; color: #1e40af;">{c.get('id')}</td>
-            <td style="padding: 6px 8px; font-family: monospace;">{student_code}</td>
-            <td style="padding: 6px 8px; font-weight: bold;">{student_name}</td>
-            <td style="padding: 6px 8px;">{c.get('title')}</td>
-            <td style="padding: 6px 8px; text-align: center;">{category_labels.get(c.get('category'), c.get('category'))}</td>
-            <td style="padding: 6px 8px; text-align: center; font-weight: bold; color: {p_color};">{c.get('priority', 'MEDIUM')}</td>
+            <td style="padding: 6px 8px; font-family: monospace; font-weight: bold; color: #1e40af;">{escape(str(c.get('id') or ''))}</td>
+            <td style="padding: 6px 8px; font-family: monospace;">{escape(str(student_code))}</td>
+            <td style="padding: 6px 8px; font-weight: bold;">{escape(str(student_name))}</td>
+            <td style="padding: 6px 8px;">{escape(str(c.get('title') or ''))}</td>
+            <td style="padding: 6px 8px; text-align: center;">{escape(str(category_labels.get(c.get('category'), c.get('category') or '')))}</td>
+            <td style="padding: 6px 8px; text-align: center; font-weight: bold; color: {p_color};">{escape(str(c.get('priority', 'MEDIUM')))}</td>
             <td style="padding: 6px 8px;">{rule_badge}</td>
             <td style="padding: 6px 8px; text-align: center;">{status_badge(c.get('status'))}</td>
             <td style="padding: 6px 8px; text-align: center;">{date_str}</td>
@@ -249,7 +239,7 @@ def generate_cases_table_html(cases: list, filter_info: dict = None) -> str:
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Báo Cáo Tổng Hợp Danh Sách Hồ Sơ Học Vụ - EDUASSISTANT</title>
+  <title>Internal Workflow Case Summary - EDUASSISTANT</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
     * {{ box-sizing: border-box; margin: 0; padding: 0; }}
@@ -279,23 +269,13 @@ def generate_cases_table_html(cases: list, filter_info: dict = None) -> str:
   </div>
 
   <div class="container">
-    <table style="width: 100%; margin-bottom: 20px;">
-      <tr>
-        <td style="width: 45%; text-align: center; vertical-align: top;">
-          <div style="font-size: 12px; text-transform: uppercase;">BỘ GIÁO DỤC VÀ ĐÀO TẠO</div>
-          <div style="font-size: 13px; font-weight: bold; text-transform: uppercase;">TRƯỜNG ĐẠI HỌC CÔNG NGHỆ QUỐC GIA</div>
-          <div style="font-size: 12px; font-weight: bold;">HỘI ĐỒNG THẨM ĐỊNH HỌC VỤ</div>
-        </td>
-        <td style="width: 55%; text-align: center; vertical-align: top;">
-          <div style="font-size: 12px; font-weight: bold; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-          <div style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #111; display: inline-block; padding-bottom: 2px;">Độc lập - Tự do - Hạnh phúc</div>
-          <div style="font-size: 12px; font-style: italic; margin-top: 4px;">TP. Hồ Chí Minh, ngày {datetime.now().strftime('%d/%m/%Y')}</div>
-        </td>
-      </tr>
-    </table>
+    <div style="margin-bottom: 20px; text-align: center;">
+      <strong>EDUASSISTANT · INTERNAL WORKFLOW REPORT</strong><br>
+      <span style="font-size: 12px; color: #475569;">For internal tracking only; not an institutional or military authority decision.</span>
+    </div>
 
     <div style="text-align: center; margin-bottom: 16px;">
-      <h2 style="font-size: 18px; font-weight: bold; text-transform: uppercase;">BẢNG TỔNG HỢP DANH SÁCH HỒ SƠ HỌC VỤ & PHÁN QUYẾT RULE ENGINE</h2>
+      <h2 style="font-size: 18px; font-weight: bold; text-transform: uppercase;">BẢNG TỔNG HỢP HỒ SƠ WORKFLOW NỘI BỘ</h2>
       <p style="font-size: 13px; font-style: italic; color: #475569; margin-top: 4px;">
         Thời điểm trích xuất: {report_date} • Bộ lọc: {filter_info.get('status', 'Tất cả trạng thái')} | {filter_info.get('category', 'Tất cả danh mục')}
       </p>
@@ -331,64 +311,95 @@ def generate_cases_table_html(cases: list, filter_info: dict = None) -> str:
 </body>
 </html>"""
 
-
 def generate_decision_html(case_data: dict, base_url: str = 'http://localhost:3001') -> str:
-    """Render an internal workflow receipt, never a government certificate."""
-    from html import escape
+    """Render a clearly labeled internal workflow record with an HMAC lookup QR."""
+    case_id_raw = str(case_data.get('id') or 'unknown')
+    case_id = escape(case_id_raw)
+    student_name = escape(str(case_data.get('studentName') or 'Sinh viên'))
+    student_code = escape(str(case_data.get('studentCode') or '—'))
+    title = escape(str(case_data.get('title') or 'Xác nhận tình trạng sinh viên'))
+    status = escape(str(case_data.get('status') or 'UNKNOWN'))
+    category = case_data.get('category')
+    category_label = (
+        'Xác nhận tình trạng sinh viên'
+        if category == 'MILITARY_SERVICE_CONFIRMATION'
+        else str(category or 'Chưa phân loại')
+    )
+    category_label = escape(category_label)
+    rule_engine = case_data.get('ruleEngine') if isinstance(case_data.get('ruleEngine'), dict) else {}
+    review = case_data.get('reviewResult') if isinstance(case_data.get('reviewResult'), dict) else {}
+    decision = escape(str(rule_engine.get('decision') or 'Not recorded'))
+    reviewer_name = escape(str(review.get('reviewerName') or 'Not recorded'))
+    review_reason = escape(str(review.get('reason') or 'No reviewer note recorded.'))
+    generated_at = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
 
-    case_id = str(case_data.get('id') or '')
-    review = case_data.get('reviewResult') or {}
-    def safe(value):
-        return escape(str(value if value is not None else ''), quote=True)
-
-    status = str(case_data.get('status') or 'UNKNOWN')
-    category = str(case_data.get('category') or 'UNKNOWN')
-    verification_url = f"{base_url.rstrip('/')}/verify?caseId={quote(case_id, safe='')}"
+    verification_url = f"{base_url.rstrip('/')}/verify?caseId={quote(case_id_raw, safe='')}"
     qr_img = qrcode.make(verification_url)
     qr_buffer = io.BytesIO()
     qr_img.save(qr_buffer, format='PNG')
-    qr_code_data_url = f"data:image/png;base64,{base64.b64encode(qr_buffer.getvalue()).decode('ascii')}"
+    qr_code_data_url = f"data:image/png;base64,{base64.b64encode(qr_buffer.getvalue()).decode('utf-8')}"
 
-    rows = {
-        'case': case_id,
-        'student': case_data.get('studentName') or 'Sinh vien',
-        'student_code': case_data.get('studentCode') or 'N/A',
-        'request': case_data.get('title') or '',
-        'category': category,
-        'status': status,
-        'department': case_data.get('assignedDepartment') or '',
-        'reviewer': review.get('reviewerName') or 'Chua ghi nhan',
-        'reviewed_at': review.get('reviewedAt') or case_data.get('updatedAt') or '',
-        'reason': review.get('reason') or 'Khong co ghi chu',
-        'signature': case_data.get('digitalSignature') or '',
-    }
-    row_html = ''.join(
-        f'<tr><th>{safe(label)}</th><td>{safe(value)}</td></tr>'
-        for label, value in (
-            ('Ma ho so', rows['case']), ('Sinh vien', rows['student']),
-            ('Ma sinh vien', rows['student_code']), ('Yeu cau', rows['request']),
-            ('Danh muc', rows['category']), ('Trang thai quy trinh', rows['status']),
-            ('Don vi phu trach', rows['department']), ('Nguoi xu ly', rows['reviewer']),
-            ('Thoi diem xu ly', rows['reviewed_at']), ('Ghi chu', rows['reason']),
-        )
-    )
-    return f"""<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bien nhan quy trinh noi bo {safe(case_id)}</title>
-<style>
-body{{font:16px/1.55 system-ui,sans-serif;background:#f1f5f9;color:#172033;margin:0;padding:24px}}
-main{{max-width:780px;margin:auto;background:#fff;padding:32px;border:1px solid #cbd5e1;border-radius:12px}}
-h1{{font-size:1.5rem}}.notice{{padding:16px;border:2px solid #b45309;background:#fffbeb;color:#78350f;font-weight:700;border-radius:8px}}
-table{{width:100%;border-collapse:collapse;margin:24px 0}}th,td{{text-align:left;vertical-align:top;border-bottom:1px solid #e2e8f0;padding:10px}}th{{width:30%;color:#475569}}
-small{{color:#475569}}img{{width:128px;height:128px}}button{{padding:10px 16px}}@media print{{body{{background:white;padding:0}}main{{border:0}}button{{display:none}}}}
-</style></head><body><main>
-<p><strong>EDUASSISTANT - Bien nhan quy trinh noi bo</strong></p>
-<div class="notice">DAY LA KET QUA WORKFLOW NOI BO/DEMO. KHONG PHAI GIAY XAC NHAN CUA CO QUAN NHA NUOC, KHONG PHAI CHU KY SO CONG CONG, VA KHONG QUYET DINH TAM HOAN NGHIA VU QUAN SU.</div>
-<h1>Ket qua xu ly ho so</h1>
-<p>Trang thai duoi day chi phan anh quy trinh cua phan mem. Co quan/truong co tham quyen phai tu xac minh va ban hanh van ban chinh thuc theo quy dinh hien hanh.</p>
-<table>{row_html}</table>
-<p><strong>Ma toan ven HMAC-SHA256:</strong><br><code>{safe(rows['signature'])}</code></p>
-<p><img src="{safe(qr_code_data_url)}" alt="QR tra cuu trang thai ho so"></p>
-<p><small>QR chi tra cuu du lieu tren he thong. HMAC kiem tra tinh toan ven du lieu theo khoa noi bo; khong thay the chu ky so duoc cap phep hay con dau cua co quan.</small></p>
-<button onclick="window.print()">In bien nhan</button>
-</main></body></html>"""
+    return f"""<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Internal Workflow Record #{case_id} - EDUASSISTANT</title>
+  <style>
+    * {{ box-sizing: border-box; }}
+    body {{ margin: 0; padding: 24px; background: #f1f5f9; color: #172033; font: 15px/1.55 Arial, sans-serif; }}
+    .page {{ max-width: 820px; margin: auto; padding: 32px; background: white; border: 1px solid #dbe3ee; border-radius: 8px; }}
+    .top {{ display: flex; justify-content: space-between; gap: 16px; align-items: center; }}
+    h1 {{ margin: 0; font-size: 20px; }}
+    .eyebrow {{ color: #475569; font-size: 12px; letter-spacing: .08em; }}
+    .notice {{ margin: 22px 0; padding: 12px 14px; border-left: 4px solid #d97706; background: #fffbeb; color: #78350f; font-weight: 600; }}
+    h2 {{ margin: 24px 0 10px; font-size: 16px; }}
+    table {{ width: 100%; border-collapse: collapse; }}
+    th, td {{ padding: 9px 10px; border: 1px solid #dbe3ee; text-align: left; vertical-align: top; }}
+    th {{ width: 185px; background: #f8fafc; }}
+    .qr {{ display: flex; gap: 18px; align-items: center; margin-top: 24px; padding-top: 18px; border-top: 1px dashed #cbd5e1; }}
+    .qr img {{ width: 112px; height: 112px; }}
+    .small {{ color: #475569; font-size: 12px; }}
+    .print {{ padding: 9px 14px; border: 0; border-radius: 5px; color: white; background: #1e40af; cursor: pointer; }}
+    @media print {{ body {{ padding: 0; background: white; }} .page {{ border: 0; border-radius: 0; }} .print {{ display: none; }} }}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="top">
+      <div>
+        <div class="eyebrow">EDUASSISTANT · INTERNAL WORKFLOW RECORD</div>
+        <h1>Student Status Confirmation Workflow</h1>
+      </div>
+      <button class="print" onclick="window.print()">Print / Save PDF</button>
+    </div>
+
+    <div class="notice">
+      Bản ghi nội bộ để theo dõi workflow. Đây không phải giấy xác nhận do trường cấp,
+      quyết định của cơ quan nhà nước/quân sự, hoặc kết luận về điều kiện pháp lý.
+    </div>
+
+    <h2>Case details</h2>
+    <table>
+      <tr><th>Case ID</th><td>{case_id}</td></tr>
+      <tr><th>Student</th><td>{student_name}</td></tr>
+      <tr><th>Student code</th><td>{student_code}</td></tr>
+      <tr><th>Request title</th><td>{title}</td></tr>
+      <tr><th>Workflow category</th><td>{category_label}</td></tr>
+      <tr><th>Workflow status</th><td>{status}</td></tr>
+      <tr><th>Rule Engine routing</th><td>{decision}</td></tr>
+      <tr><th>Reviewer of record</th><td>{reviewer_name}</td></tr>
+      <tr><th>Reviewer note</th><td>{review_reason}</td></tr>
+      <tr><th>Export generated</th><td>{generated_at}</td></tr>
+    </table>
+
+    <div class="qr">
+      <img src="{qr_code_data_url}" alt="QR code for case data integrity lookup">
+      <div>
+        <strong>HMAC-SHA256 data integrity lookup</strong>
+        <div class="small">Quét mã để kiểm tra dữ liệu hồ sơ đã lưu. HMAC-SHA256 là mã xác thực toàn vẹn, không phải chữ ký PKI hoặc chữ ký số pháp lý.</div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>"""

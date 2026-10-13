@@ -237,16 +237,16 @@ def run_security_test_suite():
     approve_for_signature = api_req(f"/cases/{m_case_obj['id']}/review", 'POST', headers={'Authorization': f"Bearer {reviewer_token}"}, data={
         'action': 'APPROVE', 'reason': 'Đã kiểm tra hồ sơ trong test'
     })
-    assert_test(approve_for_signature['status'] == 200, "Reviewer phê duyệt hồ sơ kiểm thử để ký số")
+    assert_test(approve_for_signature['status'] == 200, "Reviewer marked the test case approved in the internal workflow")
 
     approved_verification = api_req(f"/cases/verify/{m_case_obj['id']}", 'GET')
     assert_test(approved_verification['status'] == 200 and approved_verification['data']['data']['verified'] is True,
-                "Tra cứu QR xác minh chữ ký đúng của hồ sơ đã duyệt")
+                "QR lookup confirms the approved case HMAC integrity check")
 
     run_query("UPDATE cases SET digitalSignature = ? WHERE id = ?", ('0' * 64, m_case_obj['id']))
     tampered_verification = api_req(f"/cases/verify/{m_case_obj['id']}", 'GET')
     assert_test(tampered_verification['status'] == 200 and tampered_verification['data']['data']['verified'] is False,
-                "Tra cứu QR từ chối chữ ký số bị sửa")
+                "QR lookup rejects a modified HMAC integrity token")
 
     student_ai_status = api_req('/ai/status', 'GET', headers={'Authorization': f"Bearer {student1_token}"})
     assert_test(student_ai_status['status'] == 403, "Trạng thái cấu hình AI chỉ dành cho ADMIN")

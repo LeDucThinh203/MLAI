@@ -599,9 +599,9 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     onClick={() => openSafeWindow(`${API_BASE}/cases/${encodeURIComponent(selectedCase.id)}/export-decision`)}
                     className="btn-primary shimmer-button"
                     style={{ padding: '4px 10px', fontSize: '0.75rem', background: 'linear-gradient(135deg, #059669, #10b981)' }}
-                    title="Xem bản in Quyết định học vụ có mã QR và chữ ký điện tử"
+                    title="Xem bản ghi workflow nội bộ có mã QR kiểm tra toàn vẹn HMAC"
                   >
-                    📄 In Quyết Định (PDF)
+                    📄 In bản ghi workflow (PDF)
                   </button>
                   <button onClick={() => setSelectedCase(null)} className="btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
                     Đóng
@@ -1167,7 +1167,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <CheckCircle2 size={18} color="#34d399" />
                     <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#34d399' }}>
-                      Quyết định học vụ điện tử đã có hiệu lực
+                      Bản ghi workflow nội bộ đã được lưu
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
@@ -1176,7 +1176,7 @@ const ReviewerPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                       className="btn-primary shimmer-button"
                       style={{ background: 'linear-gradient(135deg, #059669, #10b981)', fontSize: '0.76rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      <Printer size={13} /> In / Lưu Quyết Định PDF
+                      <Printer size={13} /> In / Lưu bản ghi workflow PDF
                     </button>
                     <button
                       onClick={() => openSafeWindow(`/verify?caseId=${encodeURIComponent(selectedCase.id)}`)}

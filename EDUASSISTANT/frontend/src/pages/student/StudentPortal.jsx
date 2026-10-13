@@ -299,6 +299,9 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#94a3b8', margin: 0 }}>
               Phục vụ hồ sơ nghĩa vụ quân sự
             </h2>
+            <p role="note" style={{ margin: '8px 0 0', color: '#fbbf24', fontSize: '0.8rem' }}>
+              Đây là workflow nội bộ; hệ thống không cấp giấy xác nhận chính thức hoặc quyết định tạm hoãn.
+            </p>
           </div>
 
           <form onSubmit={handleSubmitCase} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

@@ -119,8 +119,8 @@ async function runTests() {
     const hasUtf8Bom = csvRes.data.startsWith('\uFEFF');
     console.log('✅ CSV Exported successfully! Length:', csvRes.data.length, 'bytes. UTF-8 BOM Present for Excel:', hasUtf8Bom);
 
-    // 6. Test Official Decision HTML / PDF Generation
-    console.log('\n[6] Testing Official Decision PDF / Print Document Generation...');
+    // 6. Test the internal workflow record export
+    console.log('\n[6] Testing Internal Workflow Record PDF / Print Export...');
     const casesRes = await axios.get(`${BASE_URL}/cases`, {
       headers: { Authorization: `Bearer ${adminToken}` }
     });
@@ -129,10 +129,12 @@ async function runTests() {
       headers: { Authorization: `Bearer ${adminToken}` }
     });
     const hasQrCodeImg = decisionRes.data.includes('img src="data:image/png;base64');
-    const hasSeal = decisionRes.data.includes('ĐÃ KÝ ĐIỆN TỬ BỞI CASEFLOW AI');
-    console.log(`✅ Decision Document for #${firstCaseId} Generated!`, {
+    const hasHmacDisclosure = decisionRes.data.includes('HMAC-SHA256 data integrity lookup');
+    const disclaimsOfficialCertificate = decisionRes.data.includes('không phải giấy xác nhận do trường cấp');
+    console.log(`✅ Internal Workflow Record for #${firstCaseId} Generated!`, {
       hasQrCodeImg,
-      hasElectronicSeal: hasSeal,
+      hasHmacDisclosure,
+      disclaimsOfficialCertificate,
       htmlLength: decisionRes.data.length
     });
 

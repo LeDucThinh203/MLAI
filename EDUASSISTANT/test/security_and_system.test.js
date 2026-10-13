@@ -264,10 +264,10 @@ async function runSecurityTestSuite() {
         headers: { Authorization: `Bearer ${reviewerToken}` },
         body: JSON.stringify({ action: 'APPROVE', reason: 'Đã kiểm tra hồ sơ trong test' })
     });
-    assert(approveForSignature.status === 200, 'Reviewer phê duyệt hồ sơ kiểm thử để ký số');
+    assert(approveForSignature.status === 200, 'Reviewer marked the test case approved in the internal workflow');
     const approvedVerification = await request(`/cases/verify/${mockCase.data.data.case.id}`);
     assert(approvedVerification.status === 200 && approvedVerification.data.data.verified === true,
-        'Tra cứu QR xác minh chữ ký đúng của hồ sơ đã duyệt');
+        'QR lookup confirms the approved case HMAC integrity check');
 
     const sqlite = require('../shared/database');
     await sqlite.runAsync('UPDATE cases SET digitalSignature = ? WHERE id = ?', [
@@ -275,7 +275,7 @@ async function runSecurityTestSuite() {
     ]);
     const tamperedVerification = await request(`/cases/verify/${mockCase.data.data.case.id}`);
     assert(tamperedVerification.status === 200 && tamperedVerification.data.data.verified === false,
-        'Tra cứu QR từ chối chữ ký số bị sửa');
+        'QR lookup rejects a modified HMAC integrity token');
 
     const studentAiStatus = await request('/ai/status', {
         headers: { Authorization: `Bearer ${student1Token}` }

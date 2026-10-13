@@ -74,17 +74,17 @@ export const PublicVerificationPage = () => {
             <Award size={28} color="#34d399" />
           </div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38bdf8', margin: '0 0 4px 0' }}>Internal workflow status lookup</h2>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-sub)', margin: 0 }}>EDUASSISTANT prototype - not an official certificate or public authority decision.</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-sub)', margin: 0 }}>Bản tra cứu workflow nội bộ; không phải giấy xác nhận chính thức hay quyết định của cơ quan có thẩm quyền.</p>
         </div>
 
         {!loading && !data && <form onSubmit={handleLookup} style={{ padding: '20px', border: '1px solid rgba(56, 189, 248, 0.30)', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.72)', marginBottom: error ? '14px' : 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#e2e8f0', fontWeight: 700 }}><Search size={18} color="#38bdf8" /> Tra cứu bằng mã hồ sơ</div>
-          <p style={{ margin: '0 0 14px', color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.5 }}>Nhập mã ghi trên giấy xác nhận, ví dụ: <strong>CASE-2026-XXXX</strong>.</p>
+          <p style={{ margin: '0 0 14px', color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.5 }}>Nhập mã hồ sơ workflow, ví dụ: <strong>CASE-2026-XXXX</strong>.</p>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <input required value={lookupId} onChange={event => { setLookupId(event.target.value.toUpperCase()); setError(null); }} placeholder="Nhập mã hồ sơ" aria-label="Mã hồ sơ cần tra cứu" style={{ flex: '1 1 280px', minWidth: 0, padding: '11px 12px', borderRadius: '8px', border: '1px solid #334155', background: '#020617', color: '#fff', fontFamily: 'monospace' }} />
             <button type="submit" className="btn-primary" style={{ padding: '10px 16px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px' }}><Search size={16} /> Tra cứu</button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', color: '#94a3b8', fontSize: '0.78rem' }}><QrCode size={17} color="#34d399" /> Bạn cũng có thể quét mã QR trên giấy xác nhận để tra cứu tự động.</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', color: '#94a3b8', fontSize: '0.78rem' }}><QrCode size={17} color="#34d399" /> Bạn cũng có thể quét mã QR trên bản ghi workflow để tra cứu.</div>
         </form>}
 
         {loading ? (
@@ -110,7 +110,7 @@ export const PublicVerificationPage = () => {
               <CheckCircle2 size={28} color={data.verified ? '#34d399' : '#f87171'} />
               <div>
                 <strong style={{ color: data.verified ? '#34d399' : '#f87171', fontSize: '0.95rem' }}>{data.verified ? 'Internal record integrity check passed' : 'Internal record integrity check failed'}</strong><br /><span>Workflow status: {data.status}</span>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>HMAC/QR confirms only the prototype record integrity; it is not an official digital signature or certificate.</p>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>HMAC/QR only checks the integrity of this internal workflow record; it is not an official signature or certificate.</p>
               </div>
             </div>
 

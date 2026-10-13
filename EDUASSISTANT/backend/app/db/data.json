@@ -521,7 +521,7 @@
         "confidence": 0.96,
         "tamperRisk": "LOW",
         "evaluatedAt": "2026-10-04T11:05:00.303Z",
-        "suggestedAction": "Hệ thống đã tự động xuất Quyết định phê duyệt học vụ có chữ ký số."
+        "suggestedAction": "Hồ sơ đã được ghi nhận trong workflow nội bộ."
       },
       "reviewResult": {
         "action": "APPROVE",
@@ -1137,7 +1137,7 @@
         "confidence": 0.96,
         "tamperRisk": "LOW",
         "evaluatedAt": "2026-10-04T11:02:20.998Z",
-        "suggestedAction": "Hệ thống đã tự động xuất Quyết định phê duyệt học vụ có chữ ký số."
+        "suggestedAction": "Hồ sơ đã được ghi nhận trong workflow nội bộ."
       },
       "escalation": null,
       "reviewResult": {
