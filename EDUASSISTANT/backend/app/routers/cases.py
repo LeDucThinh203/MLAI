@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request, Response, WebSocket, WebSocketD
 import jwt
 from fastapi.responses import HTMLResponse
 
-from app.db.db import db_service
+from app.db.db import db_service, student_case_view
 from app.db.database import get_one
 from app.services.ai_service import extract_case_data
 from app.services.rule_engine import evaluate_case
@@ -107,8 +107,12 @@ async def get_my_cases(user: dict = Depends(get_current_user)):
     cache_identity = {'userId': user['id'], 'view': 'my-cases'}
     cached = await get_cached_json('cases', cache_identity)
     if cached is not None:
+        if user.get('role') == 'STUDENT':
+            cached = {**cached, 'cases': [student_case_view(case) for case in cached.get('cases', [])]}
         return api_response(200, True, 'Cached case list.', cached)
     student_cases = await db_service.get_cases({'studentId': user['id']})
+    if user.get('role') == 'STUDENT':
+        student_cases = [student_case_view(case) for case in student_cases]
     await set_cached_json('cases', cache_identity, {'cases': student_cases, 'total': len(student_cases)}, 30)
     return api_response(200, True, 'Lấy danh sách hồ sơ của sinh viên thành công.', {
         'cases': student_cases,
@@ -134,8 +138,12 @@ async def get_cases(
     cache_identity = {'userId': user['id'], 'role': user['role'], 'filters': filter_dict}
     cached = await get_cached_json('cases', cache_identity)
     if cached is not None:
+        if user.get('role') == 'STUDENT':
+            cached = {**cached, 'cases': [student_case_view(case) for case in cached.get('cases', [])]}
         return api_response(200, True, 'Cached case list.', cached)
     cases = await db_service.get_cases(filter_dict)
+    if user.get('role') == 'STUDENT':
+        cases = [student_case_view(case) for case in cases]
     await set_cached_json('cases', cache_identity, {'cases': cases, 'total': len(cases)}, 20)
     return api_response(200, True, 'Lấy danh sách hồ sơ thành công.', {'cases': cases, 'total': len(cases)})
 
@@ -157,7 +165,8 @@ async def get_case_detail(case_id: str, user: dict = Depends(get_current_user)):
         })
         return api_response(403, False, 'Bạn không có quyền truy cập hồ sơ của sinh viên khác.', None, 'FORBIDDEN')
 
-    return api_response(200, True, 'Lấy chi tiết hồ sơ thành công.', {'case': target_case, **target_case})
+    response_case = student_case_view(target_case) if user.get('role') == 'STUDENT' else target_case
+    return api_response(200, True, 'Lấy chi tiết hồ sơ thành công.', {'case': response_case, **response_case})
 
 
 @router.post("/api/cases")
@@ -272,7 +281,8 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
 
     created = await db_service.create_case(case_dict, user)
     await case_event_hub.broadcast({'type': 'case_created', 'case': created}, roles={'REVIEWER', 'ADMIN'})
-    return api_response(201, True, 'Tạo yêu cầu cấp Giấy xác nhận tạm hoãn NVQS thành công.', {'case': created, **(created or {})})
+    response_case = student_case_view(created) if user.get('role') == 'STUDENT' else created
+    return api_response(201, True, 'Tạo yêu cầu cấp Giấy xác nhận tạm hoãn NVQS thành công.', {'case': response_case, **(response_case or {})})
 
 
 @router.post("/api/cases/{case_id}/supplement")
@@ -314,7 +324,8 @@ async def supplement_case_endpoint(
         }
     )
 
-    return api_response(200, True, f"Bổ sung hồ sơ #{case_id} thành công.", {'case': updated, **(updated or {})})
+    response_case = student_case_view(updated) if user.get('role') == 'STUDENT' else updated
+    return api_response(200, True, f"Bổ sung hồ sơ #{case_id} thành công.", {'case': response_case, **(response_case or {})})
 
 
 @router.post("/api/cases/{case_id}/re-route")

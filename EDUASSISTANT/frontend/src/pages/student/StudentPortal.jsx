@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { API_BASE, SERVER_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { ACADEMIC_STATUS_LABELS, CASE_STATUS_LABELS, SIS_RECORD_STATUS_LABELS, labelFor } from '../../utils/displayLabels';
+import { CASE_STATUS_LABELS, labelFor } from '../../utils/displayLabels';
 import CaseDiscussion from '../../components/discussion/CaseDiscussion';
 import AuditTrailViewer from '../../components/audit/AuditTrailViewer';
 import PageSkeleton from '../../components/common/PageSkeleton';
@@ -36,24 +36,11 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
   const [submittingSupplement, setSubmittingSupplement] = useState(false);
 
   const [myCases, setMyCases] = useState([]);
-  const [sisRecord, setSisRecord] = useState(null);
-  const [sisLoading, setSisLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [caseLoadError, setCaseLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [highlightedCaseId, setHighlightedCaseId] = useState(null);
-
-  useEffect(() => {
-    if (!token || !user?.id) return undefined;
-    let cancelled = false;
-    setSisLoading(true);
-    axios.get(`${API_BASE}/sis/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => { if (!cancelled) setSisRecord(res.data?.data?.record || null); })
-      .catch(() => { if (!cancelled) setSisRecord(null); })
-      .finally(() => { if (!cancelled) setSisLoading(false); });
-    return () => { cancelled = true; };
-  }, [token, user?.id]);
 
   // Debounced address normalization preview
   useEffect(() => {
@@ -305,25 +292,15 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
           </div>
 
           <form onSubmit={handleSubmitCase} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Student-facing copy of the canonical SIS row. */}
+            {/* Basic account identity only; institutional SIS details are admin-only. */}
             <div style={{ background: '#0f172a', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: '10px', padding: '16px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#38bdf8', fontWeight: 700, fontSize: '0.86rem' }}>
-                <User size={16} /> Thông tin sinh viên nhà trường đang lưu
+                <User size={16} /> Thông tin tài khoản
               </div>
-              {sisLoading ? <p>Đang tải thông tin sinh viên...</p> : sisRecord ? <>
-                {sisRecord.source === 'INTERNAL_SIS_DEMO' && <p role="note" style={{ color: '#fbbf24', fontSize: '0.78rem' }}>Đây là thông tin mẫu để minh họa, không phải hồ sơ thật do nhà trường xác nhận.</p>}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', fontSize: '0.84rem' }}>
-                  <div><span>Họ và tên</span><br /><strong>{sisRecord.fullName || 'Chưa có thông tin'}</strong></div>
-                  <div><span>Mã sinh viên</span><br /><strong>{sisRecord.studentCode || 'Chưa có thông tin'}</strong></div>
-                  <div><span>Khoa</span><br /><strong>{sisRecord.faculty || 'Chưa có thông tin'}</strong></div>
-                  <div><span>Tình trạng học</span><br /><strong>{labelFor(sisRecord.academicStatus, ACADEMIC_STATUS_LABELS)}</strong></div>
-                  <div><span>Thời gian học</span><br /><strong>{sisRecord.courseStartDate || 'Chưa có thông tin'} - {sisRecord.courseEndDate || 'Chưa có thông tin'}</strong></div>
-                  <div><span>Đang tham gia học kỳ hiện tại</span><br /><strong>{sisRecord.currentTermActive === true ? 'Rồi' : sisRecord.currentTermActive === false ? 'Chưa' : 'Chưa rõ'}</strong></div>
-                  <div><span>Đã có thời khóa biểu</span><br /><strong>{sisRecord.hasCurrentSchedule === true ? 'Rồi' : sisRecord.hasCurrentSchedule === false ? 'Chưa' : 'Chưa rõ'}</strong></div>
-                  <div><span>Tình trạng thông tin</span><br /><strong>{labelFor(sisRecord.recordStatus, SIS_RECORD_STATUS_LABELS)}</strong></div>
-                  <div style={{ gridColumn: '1 / -1' }}><span>Địa chỉ thường trú nhà trường đang lưu</span><br /><strong>{sisRecord.registeredPermanentAddress || 'Chưa có thông tin'}</strong></div>
-                </div>
-              </> : <p role="status">Chưa có thông tin sinh viên do nhà trường cung cấp. Vui lòng liên hệ nhà trường để cập nhật.</p>}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', fontSize: '0.84rem' }}>
+                <div><span>Họ và tên</span><br /><strong>{user?.fullName || 'Chưa có thông tin'}</strong></div>
+                <div><span>Mã sinh viên</span><br /><strong>{user?.studentCode || 'Chưa có thông tin'}</strong></div>
+              </div>
             </div>
 
             {/* KHỐI 2: MỤC ĐÍCH YÊU CẦU (READ-ONLY) */}

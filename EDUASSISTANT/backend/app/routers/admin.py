@@ -18,10 +18,8 @@ from typing import Optional
 router = APIRouter(tags=["Admin"])
 
 @router.get("/api/sis/me")
-async def get_my_sis_record(user: dict = Depends(get_current_user)):
-    """Return only the authenticated student's SIS row; never accept a userId from the client."""
-    if user.get('role') != 'STUDENT':
-        return api_response(403, False, 'Student account required.', None, 'FORBIDDEN')
+async def get_my_sis_record(user: dict = Depends(require_roles('ADMIN'))):
+    """Return the authenticated administrator's SIS row; student SIS data is admin-only."""
     record = get_one("""SELECT studentCode, fullName, academicStatus, courseStartDate, courseEndDate,
         currentTermActive, hasCurrentSchedule, registeredPermanentAddress, faculty,
         source, recordStatus, updatedAt FROM sis_student_records WHERE userId = ?""", (user['id'],))

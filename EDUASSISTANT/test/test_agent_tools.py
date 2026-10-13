@@ -7,7 +7,7 @@ from app.services.agent_tool_registry import TOOL_REGISTRY, tools_for_role, vali
 
 
 STUDENT_TOOLS = {
-    'get_my_profile', 'get_my_sis_record', 'list_my_cases', 'get_case_detail', 'get_case_comments',
+    'get_my_profile', 'list_my_cases', 'get_case_detail', 'get_case_comments',
     'get_notifications', 'normalize_address', 'explain_case_decision', 'search_policy',
     'get_workflow_requirements', 'create_case', 'supplement_case', 'add_case_comment',
     'mark_notification_read', 'mark_all_notifications_read',
@@ -33,7 +33,7 @@ def test_student_tools_have_strict_argument_schemas_and_empty_args_work(monkeypa
         assert spec['allowedRoles'] == ('STUDENT',)
         assert spec['args'].model_json_schema()['type'] == 'object'
 
-    empty_read_tools = ('get_my_profile', 'get_my_sis_record', 'get_notifications')
+    empty_read_tools = ('get_my_profile', 'get_notifications')
     calls = []
     async def fake_read(name, args, _user):
         calls.append((name, args))

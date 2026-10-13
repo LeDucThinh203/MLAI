@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from app.db.database import get_one
 from app.db.db import db_service
 from app.services import agent_rag_service
 from app.services.agent_tool_registry import TOOL_REGISTRY
@@ -30,9 +29,9 @@ def _safe_user(user: dict) -> dict:
 
 
 def _public_case(case: dict) -> dict:
-    # Reviewer feedback and reviewer-only detail must not enter student model context.
+    # Never send SIS-backed Rule Engine facts or escalation details to the Agent.
     fields = ('id', 'title', 'category', 'priority', 'description', 'status', 'createdAt', 'updatedAt',
-              'deadline', 'assignedDepartment', 'ruleEngine', 'escalation', 'studentClaim', 'addressAnalysis')
+              'deadline', 'assignedDepartment', 'studentClaim', 'addressAnalysis')
     return {key: case.get(key) for key in fields if key in case}
 
 
@@ -54,10 +53,6 @@ async def _read_tool(name: str, args: dict, user: dict) -> dict:
     user_id = user.get('id')
     if name == 'get_my_profile':
         return _safe_user(user)
-    if name == 'get_my_sis_record':
-        return {'record': get_one('''SELECT studentCode,fullName,academicStatus,courseStartDate,courseEndDate,
-            currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,recordStatus,updatedAt
-            FROM sis_student_records WHERE userId=?''', (user_id,))}
     if name == 'list_my_cases':
         filters = {'studentId': user_id}
         if args.get('status'):
@@ -80,9 +75,7 @@ async def _read_tool(name: str, args: dict, user: dict) -> dict:
                 return {'caseId': case_id, 'status': case.get('status'),
                         'message': 'Hồ sơ chưa lưu kết quả Rule Engine để giải thích.'}
             return {'caseId': case_id, 'status': case.get('status'), 'decision': stored.get('decision'),
-                    'escalationReason': stored.get('escalationReason'), 'ruleMatched': stored.get('ruleMatched'),
-                    'explanation': stored.get('explanation'), 'suggestedAction': stored.get('suggestedAction'),
-                    'institutionalTrust': stored.get('institutionalTrust'), 'source': 'stored_rule_engine_result'}
+                    'escalationReason': stored.get('escalationReason'), 'source': 'stored_rule_engine_result'}
         return _public_case(case)
     if name == 'get_notifications':
         rows = await db_service.get_notifications(user_id)

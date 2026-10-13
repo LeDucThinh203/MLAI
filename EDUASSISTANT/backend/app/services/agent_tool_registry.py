@@ -70,7 +70,6 @@ STUDENT = ('STUDENT',)
 TOOL_REGISTRY = {
     item['name']: item for item in [
         _spec('get_my_profile', 'Xem hồ sơ tài khoản hiện tại.', EmptyArgs, STUDENT),
-        _spec('get_my_sis_record', 'Xem bản ghi SIS gắn với tài khoản sinh viên hiện tại.', EmptyArgs, STUDENT),
         _spec('list_my_cases', 'Liệt kê hồ sơ thuộc chính sinh viên đang đăng nhập.', CaseListArgs, STUDENT),
         _spec('get_case_detail', 'Xem chi tiết hồ sơ thuộc sinh viên đang đăng nhập.', CaseIdArgs, STUDENT),
         _spec('get_case_comments', 'Xem trao đổi trong hồ sơ thuộc sinh viên đang đăng nhập.', CaseIdArgs, STUDENT),

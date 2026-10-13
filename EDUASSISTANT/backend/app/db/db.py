@@ -96,6 +96,23 @@ def format_case_row(row: dict) -> dict:
     return res
 
 
+def student_case_view(case: dict) -> dict:
+    """Hide admin-only SIS facts and their Rule Engine projections from student responses."""
+    if not isinstance(case, dict):
+        return case
+    result = dict(case)
+    hidden_fields = ('institutionalFacts', 'authoritativeInstitutionalFacts', 'ruleEngine', 'escalation')
+    for key in hidden_fields:
+        result.pop(key, None)
+    extracted = result.get('aiExtraction')
+    if isinstance(extracted, dict):
+        extracted = dict(extracted)
+        for key in hidden_fields:
+            extracted.pop(key, None)
+        result['aiExtraction'] = extracted
+    return result
+
+
 def format_audit_row(row: dict) -> dict:
     """Định dạng bản ghi nhật ký kiểm toán."""
     if not row:
@@ -676,7 +693,8 @@ class DatabaseService:
         event = {'type': 'case_updated', 'case': updated_case}
         await case_event_hub.broadcast(event, roles={'REVIEWER', 'ADMIN'})
         if target_case.get('studentId'):
-            await case_event_hub.broadcast(event, user_ids={target_case['studentId']})
+            student_event = {'type': 'case_updated', 'case': student_case_view(updated_case)}
+            await case_event_hub.broadcast(student_event, user_ids={target_case['studentId']})
 
         return updated_case
 
