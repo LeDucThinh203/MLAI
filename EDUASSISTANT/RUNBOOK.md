@@ -71,6 +71,19 @@ Keep secrets private. In production set `APP_ENV=production` and
 configuration is environment-based. Gemini is used when configured; OCR fallback
 does not invent document fields.
 
+The optional authenticated AI Agent uses `AGENT_ENABLED=true`, `AGENT_MAX_TOOL_STEPS=4`,
+`AGENT_RAG_TOP_K=5`, `AGENT_HISTORY_MESSAGES=12`, `AGENT_ACTION_TTL_SECONDS=300`,
+and `AGENT_MAX_MESSAGE_CHARS=6000`. It reuses `GEMINI_API_KEY` as the primary planner
+and `OPENROUTER_API_KEY` as fallback. `GEMINI_EMBEDDING_MODEL` is optional; without
+it, the knowledge index uses lexical retrieval. The Agent indexes only the allowlisted
+policy and project documentation described in `docs/architecture/ARCHITECTURE.md`.
+
+After startup, an empty RAG index is populated locally without an embedding API call.
+An Admin can inspect it at `GET /api/admin/agent/rag/status` and explicitly enrich or
+rebuild it with `POST /api/admin/agent/rag/reindex`. Agent writes are first stored as
+short-lived pending actions and are not applied until the user selects **Xác nhận**.
+Expired, cancelled, stale, or role-changed actions cannot be executed.
+
 ---
 
 ## 4. Khởi Chạy Hệ Thống Thủ Công (2 Terminal)

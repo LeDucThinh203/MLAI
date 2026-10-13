@@ -13,6 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend ./backend
 COPY benchmark ./benchmark
+COPY docs ./docs
+COPY RUNBOOK.md ./RUNBOOK.md
 
 EXPOSE 3001
 

@@ -50,3 +50,11 @@ HMAC-SHA256 is an integrity authentication token that can detect changes when ch
 ## Validation status
 
 User validation remains **PENDING** until real participant evidence is recorded in `docs/user-validation/`.
+
+## AI Agent
+
+Authenticated users can open a role-aware AI Agent from the application shell. It combines Gemini planning, OpenRouter fallback, an allowlisted RAG index, and typed tools over existing application services. The internal SIS registry remains demo data; no external university SIS connector is provided.
+
+The Agent's RAG sources are the student-service policy, system overview, architecture document, root runbook, and runtime policy registry. RAG is not used for live case lookup. Every live read checks the current role and record ownership. Writes are previewed and require an explicit confirmation; the server refetches and revalidates the target before using existing business routes. Agent output cannot decide legal eligibility or replace Rule Engine results.
+
+Set `AGENT_ENABLED`, the `AGENT_*` bounds, `GEMINI_API_KEY`, and optionally `GEMINI_EMBEDDING_MODEL` / `OPENROUTER_API_KEY` in the backend environment. API keys stay server-side. If embedding or text generation is unavailable, lexical retrieval and safe fallback replies remain available.

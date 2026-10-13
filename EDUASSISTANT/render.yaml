@@ -24,6 +24,20 @@ services:
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
+      - key: AGENT_ENABLED
+        value: true
+      - key: AGENT_MAX_TOOL_STEPS
+        value: 4
+      - key: AGENT_RAG_TOP_K
+        value: 5
+      - key: AGENT_HISTORY_MESSAGES
+        value: 12
+      - key: AGENT_ACTION_TTL_SECONDS
+        value: 300
+      - key: AGENT_MAX_MESSAGE_CHARS
+        value: 6000
+      - key: GEMINI_EMBEDDING_MODEL
+        value: ''
       - key: ALLOW_ADMIN_VERIFIED_DEMO_SIS
         value: false
       - key: AI_MODE
