@@ -19,6 +19,25 @@ export default function JudgeModePage({ onNavigateTab }) {
   const [loadingMetrics, setLoadingMetrics] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
 
+  const configuredProviders = metrics?.ai?.providers;
+  const providerNames = Array.isArray(configuredProviders)
+    ? configuredProviders
+    : configuredProviders && typeof configuredProviders === 'object'
+      ? Object.entries(configuredProviders)
+        .filter(([, isConfigured]) => isConfigured === true)
+        .map(([provider]) => provider)
+      : typeof configuredProviders === 'string'
+        ? [configuredProviders]
+        : [];
+  const providerLabel = providerNames
+    .map((provider) => {
+      const normalized = String(provider).toLowerCase();
+      if (normalized === 'gemini') return 'Google Gemini';
+      if (normalized === 'openrouter') return 'OpenRouter';
+      return String(provider);
+    })
+    .join(', ') || 'DETERMINISTIC_PARSER';
+
   const fetchJudgeMetrics = async () => {
     setLoadingMetrics(true);
     try {
@@ -169,7 +188,7 @@ export default function JudgeModePage({ onNavigateTab }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
               <Cpu size={16} color="#38bdf8" />
               <strong style={{ fontSize: '1.05rem', color: '#38bdf8' }}>
-                {metrics?.ai?.providers?.join(', ') || 'DETERMINISTIC_PARSER'}
+                {providerLabel}
               </strong>
             </div>
             <small style={{ color: '#94a3b8' }}>{metrics?.ai?.status || 'UNKNOWN'} · connectivity {metrics?.ai?.connectivity || 'UNKNOWN'}</small>
