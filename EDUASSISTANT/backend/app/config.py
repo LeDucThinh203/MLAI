@@ -71,3 +71,13 @@ ALLOW_ADMIN_VERIFIED_DEMO_SIS = os.environ.get(
     'ALLOW_ADMIN_VERIFIED_DEMO_SIS',
     str(APP_ENV in ('development', 'demo')),
 ).strip().lower() == 'true'
+
+# AI Agent limits are intentionally conservative. API keys remain server-side.
+AGENT_ENABLED = os.environ.get('AGENT_ENABLED', 'true').strip().lower() == 'true'
+AGENT_MAX_TOOL_STEPS = max(1, min(4, int(os.environ.get('AGENT_MAX_TOOL_STEPS', '4'))))
+AGENT_RAG_TOP_K = max(1, min(8, int(os.environ.get('AGENT_RAG_TOP_K', '5'))))
+AGENT_HISTORY_MESSAGES = max(2, min(20, int(os.environ.get('AGENT_HISTORY_MESSAGES', '12'))))
+AGENT_ACTION_TTL_SECONDS = max(60, min(900, int(os.environ.get('AGENT_ACTION_TTL_SECONDS', '300'))))
+AGENT_MAX_MESSAGE_CHARS = max(100, min(12000, int(os.environ.get('AGENT_MAX_MESSAGE_CHARS', '6000'))))
+GEMINI_EMBEDDING_MODEL = os.environ.get('GEMINI_EMBEDDING_MODEL', '').strip()
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()

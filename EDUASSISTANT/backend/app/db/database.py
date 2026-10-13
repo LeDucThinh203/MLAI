@@ -334,6 +334,65 @@ CREATE TABLE IF NOT EXISTS sis_student_records (
     recordStatus VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     createdAt VARCHAR(100) NOT NULL, updatedAt VARCHAR(100) NOT NULL, updatedBy VARCHAR(100)
 );
+CREATE TABLE IF NOT EXISTS agent_conversations (
+    id VARCHAR(100) PRIMARY KEY,
+    user_id VARCHAR(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    created_at VARCHAR(100) NOT NULL,
+    updated_at VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS agent_messages (
+    id VARCHAR(100) PRIMARY KEY,
+    conversation_id VARCHAR(100) NOT NULL REFERENCES agent_conversations(id) ON DELETE CASCADE,
+    user_id VARCHAR(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(30) NOT NULL,
+    content TEXT NOT NULL,
+    metadata TEXT,
+    created_at VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS agent_pending_actions (
+    id VARCHAR(100) PRIMARY KEY,
+    user_id VARCHAR(100) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(100) NOT NULL REFERENCES agent_conversations(id) ON DELETE CASCADE,
+    tool_name VARCHAR(100) NOT NULL,
+    arguments TEXT NOT NULL,
+    arguments_hash VARCHAR(64) NOT NULL,
+    preview TEXT NOT NULL,
+    role_at_request VARCHAR(50) NOT NULL,
+    status VARCHAR(30) NOT NULL,
+    expires_at VARCHAR(100) NOT NULL,
+    created_at VARCHAR(100) NOT NULL,
+    updated_at VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS rag_documents (
+    id VARCHAR(200) PRIMARY KEY,
+    source_key VARCHAR(200) NOT NULL,
+    source_path VARCHAR(500) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    source_type VARCHAR(100) NOT NULL,
+    priority DOUBLE PRECISION NOT NULL,
+    version VARCHAR(100) NOT NULL,
+    content_hash VARCHAR(64) NOT NULL,
+    updated_at VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS rag_chunks (
+    id VARCHAR(200) PRIMARY KEY,
+    document_id VARCHAR(200) NOT NULL REFERENCES rag_documents(id) ON DELETE CASCADE,
+    source_key VARCHAR(200) NOT NULL,
+    source_path VARCHAR(500) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    heading VARCHAR(500) NOT NULL,
+    source_type VARCHAR(100) NOT NULL,
+    priority DOUBLE PRECISION NOT NULL,
+    version VARCHAR(100) NOT NULL,
+    chunk_index INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    embedding TEXT,
+    embedding_provider VARCHAR(100),
+    embedding_model VARCHAR(200),
+    embedding_dimension INTEGER,
+    created_at VARCHAR(100) NOT NULL
+);
 '''
     with get_db_connection() as c, c.cursor() as q:
         for statement in schema.split(';'):
@@ -383,6 +442,11 @@ CREATE TABLE IF NOT EXISTS sis_student_records (
         q.execute('CREATE INDEX IF NOT EXISTS idx_threshold_history_created ON escalation_threshold_history (createdAt DESC)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_sis_academic_status ON sis_student_records (academicStatus)')
         q.execute('CREATE INDEX IF NOT EXISTS idx_sis_faculty ON sis_student_records (faculty)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_agent_conversations_user_updated ON agent_conversations (user_id, updated_at DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_agent_messages_conversation_created ON agent_messages (conversation_id, created_at)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_agent_messages_user_created ON agent_messages (user_id, created_at DESC)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_agent_pending_user_status ON agent_pending_actions (user_id, status, expires_at)')
+        q.execute('CREATE INDEX IF NOT EXISTS idx_rag_chunks_source_heading ON rag_chunks (source_key, heading)')
 
         # Khởi tạo bản ghi chính sách ngưỡng thích ứng mặc định
         q.execute("SELECT EXISTS (SELECT 1 FROM escalation_policy_state WHERE id = 'GLOBAL_NVQS_POLICY') AS has_policy")
