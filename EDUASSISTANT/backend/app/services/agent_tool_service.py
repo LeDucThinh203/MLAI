@@ -133,7 +133,7 @@ async def _read_tool(name: str, args: dict, user: dict) -> dict:
             currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,sourceType,verificationStatus,
             verifiedBy,verifiedAt,recordStatus,updatedAt FROM sis_student_records WHERE id=?''', (args['recordId'],))}
     if name == 'list_users':
-        users = get_all('''SELECT id,username,fullName,studentCode,email,role,department,createdAt,academicStatus,faculty
+        users = get_all('''SELECT id,username,fullName,studentCode,role,department,createdAt,academicStatus,faculty
             FROM users ORDER BY createdAt DESC LIMIT ?''', (100,))
         return {'users': users, 'totalReturned': len(users)}
     if name == 'get_admin_metrics':

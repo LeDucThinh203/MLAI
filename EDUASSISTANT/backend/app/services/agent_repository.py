@@ -168,8 +168,21 @@ def save_document(document: dict, chunks: list[dict]) -> None:
                  chunk.get('embedding_provider'), chunk.get('embedding_model'), chunk.get('embedding_dimension'), _now()))
 
 
-def list_rag_chunks() -> list[dict]:
-    return get_all('SELECT * FROM rag_chunks ORDER BY source_key,chunk_index')
+def get_rag_document(source_key: str) -> dict | None:
+    row = get_one('SELECT * FROM rag_documents WHERE source_key=?', (source_key,))
+    return dict(row) if row else None
+
+
+def delete_obsolete_rag_documents(allowed_source_keys: list[str]) -> int:
+    with get_db_connection() as connection, connection.cursor() as cursor:
+        cursor.execute('DELETE FROM rag_documents WHERE NOT (source_key = ANY(%s))', (allowed_source_keys,))
+        return cursor.rowcount
+
+
+def list_rag_chunks(source_key: str | None = None) -> list[dict]:
+    if source_key is None:
+        return get_all('SELECT * FROM rag_chunks ORDER BY source_key,chunk_index')
+    return get_all('SELECT * FROM rag_chunks WHERE source_key=? ORDER BY chunk_index', (source_key,))
 
 
 def rag_status() -> dict:

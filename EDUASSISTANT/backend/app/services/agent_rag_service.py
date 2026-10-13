@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import ast
 import hashlib
 import json
 import math
@@ -23,8 +24,23 @@ _SOURCES = (
     ('policy:student-service', 'docs/policies/student_service_policy.md', 'Chính sách nghiệp vụ NVQS', 'POLICY_DOCUMENT', 1.0),
     ('docs:system-overview', 'docs/SYSTEM_OVERVIEW.md', 'EDUASSISTANT System Overview', 'SYSTEM_DOCUMENTATION', 0.72),
     ('docs:architecture', 'docs/architecture/ARCHITECTURE.md', 'EDUASSISTANT Architecture', 'SYSTEM_DOCUMENTATION', 0.60),
-    ('docs:runbook', 'RUNBOOK.md', 'EDUASSISTANT Runbook', 'OPERATIONS_DOCUMENTATION', 0.42),
 )
+_SECRET_ASSIGNMENT = re.compile(
+    r'(?im)^.*(?:password|passwd|passphrase|mật\s*khẩu|api[_ -]?key|gemini_api_key|'
+    r'openrouter_api_key|jwt[_ -]?secret|refresh[_ -]?secret|signature[_ -]?key|'
+    r'client[_ -]?secret|aws[_ -]?secret[_ -]?access[_ -]?key|secret[_ -]?key|'
+    r'database[_ -]?url|access[_ -]?token|refresh[_ -]?token|bearer|private[_ -]?key|'
+    r'(?:2fa|mfa)[_ -]?(?:secret|code)|client[_ -]?secret|secret[_ -]?key|secret|otp)'
+    r'\s*(?::|=|\bis\b|\blà\b)\s*.*$'
+)
+_PRIVATE_KEY = re.compile(
+    r'-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----.*?-----END [A-Z0-9 ]*PRIVATE KEY-----',
+    re.DOTALL,
+)
+_CONNECTION_URI = re.compile(r'(?i)\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis)://[^\s<>"\']+')
+_BEARER_SECRET = re.compile(r'(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{8,}')
+_JWT_SECRET = re.compile(r'\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b')
+_GOOGLE_API_SECRET = re.compile(r'\bAIza[0-9A-Za-z_-]{20,}\b')
 _INJECTION = re.compile(
     r'(?im)^.*(?:ignore\s+(?:all\s+)?(?:previous|system|developer)\s+instructions?|'
     r'reveal\s+(?:the\s+)?(?:system\s+)?prompt|approve\s+all\s+cases|'
@@ -50,6 +66,17 @@ def _strip_tones(text: str) -> str:
 def sanitize_rag_text(text: str) -> str:
     """Remove common instruction-injection lines; retrieved text remains untrusted regardless."""
     return _INJECTION.sub('[Nội dung chỉ dẫn không đáng tin đã được lược bỏ.]', text)
+
+
+def sanitize_knowledge_text(text: str) -> str:
+    """Redact credential material before knowledge is stored, embedded, or sent to a model."""
+    text = _PRIVATE_KEY.sub('[Khóa riêng đã được lược bỏ.]', text)
+    text = _SECRET_ASSIGNMENT.sub('[Thông tin xác thực đã được lược bỏ.]', text)
+    text = _CONNECTION_URI.sub('[Địa chỉ kết nối cơ sở dữ liệu đã được lược bỏ.]', text)
+    text = _BEARER_SECRET.sub('[Bearer token đã được lược bỏ.]', text)
+    text = _JWT_SECRET.sub('[JWT đã được lược bỏ.]', text)
+    text = _GOOGLE_API_SECRET.sub('[API key đã được lược bỏ.]', text)
+    return text
 
 
 def _markdown_sections(text: str) -> list[tuple[str, str]]:
@@ -85,13 +112,14 @@ def _split_words(content: str, max_words: int = 650, overlap_words: int = 90) ->
 
 def _source_chunks(source_key: str, source_path: str, title: str, source_type: str,
                    priority: float, version: str, text: str) -> list[dict]:
+    text = sanitize_knowledge_text(text)
     document_id = source_key
     chunks = []
     index = 0
     for heading, section in _markdown_sections(text):
         # Keep each short policy rule whole; only large heading sections are split.
         for part in _split_words(section):
-            content = sanitize_rag_text(part)
+            content = sanitize_rag_text(sanitize_knowledge_text(part))
             if not content.strip():
                 continue
             chunk_id = f'{source_key}:{index}:{_hash(heading + content)[:16]}'
@@ -111,18 +139,18 @@ def _all_sources() -> list[dict]:
         path = (root / relative_path).resolve()
         if root not in path.parents or not path.is_file():
             continue
-        text = path.read_text(encoding='utf-8')
+        text = sanitize_knowledge_text(path.read_text(encoding='utf-8'))
         if len(text) > 1_500_000:
             continue
         sources.append({'source_key': source_key, 'source_path': relative_path, 'title': title,
                         'source_type': source_type, 'priority': priority, 'version': _hash(text)[:16], 'text': text})
-    policy_text = '\n\n'.join(
+    policy_text = sanitize_knowledge_text('\n\n'.join(
         f"## {policy.get('id')} — {policy.get('name')}\n"
         f"Domain: {policy.get('domain')}\nRule: {policy.get('ruleCode')}\n"
         f"Trigger: {policy.get('trigger')}\nSystem action: {policy.get('systemAction')}\n"
         f"Escalation reason: {policy.get('escalationReason') or 'None'}\nHuman action: {policy.get('humanAction')}"
         for policy in POLICY_REGISTRY if isinstance(policy, dict)
-    )
+    ))
     sources.append({'source_key': 'runtime:policy-registry', 'source_path': 'POLICY_REGISTRY',
                     'title': 'Runtime Policy Registry', 'source_type': 'RUNTIME_POLICY',
                     'priority': 0.98, 'version': _hash(policy_text)[:16], 'text': policy_text})
@@ -142,13 +170,17 @@ def _knowledge_consistency_warnings(sources: list[dict] | None = None) -> list[s
         warnings.append('Documentation must state that no external university SIS connector is present.')
     rule_engine_path = Path(project_root) / 'backend/app/services/rule_engine.py'
     try:
-        rule_engine_text = rule_engine_path.read_text(encoding='utf-8')
+        rule_engine_tree = ast.parse(rule_engine_path.read_text(encoding='utf-8'))
+        executable_codes = {
+            node.value for node in ast.walk(rule_engine_tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value.startswith('RULE_')
+        }
         stale_rules = sorted({str(policy.get('ruleCode')) for policy in POLICY_REGISTRY
                               if isinstance(policy, dict) and policy.get('ruleCode')
-                              and policy['ruleCode'] not in rule_engine_text})
+                              and policy['ruleCode'] not in executable_codes})
         if stale_rules:
             warnings.append('Runtime policy metadata references missing Rule Engine codes: ' + ', '.join(stale_rules))
-    except OSError:
+    except (OSError, SyntaxError):
         warnings.append('Rule Engine source is unavailable for policy consistency validation.')
     return warnings
 
@@ -183,46 +215,111 @@ async def _embed_many(texts: list[str]) -> list[list[float] | None]:
 
 
 async def reindex(*, enable_embeddings: bool = True) -> dict:
-    processed, created, updated, failed = 0, 0, 0, []
-    providers, models = set(), set()
+    processed = skipped = created = updated = reused = embedding_calls = 0
+    providers, models, failed = set(), set(), []
     sources = _all_sources()
+    allowed_keys = [source['source_key'] for source in sources]
+    agent_repository.delete_obsolete_rag_documents(allowed_keys)
     for _, relative_path, _, _, _ in _SOURCES:
         if not (Path(project_root) / relative_path).is_file():
             failed.append({'sourceKey': relative_path, 'error': 'SOURCE_NOT_FOUND'})
     warnings = _knowledge_consistency_warnings(sources)
     if warnings:
         failed.append({'sourceKey': 'knowledge-consistency', 'error': '; '.join(warnings)[:500]})
-        return {'documentsProcessed': 0, 'chunksCreated': 0, 'chunksUpdated': 0,
+        return {'documentsProcessed': 0, 'documentsSkipped': 0, 'chunksCreated': 0,
+                'chunksUpdated': 0, 'chunksReused': 0, 'embeddingCalls': 0,
                 'embeddingProvider': None, 'embeddingModel': None,
                 'failedDocuments': failed, 'lexicalFallback': True, 'consistencyWarnings': warnings}
+
+    target_model = GEMINI_EMBEDDING_MODEL if enable_embeddings and GEMINI_API_KEY and GEMINI_EMBEDDING_MODEL else None
     for source in sources:
         try:
+            source_text = sanitize_knowledge_text(source['text'])
             chunks = _source_chunks(source['source_key'], source['source_path'], source['title'],
-                                    source['source_type'], source['priority'], source['version'], source['text'])
-            previous = [row for row in agent_repository.list_rag_chunks() if row.get('source_key') == source['source_key']]
-            embeddings = await _embed_many([chunk['content'] for chunk in chunks]) if enable_embeddings else [None] * len(chunks)
-            for chunk, vector in zip(chunks, embeddings):
+                                    source['source_type'], source['priority'], source['version'], source_text)
+            content_hash = _hash(json.dumps({
+                'sourcePath': source['source_path'], 'title': source['title'],
+                'sourceType': source['source_type'], 'priority': source['priority'], 'text': source_text,
+            }, ensure_ascii=False, sort_keys=True, separators=(',', ':')))
+            previous_document = agent_repository.get_rag_document(source['source_key'])
+            previous_chunks = agent_repository.list_rag_chunks(source['source_key'])
+            previous_ids = {row.get('id') for row in previous_chunks}
+            vectors_match = not target_model or (
+                bool(previous_chunks) and all(
+                    row.get('embedding') is not None and row.get('embedding_model') == target_model
+                    for row in previous_chunks
+                )
+            )
+            if previous_document and previous_document.get('content_hash') == content_hash and vectors_match:
+                skipped += 1
+                processed += 1
+                if target_model:
+                    providers.update(row.get('embedding_provider') for row in previous_chunks if row.get('embedding'))
+                    models.update(row.get('embedding_model') for row in previous_chunks if row.get('embedding'))
+                continue
+
+            reusable: dict[tuple[str, str], list[dict]] = {}
+            reused_chunk_ids = set()
+            for row in previous_chunks:
+                vector = row.get('embedding')
+                if isinstance(vector, str):
+                    try:
+                        vector = json.loads(vector)
+                    except ValueError:
+                        vector = None
+                model_matches = not target_model or row.get('embedding_model') == target_model
+                if vector is not None and model_matches:
+                    reusable.setdefault((row.get('heading') or '', row.get('content') or ''), []).append(
+                        {**row, 'embedding': vector}
+                    )
+
+            embed_candidates = []
+            for chunk in chunks:
+                matches = reusable.get((chunk['heading'], chunk['content']), [])
+                if matches:
+                    prior = matches.pop(0)
+                    chunk.update(embedding=prior['embedding'],
+                                 embedding_provider=prior.get('embedding_provider'),
+                                 embedding_model=prior.get('embedding_model'),
+                                 embedding_dimension=prior.get('embedding_dimension'))
+                    reused_chunk_ids.add(chunk['id'])
+                    reused += 1
+                    if target_model:
+                        providers.add(chunk.get('embedding_provider'))
+                        models.add(chunk.get('embedding_model'))
+                elif target_model:
+                    embed_candidates.append(chunk)
+
+            vectors = await _embed_many([chunk['content'] for chunk in embed_candidates]) if embed_candidates else []
+            if target_model:
+                embedding_calls += len(embed_candidates)
+            for chunk, vector in zip(embed_candidates, vectors):
                 if vector:
                     chunk.update(embedding=vector, embedding_provider='Google Gemini',
-                                 embedding_model=GEMINI_EMBEDDING_MODEL, embedding_dimension=len(vector))
+                                 embedding_model=target_model, embedding_dimension=len(vector))
                     providers.add('Google Gemini')
-                    models.add(GEMINI_EMBEDDING_MODEL)
-            doc = {'id': source['source_key'], 'source_key': source['source_key'],
-                   'source_path': source['source_path'], 'title': source['title'],
-                   'source_type': source['source_type'], 'priority': source['priority'],
-                   'version': source['version'], 'content_hash': _hash(source['text']), 'updated_at': _now()}
-            agent_repository.save_document(doc, chunks)
+                    models.add(target_model)
+
+            document = {'id': source['source_key'], 'source_key': source['source_key'],
+                        'source_path': source['source_path'], 'title': source['title'],
+                        'source_type': source['source_type'], 'priority': source['priority'],
+                        'version': source['version'], 'content_hash': content_hash, 'updated_at': _now()}
+            agent_repository.save_document(document, chunks)
+            created += sum(1 for chunk in chunks if chunk['id'] not in previous_ids)
+            updated += sum(1 for chunk in chunks if chunk['id'] in previous_ids and chunk['id'] not in reused_chunk_ids)
             processed += 1
-            if previous:
-                updated += len(chunks)
-            else:
-                created += len(chunks)
         except Exception as exc:
             failed.append({'sourceKey': source['source_key'], 'error': type(exc).__name__})
-    return {'documentsProcessed': processed, 'chunksCreated': created, 'chunksUpdated': updated,
+
+    providers.discard(None)
+    models.discard(None)
+    return {'documentsProcessed': processed, 'documentsSkipped': skipped,
+            'chunksCreated': created, 'chunksUpdated': updated, 'chunksReused': reused,
+            'embeddingCalls': embedding_calls,
             'embeddingProvider': ', '.join(sorted(providers)) if providers else None,
             'embeddingModel': ', '.join(sorted(models)) if models else None,
-            'failedDocuments': failed, 'lexicalFallback': not bool(providers), 'consistencyWarnings': warnings}
+            'failedDocuments': failed, 'lexicalFallback': not bool(target_model and providers),
+            'consistencyWarnings': warnings}
 
 
 def _tokens(text: str) -> set[str]:
@@ -246,8 +343,17 @@ def _cosine(left: list[float], right: list[float]) -> float:
 
 
 async def search(query: str, top_k: int | None = None) -> dict:
-    rows = agent_repository.list_rag_chunks()
-    has_embeddings = any(row.get('embedding') for row in rows)
+    warnings = _knowledge_consistency_warnings()
+    if warnings:
+        return {'chunks': [], 'sources': [], 'retrievalMode': 'unavailable_consistency',
+                'embeddingProvider': None, 'embeddingModel': None,
+                'consistencyWarnings': warnings}
+    allowed_source_keys = {source['source_key'] for source in _all_sources()}
+    rows = [row for row in agent_repository.list_rag_chunks()
+            if row.get('source_key') in allowed_source_keys]
+    has_embeddings = bool(GEMINI_API_KEY and GEMINI_EMBEDDING_MODEL) and any(
+        row.get('embedding') and row.get('embedding_model') == GEMINI_EMBEDDING_MODEL for row in rows
+    )
     query_vector = await _embed(query) if has_embeddings else None
     hybrid_used = False
     ranked = []
@@ -283,7 +389,8 @@ async def search(query: str, top_k: int | None = None) -> dict:
         seen.add(dedupe)
         source = {'sourceKey': row['source_key'], 'title': row['title'], 'path': row['source_path'],
                   'heading': row['heading'], 'chunkId': row['id']}
-        selected.append({'source': source, 'content': sanitize_rag_text(row['content']),
+        content = sanitize_rag_text(sanitize_knowledge_text(row['content']))
+        selected.append({'source': source, 'content': content,
                          'score': round(score, 4), 'lexicalScore': round(lexical, 4)})
         if len(selected) >= max(1, min(8, top_k or AGENT_RAG_TOP_K)):
             break
@@ -297,5 +404,10 @@ def status() -> dict:
     result = agent_repository.rag_status()
     result['sources'] = [{'sourceKey': source['source_key'], 'path': source['source_path'], 'title': source['title']}
                          for source in _all_sources()]
-    result['lexicalFallback'] = result['embeddedChunks'] == 0
+    result['lexicalFallback'] = not bool(
+        GEMINI_API_KEY and GEMINI_EMBEDDING_MODEL and any(
+            item.get('embedding_model') == GEMINI_EMBEDDING_MODEL and item.get('count', 0) > 0
+            for item in result.get('embeddingModels', [])
+        )
+    )
     return result
