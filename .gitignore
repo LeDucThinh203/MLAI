@@ -22,6 +22,12 @@ dist/
 build/
 frontend/dist/
 
+# Generated local application caches
+.appdata/
+.localappdata/
+EDUASSISTANT/.appdata/
+EDUASSISTANT/.localappdata/
+
 # Logs & OS metadata
 *.log
 npm-debug.log*

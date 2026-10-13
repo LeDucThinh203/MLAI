@@ -1,103 +1,62 @@
-# CASEFLOW AI - OPERATIONAL RUNBOOK
+# EDUASSISTANT Runbook
 
-Follow these steps sequentially to set up, initialize, run, and verify the CaseFlow AI platform.
+This file replaces legacy CaseFlow AI instructions. The current source uses a
+FastAPI backend, React/Vite frontend, and PostgreSQL. See the [canonical runbook](../../RUNBOOK.md)
+for the full setup and operational steps.
 
-### Step 1: Clone Repository
-```bash
-git clone <repository_url>
-cd caseflow-ai
+## Current deployment and scope
+
+- The only supported workflow is `MILITARY_SERVICE_CONFIRMATION`.
+- The frontend is hosted at <https://edu-sp.pages.dev>; the Judge page is
+  <https://edu-sp.pages.dev/judge>.
+- The backend requires PostgreSQL through `DATABASE_URL`.
+- The Admin SIS page manages internal demo records. It does not connect to a
+  university SIS. Admin verification is enabled only for demo use and disabled
+  in production by default.
+- Gemini is the primary external AI provider; OpenRouter can run as fallback when
+  configured. Without a usable key or live response, address analysis falls back
+  to a deterministic parser and OCR returns no inferred document fields.
+- HMAC-SHA256 checks stored-data integrity. It is not a PKI or legal digital
+  signature.
+
+## Local services
+
+From the `EDUASSISTANT/` directory, install backend dependencies and configure
+`DATABASE_URL`, then start the API:
+
+```powershell
+python -m pip install -r backend/requirements.txt
+python -m uvicorn backend.server:app --host 0.0.0.0 --port 3001 --reload
 ```
 
-### Step 2: Prepare SQL Server Database
-Install SQL Server and Microsoft ODBC Driver 18 for SQL Server on the local machine.
-Create a database named `CaseFlowAI`, then configure its instance and authentication details in `backend/.env`.
+In another terminal:
 
-### Step 3: Set Up Python Backend Virtual Environment
-```bash
-cd backend
-python -m venv .venv
-# On Windows PowerShell:
-.venv\Scripts\Activate.ps1
-# On Linux / macOS:
-source .venv/bin/activate
-```
-
-### Step 4: Install Backend Dependencies
-```bash
-pip install -e .
-pip install pytest pytest-asyncio pytest-cov
-```
-
-### Step 5: Configure Environment Variables
-```bash
-cp ../.env.example .env
-# Edit .env to set DB_PASSWORD and optional GEMINI_API_KEY
-```
-
-### Step 6: Apply Database Migrations & Seed
-```bash
-alembic upgrade head
-python -m app.db.seed
-```
-
-### Step 7: Launch FastAPI Server
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Step 8: Verify Health & API Docs
-- Health Check: `http://localhost:8000/health`
-- Swagger UI: `http://localhost:8000/docs`
-
-### Step 9: Set Up and Launch Frontend
-In a new terminal window:
-```bash
-cd ../frontend
-npm install
+```powershell
+cd frontend
+npm ci
 npm run dev
 ```
-Open browser at: `http://localhost:5173`
 
-### Step 10: Run Automated Tests
-```bash
-cd ../backend
-pytest
+The local API is at `http://localhost:3001`; the frontend is at
+`http://localhost:5173`.
+
+## Deterministic evaluation
+
+The Verify Harness runs 9 in-memory cases without network calls, database access,
+database writes, or AI calls:
+
+```powershell
+python -c "import sys; sys.path.insert(0, 'backend'); from app.services.verify_harness_service import run_verify_harness; print(run_verify_harness())"
 ```
 
-### Step 11: Run Verification Harness
-For Sprint 1 judging, navigate to `http://localhost:5173/verify` and run **CORE VERIFY — 4 CASES**, then **ESCALATION CHALLENGE — 5 CASES** (3 AUTO_RESOLVE and 2 ESCALATE). Use **FULL REGRESSION — 20 CASES** for technical testing. API calls:
-```bash
-curl -X POST http://localhost:8000/api/verify/core
-curl -X POST http://localhost:8000/api/verify/escalation-challenge
-curl -X POST http://localhost:8000/api/verify/run
+Track A uses 18 fixed synthetic scenarios and does not call AI or depend on
+network/database access:
+
+```powershell
+python benchmark/run_benchmark.py
 ```
 
-### Vietnamese text and legacy question marks
-
-Run these commands from `backend` using its virtual environment:
-
-```bash
-python -m alembic upgrade head
-python scripts/repair_unicode.py
-python scripts/repair_unicode.py --apply
-python scripts/check_unicode.py
-python -m pytest -q
-```
-
-Migration `0002_unicode_content` upgrades all 40 human-readable content columns
-to Unicode, including databases partially updated by hand. Updating ORM models
-alone does not change existing SQL Server columns. Restart the backend after
-updating the models.
-
-The repair command previews changes by default. With `--apply`, it saves the
-original values, record IDs and replacement values to
-`backend/storage/unicode-backups/` before updating anything. It only restores
-exact matches to known source text damaged by the legacy Vietnamese code page;
-unknown text and ordinary question punctuation are not rewritten. Keep the
-backup private and retain it for recovery. Historical audit display-name repairs
-are recorded in this backup; event IDs, actions and timestamps are preserved.
-
-`check_unicode.py` scans project text encoding and verifies Vietnamese round
-trips in a temporary table using each migrated column's actual SQL type. It does
-not modify business records. The migration intentionally refuses downgrade
-because converting back to a legacy code page can destroy Vietnamese characters.
+Optional live address AI evaluation runs separately with
+`python benchmark/run_live_ai_eval.py`. It can call Gemini when configured and
+does not affect Track A metrics. User validation remains **PENDING** until real
+participant evidence is recorded.

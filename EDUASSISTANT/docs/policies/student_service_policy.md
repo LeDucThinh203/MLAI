@@ -1,42 +1,57 @@
-# Internal Student Service Workflow Policy (Prototype)
+# INTERNAL WORKFLOW POLICY — STUDENT-SERVICE CONFIRMATION
+## (`MILITARY_SERVICE_CONFIRMATION`)
 
-## Scope and authority
+> [!IMPORTANT]
+> This document describes Team 1's application workflow for the MLAI Hackathon 2026. It is not a legal interpretation, does not establish eligibility for deferment, and does not replace current guidance from competent authorities.
 
-This document describes the software workflow implemented in EDUASSISTANT. It is an internal prototype policy, not a legal opinion, official institutional policy, or government procedure. The project has no verified connection to an institution's student information system or a competent military authority.
+---
 
-An `APPROVED` case means only that the prototype workflow reached its approved state. A generated receipt, QR code, or HMAC value is not an official certificate, a public-key digital signature, proof of legal eligibility, or a decision to defer military service. Only the competent institution and public authority can verify eligibility and issue official documents under the rules in force.
+### 1. Phạm Vi Áp Dụng & Mục Tiêu
 
-The current address and academic checks are conservative demo rules. Before real deployment, the institution must validate the policy, data sources, retention, staff authority, and document wording with its legal and academic-affairs offices. Do not infer current law from this code or document.
+Đây là workflow nội bộ cấp giấy xác nhận sinh viên phục vụ hồ sơ tạm hoãn nghĩa vụ quân sự. It defines how the application routes a case to automatic internal processing or a human reviewer; it does not define a legal procedure or who is legally eligible.
 
-## Authoritative data and claims
+- **Use case:** `MILITARY_SERVICE_CONFIRMATION` only.
+- **Data source:** Admin-managed internal demo registry. No external university SIS connector is present.
+- **Safety:** Missing or unverified facts must not be inferred or filled in by the application.
 
-- The server derives the submitting identity from the authenticated account. Client-supplied identity fields are not authoritative.
-- When present, `sis_student_records` is the canonical academic record; legacy `users` fields are a compatibility fallback. Missing facts must remain missing and cause human review.
-- The student's declared address and reason are claims. AI output may parse or normalize the address, but it cannot establish identity, residence, academic status, or legal eligibility.
-- Seeded and admin-maintained internal SIS records are not authenticated SIS integrations. The engine escalates unless the record source is explicitly `VERIFIED_INSTITUTIONAL_SIS`. Mock, cached, synthetic, or fallback AI results also cannot be represented as verified real-world facts.
+---
 
-## Prototype automatic-workflow checks
+### 2. Internal Workflow Conditions for `AUTO_APPROVE`
 
-The rule engine may mark a case `AUTO_APPROVE` only when all implemented checks pass, including a trusted `VERIFIED_INSTITUTIONAL_SIS` source: exact normalized student-code and full-name match; `academicStatus = ACTIVE`; course dates are valid and include the current date; current term and schedule are explicitly true; address type is `PERMANENT`; address has a house number, street/locality, ward/commune, and province/city; an institutional permanent address exists and has no material conflict; AI confidence is at least the configured threshold; and the AI provenance is live, non-fallback, and non-synthetic.
+`AUTO_APPROVE` means the internal workflow has enough trusted facts to process automatically. It is not approval of military-service deferment. The current workflow requires:
+1. Student identity fields match the internal institutional record.
+2. Academic facts meet the workflow's configured active-study checks.
+3. The claim uses the workflow's configured permanent-address type.
+4. Required address fields are present and do not materially conflict with the recorded address.
+5. Institutional provenance is trusted. An internal demo record must have `sourceType=INTERNAL_DEMO_SIS` and `verificationStatus=ADMIN_VERIFIED_DEMO`, with demo trust enabled. A future external source must have `sourceType=EXTERNAL_INSTITUTIONAL_SIS` and `verificationStatus=EXTERNAL_VERIFIED`.
+6. Address AI provenance is live, has no fallback, and meets the configured confidence-score threshold. Confidence is not a calibrated probability.
 
-The parser does not require a district. This matches a two-tier local-administration address format and supports records that do not contain a district. A missing district alone is not a reason to escalate. The prototype's `PERMANENT` check is an internal workflow constraint; this document does not claim that it is a statutory requirement for every real application.
+---
 
-Passing these checks only marks the internal workflow recommendation. It does not authorize the software to issue an official certificate or make a legal decision.
+### 3. Team 1 Escalation Taxonomy (`ESCALATE_TO_HUMAN`)
 
-## Human review
+These five categories are the taxonomy implemented by Team 1; they are not asserted as required Hackathon category names. A failed or unknown workflow check routes the case for human review:
 
-The system routes a case for staff review when identity is missing or mismatched (`OWNERSHIP_UNCLEAR`), facts are missing or AI provenance/confidence is inadequate (`FACT_UNKNOWN`), claimed and stored addresses materially conflict or the claim is temporary (`DATA_CONFLICT`), academic records are missing, out of date, inactive, or otherwise not `ACTIVE` (`AUTHORITY_REQUIRED`), or the request asks for an exception beyond the prototype workflow (`POLICY_OUT_OF_SCOPE`).
+| Mã Nguyên Nhân | Nhãn Hiển Thị | Tiêu Chí Kích Hoạt Nghiệp Vụ | Hành Động Khuyến Nghị Cán Bộ |
+| :--- | :--- | :--- | :--- |
+| `OWNERSHIP_UNCLEAR` | Identity mismatch | Submitted identity fields do not match the internal record. | Ask a reviewer to verify the identity record. |
+| `FACT_UNKNOWN` | Missing or untrusted facts | Required address, academic, provenance, or AI facts are missing or untrusted. | Request the missing facts or review the source record. |
+| `DATA_CONFLICT` | Conflicting facts | The claimed address type or address materially conflicts with the internal workflow facts. | Ask a reviewer to resolve the discrepancy. |
+| `AUTHORITY_REQUIRED` | Academic facts need review | Academic status, term, schedule, or course dates need a human check under this workflow. | Route to the responsible institutional reviewer. |
+| `POLICY_OUT_OF_SCOPE` | Outside configured workflow | The request asks for an exception or handling beyond this application's configured workflow. | Route for an authorized human decision. |
 
-Reviewers must record a reason for their action. Returning a case for more information, stopping it, or making an administrative override follows the workflow transition guard. The guard protects application state; it does not grant legal authority.
+---
 
-## Workflow states
+### 4. Cơ Chế Giám Sát Con Người Trong Vòng Lặp (Human-in-the-Loop)
 
-`SUBMITTED` may move to `UNDER_REVIEW`, `REQUIRES_SUPPLEMENT`, or `STOPPED`. `UNDER_REVIEW` may move to `APPROVED`, `REJECTED`, `REQUIRES_SUPPLEMENT`, or `STOPPED`. `REQUIRES_SUPPLEMENT` may move to `UNDER_REVIEW` or `STOPPED`. Terminal states require an explicitly authorized admin override to reopen.
-
-## Adaptive threshold
-
-The confidence threshold is a configurable prototype control, bounded by 0.65 and 0.90 with 0.02 feedback steps. Reviewer feedback changes the workflow threshold only; it does not change legal criteria or prove model calibration. A single feedback event must not be treated as institutional policy approval.
-
-## Required before real-world use
-
-Connect an authenticated, audited institutional SIS source and set its trusted provenance only from that integration; establish an explicit data-verification and record-freshness process; have the competent institution approve the eligibility and address rules; separate internal recommendations from authorized issuance; use an approved digital-signature mechanism if official documents are ever issued; and obtain privacy/security review for personal data and public verification links.
+1. **Ghi đè thẩm quyền (Reviewer Override):**
+   - Cán bộ thẩm định có quyền ghi đè quyết định của Rule Engine (ví dụ: chuyển từ `ESCALATE_TO_HUMAN` sang `APPROVED` sau khi đã kiểm tra hồ sơ giấy).
+   - **Bắt buộc:** Phải cung cấp lý do ghi đè minh bạch (`overrideReason`), lưu vết vĩnh viễn vào Audit Trail toàn trường.
+2. **Dừng khẩn cấp tiến trình (`STOP`):**
+   - Cho phép đóng băng ngay lập tức các hồ sơ phát hiện dấu hiệu gian lận hoặc tranh chấp pháp lý.
+3. **Phản hồi thích ứng ngưỡng (`Reviewer Feedback`):**
+   - `MISSED_ESCALATION` (Sót leo thang): Hệ thống tự duyệt sai -> Ngưỡng tin cậy tăng `+0.02` (tối đa `0.90`).
+   - `UNNECESSARY_ESCALATION` (Leo thang thừa): Hệ thống leo thang không cần thiết -> Ngưỡng tin cậy giảm `-0.02` (tối thiểu `0.65`).
+   - `CORRECT` (Đúng chuẩn): Quyết định chính xác, không thay đổi ngưỡng.
+4. **Integrity token and QR lookup:**
+   - HMAC-SHA256 provides integrity authentication for stored case fields. It is not a PKI signature or a legal digital signature. The QR page reports whether the stored data matches the HMAC check; it does not independently certify legal validity.

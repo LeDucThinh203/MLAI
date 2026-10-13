@@ -47,6 +47,8 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # Storage
+.appdata/
+.localappdata/
 storage/unicode-backups/
 backend/storage/unicode-backups/
 storage/evidence/*

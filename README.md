@@ -1,7 +1,9 @@
 # 🎖️ EDUASSISTANT - HỆ THỐNG THẨM ĐỊNH HỌC VỤ & CẤP GIẤY XÁC NHẬN TẠM HOÃN NGHĨA VỤ QUÂN SỰ
 > **Đội Thi:** Team 1 | **Cuộc Thi:** MLAI Hackathon 2026 | **Track VNG – Option A:** The Escalation Referee & HITL  
 > **Nghiệp Vụ Chuyên Sâu Duy Nhất:** Cấp Giấy Xác Nhận Sinh Viên Phục Vụ Tạm Hoãn Nghĩa Vụ Quân Sự (`MILITARY_SERVICE_CONFIRMATION`)  
-> Nền tảng thẩm định hành chính học vụ chuyên sâu kết hợp **AI Address Normalization (Google Gemini)**, **Bộ máy Phân xử Leo thang (Escalation Referee 5 Lý do)**, **Kiến trúc 3 Lớp Dữ kiện (Institutional Facts - Student Claims - AI-Derived Facts)**, **Bảo mật Doanh nghiệp (JWT, Bcrypt, 2FA TOTP, Chống IDOR, Ký số HMAC-SHA256)**, **Adaptive Escalation Threshold [0.65, 0.90]**, **Bộ Kiểm Chuẩn Độc Lập (18 Cases Held-Out Benchmark - 100% Accuracy)** và **Verify Harness Giám Khảo (9 Kịch bản Xác định - 100% PASS)**.
+> Phạm vi duy nhất: workflow nội bộ cấp giấy xác nhận sinh viên phục vụ hồ sơ tạm hoãn NVQS. Bộ phân loại escalation 5 nhóm là taxonomy do Team 1 triển khai. HMAC-SHA256 được dùng làm mã xác thực toàn vẹn, không phải chữ ký PKI hay chữ ký số có giá trị pháp lý.
+
+**Live:** https://edu-sp.pages.dev · **Judge:** https://edu-sp.pages.dev/judge
 
 ---
 
@@ -11,7 +13,7 @@
 3. [Cơ Chế Phân Xử Leo Thang (Escalation Referee 5 Lý Do)](#3-cơ-chế-phân-xử-leo-thang-escalation-referee-5-lý-do)
 4. [Tính Bất Biến Định Dạng & Nhận Diện Xung Đột Thực Chất](#4-tính-bất-biến-định-dạng--nhận-diện-xung-đột-thực-chất)
 5. [Cổng Giám Khảo & Verify Harness 9 Kịch Bản (/judge)](#5-cổng-giám-khảo--verify-harness-9-kịch-bản-judge)
-6. [Bộ Đo Lường Benchmark Độc Lập (18 Held-Out Cases)](#6-bộ-đo-lường-benchmark-độc-lập-18-held-out-cases)
+6. [Track A Decision Benchmark (18 Kịch Bản Cố Định)](#6-track-a-decision-benchmark-18-kịch-bản-cố-định)
 7. [Hướng Dẫn Cài Đặt & Khởi Chạy (Quickstart)](#7-hướng-dẫn-cài-đặt--khởi-chạy-quickstart)
 8. [Tài Khoản Thử Nghiệm Mặc Định (Demo Accounts)](#8-tài-khoản-thử-nghiệm-mặc-định-demo-accounts)
 9. [Bộ Kiểm Thử Cuộc Thi (Competition Test Suite - 21/21 Pass)](#9-bộ-kiểm-thử-cuộc-thi-competition-test-suite---2121-pass)
@@ -21,35 +23,33 @@
 
 ## 1. MỤC TIÊU & BÀI TOÁN NGHIỆP VỤ CHUYÊN SÂU (NVQS DOMAIN)
 
-Theo **Luật Nghĩa vụ quân sự Việt Nam** và Quy chế Quản lý đào tạo Đại học:
-- Sinh viên theo học hệ chính quy được tạm hoãn gọi nhập ngũ trong thời gian một khóa đào tạo.
-- Giấy xác nhận tạm hoãn NVQS chỉ được cấp gửi về **Ban Chỉ huy Quân sự cấp Quận/Huyện/Thị xã nơi sinh viên ĐĂNG KÝ THƯỜNG TRÚ**.
-- **Tính chất nhạy cảm & nghiêm ngặt:** Cấp sai có thể dẫn đến trốn tránh nghĩa vụ quân sự trái phép hoặc tước đoạt quyền lợi học tập của công dân. Do đó, hệ thống không cho phép AI tự ý phê duyệt hồ sơ mơ hồ hoặc sai thẩm quyền.
+Đây là workflow nội bộ cấp giấy xác nhận sinh viên phục vụ hồ sơ tạm hoãn nghĩa vụ quân sự. README này mô tả hành vi phần mềm, không diễn giải điều kiện pháp luật và không thay thế hướng dẫn từ cơ quan có thẩm quyền.
 
 Hệ thống tập trung toàn bộ năng lực vào một nghiệp vụ chuẩn mực duy nhất:
 - **Tên danh mục nghiệp vụ:** `MILITARY_SERVICE_CONFIRMATION`
-- **Cơ quan giải quyết:** Phòng Quản lý Đào tạo / Ban Chỉ huy Quân sự Nhà trường
-- **Cơ chế:** Phê duyệt tự động (`AUTO_APPROVE`) các trường hợp chuẩn mực; Định tuyến phân xử (`ESCALATE_TO_HUMAN`) các tình huống nghi vấn, mâu thuẫn địa chỉ, ngoại lệ hoặc thiếu dữ kiện.
+- **Workflow owner:** Internal reviewer or office configured by the institution
+- **Cơ chế:** `AUTO_APPROVE` nghĩa là workflow nội bộ đủ điều kiện tự động xử lý; `ESCALATE_TO_HUMAN` chuyển hồ sơ cho cán bộ xem xét. Bản in là bản ghi workflow, không phải giấy xác nhận chính thức hoặc quyết định của cơ quan quân sự.
+- **SIS:** Admin-managed internal demo registry; không có connector SIS đại học bên ngoài. Demo facts chỉ được trust khi Admin xác nhận rõ là dữ liệu demo.
 
 ---
 
 ## 2. KIẾN TRÚC 3 LỚP DỮ KIỆN & QUY TẮC AN TOÀN AI
 
-Để loại bỏ hoàn toàn hiện tượng AI "ảo giác" (hallucination) trong thẩm định hành chính, EDUASSISTANT phân tách rõ ràng 3 lớp dữ kiện:
+Để giảm rủi ro AI tạo thông tin không có căn cứ, EDUASSISTANT phân tách rõ ràng 3 lớp dữ kiện:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ 🏛️ LỚP 1: DỮ KIỆN THẨM QUYỀN NHÀ TRƯỜNG (Authoritative Institutional) │
+│ 🏛️ LỚP 1: HỒ SƠ NỘI BỘ (Trust depends on source and verification)     │
 │ • studentId, studentCode, fullName, academicStatus (ACTIVE/SUSPENDED)  │
 │ • courseStartDate, courseEndDate, currentTermActive, hasCurrentSchedule │
-│ • registeredPermanentAddress (Địa chỉ hộ khẩu thường trú gốc trong CSDL)│
+│ • registeredPermanentAddress (địa chỉ lưu trong registry nội bộ)       │
 └───────────────────────────────────┬────────────────────────────────────┘
-                                    │ Đối chiếu độc lập
+                                    │ Đối chiếu theo workflow
 ┌───────────────────────────────────┴────────────────────────────────────┐
 │ 📝 LỚP 2: TUYÊN BỐ CỦA SINH VIÊN (Student Claims)                      │
 │ • declaredAddress: Địa chỉ sinh viên tự khai báo trong đơn             │
 │ • addressType: PERMANENT (Thường trú) vs TEMPORARY (Tạm trú)           │
-│ • requestReason: Lý do xin cấp / Bổ sung thông tin đợt khám NVQS       │
+│ • requestReason: Lý do và ghi chú do sinh viên cung cấp                 │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │ Trích xuất cấu trúc & Chuẩn hoá
 ┌───────────────────────────────────┴────────────────────────────────────┐
@@ -63,13 +63,13 @@ Hệ thống tập trung toàn bộ năng lực vào một nghiệp vụ chuẩn
 
 > [!IMPORTANT]
 > **Quy Tắc An Toàn AI Cốt Lõi:**  
-> Gemini VLM/LLM **TUYỆT ĐỐI KHÔNG** đưa ra khẳng định mang tính pháp lý (như "sinh viên được miễn NVQS" hay "hồ sơ đủ điều kiện pháp luật"). Gemini chỉ đóng vai trò phân tích cú pháp địa chỉ và bóc tách thành phần hành chính. Mọi quyết định chính sách đều do **Escalation Referee Engine** xác định theo luật.
+> Gemini được dùng để phân tích và chuẩn hóa địa chỉ; OpenRouter có thể chạy làm provider fallback khi được cấu hình. Rule Engine quyết định routing theo workflow nội bộ, không xác nhận tư cách pháp lý hay quyết định tạm hoãn NVQS. AI confidence là score do model tạo và chưa được hiệu chỉnh thống kê trên production dataset. Khi các provider không trả kết quả dùng được, address service dùng deterministic parser.
 
 ---
 
 ## 3. CƠ CHẾ PHÂN XỬ LEO THANG (ESCALATION REFEREE 5 LÝ DO)
 
-Bộ máy phân xử áp dụng quy tắc hình tháp thứ bậc (Hierarchical Cascade) với đầy đủ 5 lý do leo thang tiêu chuẩn của Hackathon:
+Bộ máy dùng taxonomy 5 nhóm escalation do Team 1 triển khai; đây không phải danh sách tên category bắt buộc của Hackathon:
 
 | Thứ Bậc | Điều Kiện Kiểm Tra | Quyết Định | Lý Do Leo Thang | Trạng Thái Hồ Sơ |
 | :---: | :--- | :---: | :---: | :---: |
@@ -80,7 +80,7 @@ Bộ máy phân xử áp dụng quy tắc hình tháp thứ bậc (Hierarchical 
 | **5** | Địa chỉ thiếu Phường/Xã hoặc Tỉnh/TP hoặc độ tin cậy < Ngưỡng | `ESCALATE_TO_HUMAN` | `FACT_UNKNOWN` | `UNDER_REVIEW` |
 | **6** | Xung đột thực chất địa chỉ (Lệch Tỉnh/TP, Quận/Huyện, Phường/Xã) | `ESCALATE_TO_HUMAN` | `DATA_CONFLICT` | `UNDER_REVIEW` |
 | **7** | Cơ chế Fail-Safe khi AI ở chế độ `mock`, `cache`, hoặc `fallback` | `ESCALATE_TO_HUMAN` | `FACT_UNKNOWN` | `UNDER_REVIEW` |
-| **8** | Đầy đủ dữ kiện, học vụ `ACTIVE`, địa chỉ thường trú trùng khớp | `AUTO_APPROVE` | *Không có* | `APPROVED` (Ký số HMAC) |
+| **8** | Đủ các dữ kiện của workflow nội bộ và không phát hiện mâu thuẫn | `AUTO_APPROVE` | *Không có* | `APPROVED` (workflow nội bộ) |
 
 ---
 
@@ -114,7 +114,7 @@ Hệ thống tích hợp cổng Giám khảo trực quan tại **`/judge`** (`ht
 | `NVQS-02` | Khác biệt định dạng: Toàn bộ chữ HOA & viết tắt chuẩn `P.`, `Q.`, `TP.` | `AUTO_APPROVE` | 100% PASS |
 | `NVQS-03` | Khác biệt định dạng: Toàn bộ chữ thường không dấu & viết tắt `p`, `q1` | `AUTO_APPROVE` | 100% PASS |
 | `NVQS-04` | Thiếu Phường/Xã trong địa chỉ khai báo | `ESCALATE_TO_HUMAN` (`FACT_UNKNOWN`) | 100% PASS |
-| `NVQS-05` | Khai báo địa chỉ Tạm trú thay vì Thường trú theo quy định NVQS | `ESCALATE_TO_HUMAN` (`DATA_CONFLICT`) | 100% PASS |
+| `NVQS-05` | Địa chỉ tạm trú được khai báo thay cho địa chỉ thường trú yêu cầu trong workflow | `ESCALATE_TO_HUMAN` (`DATA_CONFLICT`) | 100% PASS |
 | `NVQS-06` | Xung đột thực chất địa chỉ (Khai báo Quận 3 vs Hồ sơ Quận 1) | `ESCALATE_TO_HUMAN` (`DATA_CONFLICT`) | 100% PASS |
 | `NVQS-07` | Sinh viên đang bị tạm đình chỉ học tập (`SUSPENDED`) | `ESCALATE_TO_HUMAN` (`AUTHORITY_REQUIRED`) | 100% PASS |
 | `NVQS-08` | Đơn xin đặc cách hoãn NVQS vượt thời gian tối đa đào tạo | `ESCALATE_TO_HUMAN` (`POLICY_OUT_OF_SCOPE`) | 100% PASS |
@@ -124,9 +124,9 @@ Hệ thống tích hợp cổng Giám khảo trực quan tại **`/judge`** (`ht
 
 ---
 
-## 6. BỘ ĐO LƯỜNG BENCHMARK ĐỘC LẬP (18 HELD-OUT CASES)
+## 6. TRACK A DECISION BENCHMARK (18 KỊCH BẢN CỐ ĐỊNH)
 
-Hệ thống kiểm chuẩn độc lập chạy bằng lệnh CLI không phụ thuộc CSDL:
+Benchmark chính dùng fixed synthetic scenarios để đo quyết định escalation. Nó chạy không phụ thuộc database/network và không gọi AI. Scenario set hiện tại chưa được mô tả là independent/held-out:
 ```powershell
 python EDUASSISTANT/benchmark/run_benchmark.py
 ```
@@ -138,9 +138,9 @@ python EDUASSISTANT/benchmark/run_benchmark.py
   • Decision Accuracy:            100.0% (18/18)
   • Automation Rate:              27.78% (5/18)
   • Escalation Rate:              72.22% (13/18)
-  • Missed Escalation Rate:       0.0% (0/13)  <-- AN TOÀN TUYỆT ĐỐI
-  • Unnecessary Escalation Rate:  0.0% (0/5)   <-- TỐI ƯU VẬN HÀNH
-  • Thời gian chạy:               0.017s
+  • Missed Escalation Rate:       0.0% (0/13)
+  • Unnecessary Escalation Rate:  0.0% (0/5)
+  • Thời gian chạy lần gần nhất:  0.016s
 ======================================================================
 ```
 *Kết quả chi tiết được tự động xuất ra `EDUASSISTANT/benchmark/results/latest.json` và `latest.csv`.*
@@ -201,4 +201,11 @@ python EDUASSISTANT/test/test_competition_features.py
 - **User validation status:** PENDING. The repository currently contains templates and reserved folders for real participant evidence.
 
 ---
-**EDUASSISTANT Team 1 - MLAI Hackathon 2026** — *The Escalation Referee & Human-in-the-Loop Safeguards for Military Service Deferment Verification.*
+Live AI sanity check là evaluation riêng, không thay thế metric Track A:
+```powershell
+python benchmark/run_live_ai_eval.py
+```
+
+Verify Harness: 9 deterministic cases · Track benchmark: 18 fixed scenarios · User validation: **PENDING** nếu chưa có evidence thật.
+
+**EDUASSISTANT Team 1 - MLAI Hackathon 2026** — Internal student-service confirmation workflow. HMAC-SHA256 is an integrity authentication token, not a PKI or legal digital signature.
