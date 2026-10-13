@@ -46,7 +46,7 @@ jobs:
           test/test_ocr_service.py
           test/test_benchmark_provenance.py
       - run: >-
-          python -c "from app.services.verify_harness_service import run_verify_harness; result = run_verify_harness(); assert result['total'] == 9 and result['failed'] == 0 and not result['networkCallsPerformed'] and not result['databaseWritesPerformed']"
+          python -c "import sys; sys.path.insert(0, 'backend'); from app.services.verify_harness_service import run_verify_harness; result = run_verify_harness(); assert result['total'] == 9 and result['failed'] == 0 and not result['networkCallsPerformed'] and not result['databaseWritesPerformed']"
       - run: >-
           python -c "from benchmark.run_benchmark import run_benchmark; result = run_benchmark(); metrics = result['metrics']; assert result['scenarioCount'] == 18 and metrics['correctCases'] == 18 and result['aiCallsPerformed'] is False"
 
