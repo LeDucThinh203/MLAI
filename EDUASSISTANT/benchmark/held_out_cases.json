@@ -35,16 +35,31 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.98,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "AUTO_APPROVE",
-    "expectedEscalationReason": null
+    "expectedEscalationReason": null,
+    "institutionalFacts": {
+      "fullName": "Nguyễn Văn An",
+      "studentCode": "SV2026-1001",
+      "username": "student1",
+      "academicStatus": "ACTIVE",
+      "courseStartDate": "2022-09-05",
+      "courseEndDate": "2027-06-30",
+      "currentTermActive": true,
+      "hasCurrentSchedule": true,
+      "registeredPermanentAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+    }
   },
   {
     "id": "BENCH-02-UPPERCASE-ONLY",
@@ -82,13 +97,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.96,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "AUTO_APPROVE",
     "expectedEscalationReason": null
@@ -129,13 +148,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.95,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "AUTO_APPROVE",
     "expectedEscalationReason": null
@@ -176,13 +199,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.96,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "AUTO_APPROVE",
     "expectedEscalationReason": null
@@ -223,13 +250,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.94,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "AUTO_APPROVE",
     "expectedEscalationReason": null
@@ -272,13 +303,17 @@
       ],
       "isComplete": false,
       "confidence": 0.6,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "FACT_UNKNOWN"
@@ -321,13 +356,17 @@
       ],
       "isComplete": false,
       "confidence": 0.58,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "FACT_UNKNOWN"
@@ -366,13 +405,17 @@
       ],
       "isComplete": false,
       "confidence": 0.2,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "FACT_UNKNOWN"
@@ -412,13 +455,17 @@
       ],
       "isComplete": false,
       "confidence": 0.45,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "FACT_UNKNOWN"
@@ -457,13 +504,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.95,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "DATA_CONFLICT"
@@ -504,13 +555,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.97,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "DATA_CONFLICT"
@@ -551,13 +606,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.96,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "DATA_CONFLICT"
@@ -598,13 +657,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.96,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "DATA_CONFLICT"
@@ -645,13 +708,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.98,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "AUTHORITY_REQUIRED"
@@ -692,13 +759,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.98,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "AUTHORITY_REQUIRED"
@@ -739,13 +810,17 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.98,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "POLICY_OUT_OF_SCOPE"
@@ -779,10 +854,13 @@
       "tamperRisk": "LOW",
       "confidenceScore": 0.98,
       "confidence": 0.98,
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "addressAnalysis": {
       "rawAddress": "123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
@@ -797,24 +875,29 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.98,
-      "source": "gemini"
+      "source": "fixed_test_fixture"
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
+      "modeUsed": "fixture",
+      "isLive": false,
+      "fallbackOccurred": false,
       "isFallback": false,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
     "expectedEscalationReason": "OWNERSHIP_UNCLEAR"
   },
   {
-    "id": "BENCH-18-FAILSAFE-UNVERIFIED-SIS",
-    "name": "Gemini live with unverified SIS must escalate",
+    "id": "BENCH-18-FAILSAFE-FALLBACK-TRIGGERED",
+    "name": "Cơ chế an toàn fail-safe khi AI chạy chế độ mock/fallback",
+    "benchmarkSISVerified": false,
     "category": "MILITARY_SERVICE_CONFIRMATION",
     "priority": "MEDIUM",
-    "title": "Complete address with unverified SIS source",
-    "description": "Synthetic benchmark case with a complete address and student facts not verified by the institutional SIS.",
+    "title": "Hồ sơ kích hoạt chế độ Fallback / Mock",
+    "description": "Khi hệ thống AI không ở chế độ Live an toàn, từ chối tự động phê duyệt.",
     "student": {
       "fullName": "Nguyễn Văn An",
       "studentCode": "SV2026-1001",
@@ -844,7 +927,7 @@
       "missingFields": [],
       "isComplete": true,
       "confidence": 0.98,
-      "source": "mock"
+      "source": "fixed_test_fixture"
     },
     "ocr": {
       "studentCode": "SV2026-1001",
@@ -854,16 +937,22 @@
       "modeUsed": "mock",
       "isLive": false,
       "isFallback": true,
-      "isSynthetic": false
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "aiMetadata": {
-      "modeUsed": "live",
-      "isLive": true,
-      "isFallback": false,
-      "isSynthetic": false
+      "modeUsed": "mock",
+      "isLive": false,
+      "fallbackOccurred": true,
+      "isFallback": true,
+      "isSynthetic": true,
+      "provider": "FIXED_TEST_FIXTURE",
+      "apiCallPerformed": false,
+      "apiAttempts": 0
     },
     "expectedDecision": "ESCALATE_TO_HUMAN",
-    "expectedEscalationReason": "FACT_UNKNOWN",
-    "benchmarkSISVerified": false
+    "expectedEscalationReason": "FACT_UNKNOWN"
   }
 ]

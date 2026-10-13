@@ -1,21 +1,23 @@
 {
-  "benchmarkType": "DETERMINISTIC_DECISION_BENCHMARK",
+  "benchmarkType": "DETERMINISTIC_TRACK_A_DECISION_BENCHMARK",
   "aiCallsPerformed": false,
-  "benchmarkRunId": "BM-1791667001",
-  "timestamp": "2026-10-10T21:16:41.686894Z",
-  "executionTimeSec": 0.016,
+  "evaluationTarget": "ESCALATION_DECISION_POLICY",
+  "scenarioCount": 18,
+  "benchmarkRunId": "BM-1791922223",
+  "timestamp": "2026-10-13T20:10:23.321248Z",
+  "executionTimeSec": 0.013,
   "metrics": {
     "totalCases": 18,
-    "correctCases": 13,
-    "decisionAccuracy": 72.22,
-    "automationRate": 0.0,
-    "escalationRate": 100.0,
+    "correctCases": 18,
+    "decisionAccuracy": 100.0,
+    "automationRate": 27.78,
+    "escalationRate": 72.22,
     "missedEscalationRate": 0.0,
-    "unnecessaryEscalationRate": 100.0,
+    "unnecessaryEscalationRate": 0.0,
     "shouldEscalateCount": 13,
     "missedEscalateCount": 0,
     "shouldAutoApproveCount": 5,
-    "unnecessaryEscalateCount": 5
+    "unnecessaryEscalateCount": 0
   },
   "results": [
     {
@@ -24,13 +26,14 @@
       "category": "MILITARY_SERVICE_CONFIRMATION",
       "priority": "MEDIUM",
       "expectedDecision": "AUTO_APPROVE",
-      "actualDecision": "ESCALATE_TO_HUMAN",
+      "actualDecision": "AUTO_APPROVE",
       "expectedReason": null,
-      "actualReason": "FACT_UNKNOWN",
-      "ruleMatched": "RULE_FAILSAFE_UNVERIFIED_SIS",
+      "actualReason": null,
+      "ruleMatched": "RULE_AUTO_PASSED_MILITARY_SERVICE_2026",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.98,
-      "isCorrect": false,
-      "durationMs": 7.78
+      "isCorrect": true,
+      "durationMs": 2.51
     },
     {
       "id": "BENCH-02-UPPERCASE-ONLY",
@@ -38,13 +41,14 @@
       "category": "MILITARY_SERVICE_CONFIRMATION",
       "priority": "MEDIUM",
       "expectedDecision": "AUTO_APPROVE",
-      "actualDecision": "ESCALATE_TO_HUMAN",
+      "actualDecision": "AUTO_APPROVE",
       "expectedReason": null,
-      "actualReason": "FACT_UNKNOWN",
-      "ruleMatched": "RULE_FAILSAFE_UNVERIFIED_SIS",
+      "actualReason": null,
+      "ruleMatched": "RULE_AUTO_PASSED_MILITARY_SERVICE_2026",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.96,
-      "isCorrect": false,
-      "durationMs": 0.71
+      "isCorrect": true,
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-03-LOWERCASE-ONLY",
@@ -52,13 +56,14 @@
       "category": "MILITARY_SERVICE_CONFIRMATION",
       "priority": "MEDIUM",
       "expectedDecision": "AUTO_APPROVE",
-      "actualDecision": "ESCALATE_TO_HUMAN",
+      "actualDecision": "AUTO_APPROVE",
       "expectedReason": null,
-      "actualReason": "FACT_UNKNOWN",
-      "ruleMatched": "RULE_FAILSAFE_UNVERIFIED_SIS",
+      "actualReason": null,
+      "ruleMatched": "RULE_AUTO_PASSED_MILITARY_SERVICE_2026",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.95,
-      "isCorrect": false,
-      "durationMs": 0.11
+      "isCorrect": true,
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-04-ABBREVIATION-P-Q-TP",
@@ -66,13 +71,14 @@
       "category": "MILITARY_SERVICE_CONFIRMATION",
       "priority": "MEDIUM",
       "expectedDecision": "AUTO_APPROVE",
-      "actualDecision": "ESCALATE_TO_HUMAN",
+      "actualDecision": "AUTO_APPROVE",
       "expectedReason": null,
-      "actualReason": "FACT_UNKNOWN",
-      "ruleMatched": "RULE_FAILSAFE_UNVERIFIED_SIS",
+      "actualReason": null,
+      "ruleMatched": "RULE_AUTO_PASSED_MILITARY_SERVICE_2026",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.96,
-      "isCorrect": false,
-      "durationMs": 4.99
+      "isCorrect": true,
+      "durationMs": 7.64
     },
     {
       "id": "BENCH-05-ABBREVIATION-NO-DOT",
@@ -80,13 +86,14 @@
       "category": "MILITARY_SERVICE_CONFIRMATION",
       "priority": "MEDIUM",
       "expectedDecision": "AUTO_APPROVE",
-      "actualDecision": "ESCALATE_TO_HUMAN",
+      "actualDecision": "AUTO_APPROVE",
       "expectedReason": null,
-      "actualReason": "FACT_UNKNOWN",
-      "ruleMatched": "RULE_FAILSAFE_UNVERIFIED_SIS",
+      "actualReason": null,
+      "ruleMatched": "RULE_AUTO_PASSED_MILITARY_SERVICE_2026",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.94,
-      "isCorrect": false,
-      "durationMs": 0.27
+      "isCorrect": true,
+      "durationMs": 1.0
     },
     {
       "id": "BENCH-06-MISSING-WARD",
@@ -98,9 +105,10 @@
       "expectedReason": "FACT_UNKNOWN",
       "actualReason": "FACT_UNKNOWN",
       "ruleMatched": "RULE_FACT_01_INCOMPLETE_ADDRESS",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.6,
       "isCorrect": true,
-      "durationMs": 0.07
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-07-MISSING-PROVINCE",
@@ -112,9 +120,10 @@
       "expectedReason": "FACT_UNKNOWN",
       "actualReason": "FACT_UNKNOWN",
       "ruleMatched": "RULE_FACT_01_INCOMPLETE_ADDRESS",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.58,
       "isCorrect": true,
-      "durationMs": 0.06
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-08-EMPTY-ADDRESS",
@@ -126,9 +135,10 @@
       "expectedReason": "FACT_UNKNOWN",
       "actualReason": "FACT_UNKNOWN",
       "ruleMatched": "RULE_FACT_01_INCOMPLETE_ADDRESS",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.5,
       "isCorrect": true,
-      "durationMs": 0.12
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-09-LOW-CONFIDENCE",
@@ -140,9 +150,10 @@
       "expectedReason": "FACT_UNKNOWN",
       "actualReason": "FACT_UNKNOWN",
       "ruleMatched": "RULE_FACT_01_INCOMPLETE_ADDRESS",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.45,
       "isCorrect": true,
-      "durationMs": 0.05
+      "durationMs": 0.53
     },
     {
       "id": "BENCH-10-TEMPORARY-ADDRESS",
@@ -154,9 +165,10 @@
       "expectedReason": "DATA_CONFLICT",
       "actualReason": "DATA_CONFLICT",
       "ruleMatched": "RULE_CONFLICT_01_TEMPORARY_ADDRESS_NOT_ALLOWED",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.95,
       "isCorrect": true,
-      "durationMs": 0.06
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-11-CONFLICT-PROVINCE",
@@ -168,9 +180,10 @@
       "expectedReason": "DATA_CONFLICT",
       "actualReason": "DATA_CONFLICT",
       "ruleMatched": "RULE_CONFLICT_02_PERMANENT_ADDRESS_MISMATCH",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.97,
       "isCorrect": true,
-      "durationMs": 0.25
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-12-CONFLICT-DISTRICT",
@@ -182,9 +195,10 @@
       "expectedReason": "DATA_CONFLICT",
       "actualReason": "DATA_CONFLICT",
       "ruleMatched": "RULE_CONFLICT_02_PERMANENT_ADDRESS_MISMATCH",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.96,
       "isCorrect": true,
-      "durationMs": 0.29
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-13-CONFLICT-WARD",
@@ -196,9 +210,10 @@
       "expectedReason": "DATA_CONFLICT",
       "actualReason": "DATA_CONFLICT",
       "ruleMatched": "RULE_CONFLICT_02_PERMANENT_ADDRESS_MISMATCH",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.96,
       "isCorrect": true,
-      "durationMs": 0.35
+      "durationMs": 1.0
     },
     {
       "id": "BENCH-14-ACADEMIC-SUSPENDED",
@@ -210,9 +225,10 @@
       "expectedReason": "AUTHORITY_REQUIRED",
       "actualReason": "AUTHORITY_REQUIRED",
       "ruleMatched": "RULE_AUTH_01_ACADEMIC_STATUS_NEEDS_OFFICER",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.98,
       "isCorrect": true,
-      "durationMs": 0.08
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-15-ACADEMIC-WITHDRAWN",
@@ -224,9 +240,10 @@
       "expectedReason": "AUTHORITY_REQUIRED",
       "actualReason": "AUTHORITY_REQUIRED",
       "ruleMatched": "RULE_AUTH_01_ACADEMIC_STATUS_NEEDS_OFFICER",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.98,
       "isCorrect": true,
-      "durationMs": 0.06
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-16-POLICY-EXCEPTION-EXTENSION",
@@ -238,9 +255,10 @@
       "expectedReason": "POLICY_OUT_OF_SCOPE",
       "actualReason": "POLICY_OUT_OF_SCOPE",
       "ruleMatched": "RULE_POLICY_01_SPECIAL_EXCEPTION_REQUEST",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.98,
       "isCorrect": true,
-      "durationMs": 0.07
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-17-OWNERSHIP-MSSV-MISMATCH",
@@ -252,9 +270,10 @@
       "expectedReason": "OWNERSHIP_UNCLEAR",
       "actualReason": "OWNERSHIP_UNCLEAR",
       "ruleMatched": "RULE_SEC_01_OWNERSHIP_MISMATCH",
+      "institutionalTrust": "TEST_VERIFIED",
       "confidence": 0.98,
       "isCorrect": true,
-      "durationMs": 0.03
+      "durationMs": 0.0
     },
     {
       "id": "BENCH-18-FAILSAFE-FALLBACK-TRIGGERED",
@@ -265,10 +284,11 @@
       "actualDecision": "ESCALATE_TO_HUMAN",
       "expectedReason": "FACT_UNKNOWN",
       "actualReason": "FACT_UNKNOWN",
-      "ruleMatched": "RULE_FAILSAFE_NON_LIVE_AI",
-      "confidence": 0.98,
+      "ruleMatched": "RULE_FAILSAFE_UNVERIFIED_INSTITUTIONAL_RECORD",
+      "institutionalTrust": "UNVERIFIED",
+      "confidence": null,
       "isCorrect": true,
-      "durationMs": 0.09
+      "durationMs": 0.0
     }
   ]
 }

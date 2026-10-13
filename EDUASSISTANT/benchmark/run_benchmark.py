@@ -3,7 +3,7 @@
 EDUASSISTANT - BENCHMARK RUNNER & MEASUREMENT ENGINE (PYTHON)
 ============================================================================
 Thực thi kiểm chuẩn độ chính xác, tỷ lệ tự động hóa và tỷ lệ sai sót
-trên tập dữ liệu kiểm chuẩn độc lập (Held-Out Cases Dataset).
+trên fixed synthetic scenarios dành cho Track A; scenario set này không phải dữ liệu độc lập/held-out.
 
 CÔNG THỨC CHUẨN XÁC:
   - decisionAccuracy: (correctCases / totalCases) * 100%
@@ -36,10 +36,59 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from app.services.rule_engine import evaluate_case
-from app.services.gemini_benchmark_service import enrich_benchmark_cases
 
 
-def run_benchmark(persist_results=True):
+def build_evaluation_input(case):
+    """Prepare fixture facts and explicit test-only trust provenance."""
+    student = dict(case.get('student') or {})
+    institutional_facts = dict(case.get('institutionalFacts') or student)
+    institutional_facts['sourceType'] = 'SYNTHETIC_TEST_SIS'
+    if case.get('benchmarkSISVerified', True):
+        institutional_facts['verificationStatus'] = 'TEST_VERIFIED'
+    else:
+        institutional_facts['verificationStatus'] = 'UNVERIFIED'
+
+    # Keep the fallback identity facts consistent with the authoritative fixture.
+    student_user = dict(institutional_facts)
+    payload = {
+        'id': case['id'],
+        'title': case['title'],
+        'description': case['description'],
+        'category': case['category'],
+        'priority': case['priority'],
+        'evidenceFiles': case.get('evidenceFiles', []),
+        'aiMetadata': case.get('aiMetadata', {}),
+        'studentClaim': case.get('studentClaim', {}),
+        'institutionalFacts': institutional_facts,
+        'authoritativeInstitutionalFacts': institutional_facts,
+        'addressAnalysis': case.get('addressAnalysis', {}),
+    }
+
+    ocr_data = None
+    evidence_files = case.get('evidenceFiles') or []
+    if evidence_files:
+        ocr_data = evidence_files[0].get('ocrData')
+    elif case.get('ocr'):
+        ocr_data = case['ocr']
+
+    fixture_ai_context = {
+        'modeUsed': case.get('aiMetadata', {}).get('modeUsed', 'live'),
+        'isLive': case.get('aiMetadata', {}).get('isLive', True),
+        'isFallback': case.get('aiMetadata', {}).get('fallbackOccurred', False),
+        'isSynthetic': case.get('aiMetadata', {}).get('isSynthetic', True),
+        'provider': case.get('aiMetadata', {}).get('provider', 'FIXED_TEST_FIXTURE'),
+        'apiCallPerformed': case.get('aiMetadata', {}).get('apiCallPerformed', False),
+        'source': 'FIXED_TEST_FIXTURE',
+    }
+    evaluation_context = {
+        'evaluationMode': 'DETERMINISTIC_TEST',
+        'allowSyntheticVerifiedInstitutionalFacts': True,
+        'allowSyntheticAIAnalysis': True,
+    }
+    return payload, student_user, ocr_data, fixture_ai_context, evaluation_context
+
+
+def run_benchmark():
     benchmark_dir = os.path.dirname(os.path.abspath(__file__))
     cases_file = os.path.join(benchmark_dir, 'held_out_cases.json')
     results_dir = os.path.join(benchmark_dir, 'results')
@@ -50,12 +99,11 @@ def run_benchmark(persist_results=True):
 
     with open(cases_file, 'r', encoding='utf-8') as f:
         cases = json.load(f)
-    ai_run = enrich_benchmark_cases(cases)
 
     print("\n" + "=" * 70)
     print("🚀 EDUASSISTANT BENCHMARK & MEASUREMENT RUNNER")
     print("=" * 70)
-    print(f"• Số lượng ca kiểm thử độc lập: {len(cases)} cases")
+    print(f"• Số lượng fixed synthetic scenarios: {len(cases)} cases")
     print(f"• Thời gian bắt đầu: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
     print("-" * 70)
 
@@ -76,43 +124,14 @@ def run_benchmark(persist_results=True):
     for idx, c in enumerate(cases, start=1):
         t0 = time.time()
         
-        # The benchmark tries Gemini, then OpenRouter, then prepared fixtures.
-        ai_metadata = c.get('aiMetadata', {})
-        fixture_ai_context = {
-            'modeUsed': ai_metadata.get('modeUsed', 'mock'),
-            'isLive': ai_metadata.get('isLive', False),
-            'isFallback': ai_metadata.get('fallbackOccurred', False),
-            'isSynthetic': ai_metadata.get('isSynthetic', True),
-            'source': ai_run['mode']
-        }
-
-        student = c.get('student', {})
-        # These fixtures simulate facts returned by the trusted SIS connector.
-        if c.get('benchmarkSISVerified', True):
-            student['source'] = 'VERIFIED_INSTITUTIONAL_SIS'
-        else:
-            student.pop('source', None)
-
-        payload = {
-            'id': c['id'],
-            'title': c['title'],
-            'description': c['description'],
-            'category': c['category'],
-            'priority': c['priority'],
-            'evidenceFiles': c.get('evidenceFiles', []),
-            'aiMetadata': c.get('aiMetadata', {}),
-            'studentClaim': c.get('studentClaim', {}),
-            'institutionalFacts': c.get('institutionalFacts') or student,
-            'addressAnalysis': c.get('addressAnalysis', {})
-        }
-
-        ocr_data = None
-        if c.get('evidenceFiles') and len(c['evidenceFiles']) > 0:
-            ocr_data = c['evidenceFiles'][0].get('ocrData')
-        elif c.get('ocr'):
-            ocr_data = c['ocr']
-
-        verdict = evaluate_case(payload, ocr_data, student, ai_context=fixture_ai_context)
+        payload, student_user, ocr_data, fixture_ai_context, evaluation_context = build_evaluation_input(c)
+        verdict = evaluate_case(
+            payload,
+            ocr_data,
+            student_user,
+            ai_context=fixture_ai_context,
+            evaluation_context=evaluation_context,
+        )
         duration_ms = round((time.time() - t0) * 1000, 2)
 
         actual_decision = verdict.get('decision')
@@ -159,11 +178,10 @@ def run_benchmark(persist_results=True):
             'expectedReason': expected_reason,
             'actualReason': actual_reason,
             'ruleMatched': verdict.get('ruleMatched'),
+            'institutionalTrust': verdict.get('institutionalTrust'),
             'confidence': verdict.get('confidence'),
             'isCorrect': is_correct,
-            'durationMs': duration_ms,
-            'aiModeUsed': f"{ai_metadata.get('provider', 'synthetic fixture')} live" if ai_metadata.get('isLive') else 'mock',
-            'aiProvider': ai_run.get('provider'),
+            'durationMs': duration_ms
         })
 
     total_duration_sec = round(time.time() - start_all, 3)
@@ -177,15 +195,10 @@ def run_benchmark(persist_results=True):
     unnecessary_escalation_rate = round((unnecessary_escalate_count / should_auto_approve_count) * 100, 2) if should_auto_approve_count > 0 else 0.0
 
     summary = {
-        'benchmarkType': 'GEMINI_OPENROUTER_ASSISTED_END_TO_END_BENCHMARK',
-        'aiCallsPerformed': ai_run.get('apiCalls', 0) > 0,
-        'aiMode': ai_run.get('mode'),
-        'aiProvider': ai_run.get('provider'),
-        'aiModel': ai_run.get('model'),
-        'aiApiCalls': ai_run.get('apiCalls', 0),
-        'aiCasesProcessed': len(cases) if ai_run.get('mode') in ('GEMINI_LIVE', 'OPENROUTER_LIVE') else 0,
-        'fallbackCases': len(cases) if ai_run.get('mode') == 'MOCK_FALLBACK' else 0,
-        'aiFallbackReason': ai_run.get('fallbackReason'),
+        'benchmarkType': 'DETERMINISTIC_TRACK_A_DECISION_BENCHMARK',
+        'aiCallsPerformed': False,
+        'evaluationTarget': 'ESCALATION_DECISION_POLICY',
+        'scenarioCount': total_cases,
         'benchmarkRunId': f"BM-{int(datetime.now().timestamp())}",
         'timestamp': datetime.utcnow().isoformat() + 'Z',
         'executionTimeSec': total_duration_sec,
@@ -206,29 +219,28 @@ def run_benchmark(persist_results=True):
     }
 
     # Xuất file JSON
-    if persist_results:
-        json_path = os.path.join(results_dir, 'latest.json')
-        with open(json_path, 'w', encoding='utf-8') as f:
-            json.dump(summary, f, ensure_ascii=False, indent=2)
+    json_path = os.path.join(results_dir, 'latest.json')
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
 
-        # Xuất file CSV
-        csv_path = os.path.join(results_dir, 'latest.csv')
-        with open(csv_path, 'w', encoding='utf-8-sig', newline='') as f:
-            writer = csv.writer(f)
+    # Xuất file CSV
+    csv_path = os.path.join(results_dir, 'latest.csv')
+    with open(csv_path, 'w', encoding='utf-8-sig', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            'Mã Ca', 'Tên Tình Huống', 'Danh Mục', 'Độ Ưu Tiên',
+            'Kỳ Vọng Quyết Định', 'Thực Tế Quyết Định',
+            'Kỳ Vọng Lý Do', 'Thực Tế Lý Do',
+            'Mã Quy Tắc', 'Độ Tin Cậy', 'Kết Quả Kiểm Thử', 'Thời Gian (ms)'
+        ])
+        for r in case_results:
             writer.writerow([
-                'Mã Ca', 'Tên Tình Huống', 'Danh Mục', 'Độ Ưu Tiên',
-                'Kỳ Vọng Quyết Định', 'Thực Tế Quyết Định',
-                'Kỳ Vọng Lý Do', 'Thực Tế Lý Do',
-                'Mã Quy Tắc', 'Độ Tin Cậy', 'Kết Quả Kiểm Thử', 'Thời Gian (ms)'
+                r['id'], r['name'], r['category'], r['priority'],
+                r['expectedDecision'], r['actualDecision'],
+                r['expectedReason'] or '—', r['actualReason'] or '—',
+                r['ruleMatched'], r['confidence'],
+                'PASS' if r['isCorrect'] else 'FAIL', r['durationMs']
             ])
-            for r in case_results:
-                writer.writerow([
-                    r['id'], r['name'], r['category'], r['priority'],
-                    r['expectedDecision'], r['actualDecision'],
-                    r['expectedReason'] or '—', r['actualReason'] or '—',
-                    r['ruleMatched'], r['confidence'],
-                    'PASS' if r['isCorrect'] else 'FAIL', r['durationMs']
-                ])
 
     print("-" * 70)
     print("📊 KẾT QUẢ ĐO LƯỜNG CHUẨN XÁC (MEASUREMENT REPORT):")
@@ -238,10 +250,8 @@ def run_benchmark(persist_results=True):
     print(f"  • Missed Escalation Rate:       {missed_escalation_rate}% ({missed_escalate_count}/{should_escalate_count})")
     print(f"  • Unnecessary Escalation Rate:  {unnecessary_escalation_rate}% ({unnecessary_escalate_count}/{should_auto_approve_count})")
     print(f"  • Thời gian chạy:               {total_duration_sec}s")
-    if persist_results:
-        print(f"  • Tệp kết quả JSON:             {json_path}")
-    if persist_results:
-        print(f"  • Tệp kết quả CSV:              {csv_path}")
+    print(f"  • Tệp kết quả JSON:             {json_path}")
+    print(f"  • Tệp kết quả CSV:              {csv_path}")
     print("=" * 70 + "\n")
 
     return summary
