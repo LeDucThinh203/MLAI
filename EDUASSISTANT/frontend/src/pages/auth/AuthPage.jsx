@@ -8,8 +8,12 @@ import { useAuth } from '../../context/AuthContext';
 import PageSkeleton from '../../components/common/PageSkeleton';
 
 const AuthPage = () => {
-  const showDemoAccounts = import.meta.env.VITE_SHOW_DEMO_ACCOUNTS === 'true'
-    && import.meta.env.MODE !== 'production';
+  const isPublicDemoHost = typeof window !== 'undefined'
+    && window.location.hostname === 'edu-sp.pages.dev';
+  const showDemoAccounts = isPublicDemoHost || (
+    import.meta.env.VITE_SHOW_DEMO_ACCOUNTS === 'true'
+    && import.meta.env.MODE !== 'production'
+  );
   const [mode, setMode] = useState('login');
   
   // Login fields
@@ -536,7 +540,7 @@ const AuthPage = () => {
         )}
 
         {showDemoAccounts && <>
-        {/* Demo shortcuts are only enabled for an explicitly configured non-production build. */}
+        {/* Shortcuts are enabled on the public demo host and explicit local demo builds. */}
         <div className="auth-demo-accounts" style={{
           marginTop: '22px',
           paddingTop: '18px',
