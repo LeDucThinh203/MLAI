@@ -465,6 +465,9 @@ class DatabaseService:
             params.append(filter_dict['department'])
 
         sql += ' ORDER BY createdAt DESC'
+        if filter_dict.get('limit'):
+            sql += ' LIMIT ?'
+            params.append(max(1, min(50, int(filter_dict['limit']))))
         rows = get_all(sql, tuple(params))
         return [format_case_row(r) for r in rows]
 
