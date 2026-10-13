@@ -238,6 +238,8 @@ async def normalize_student_address(
     is_live = False
     is_fallback = False
     used_model = 'deterministic-regex'
+    api_attempts = 0
+    attempted_models = []
 
     if not raw_address or not raw_address.strip():
         fallback_res = deterministic_parse_address(raw_address)
@@ -259,9 +261,12 @@ async def normalize_student_address(
             'ambiguousFields, confidence. Address: ' + raw_address
         )
         if len(api_key) > 10:
-            parsed, used_model, _, _ = await generate_gemini_json(
+            parsed, used_model, gemini_attempts, _ = await generate_gemini_json(
                 prompt, api_key, max_tokens=1000, validator=_valid_address_ai_result,
             )
+            api_attempts += gemini_attempts
+            if used_model:
+                attempted_models.append(used_model)
             if isinstance(parsed, dict) and _valid_address_ai_result(parsed):
                 required = ('houseNumber', 'street', 'wardCommune', 'district', 'provinceCity', 'normalizedAddress')
                 return {
@@ -269,20 +274,27 @@ async def normalize_student_address(
                     'missingFields': parsed['missingFields'], 'ambiguousFields': parsed['ambiguousFields'],
                     'confidence': float(parsed['confidence']), 'modeUsed': 'live', 'isLive': True,
                     'isFallback': False, 'isSynthetic': False, 'provider': 'Google Gemini',
+                    'model': used_model, 'apiCallPerformed': api_attempts > 0,
+                    'apiAttempts': api_attempts, 'attemptedModels': attempted_models,
                     'modelUsed': used_model,
                     'durationMs': round((time.time() - start_time) * 1000, 2),
                 }
 
-        parsed, _, openrouter_model, _ = await generate_json(
+        parsed, _, openrouter_model, openrouter_attempts = await generate_json(
             prompt, max_tokens=1000, validator=_valid_address_ai_result,
         )
+        api_attempts += openrouter_attempts
+        if openrouter_model:
+            attempted_models.append(openrouter_model)
         if isinstance(parsed, dict) and _valid_address_ai_result(parsed):
             required = ('houseNumber', 'street', 'wardCommune', 'district', 'provinceCity', 'normalizedAddress')
             return {
                 **{key: parsed[key] for key in required},
                 'missingFields': parsed['missingFields'], 'ambiguousFields': parsed['ambiguousFields'],
                 'confidence': float(parsed['confidence']), 'modeUsed': 'live', 'isLive': True,
-                'isFallback': False, 'isSynthetic': False, 'provider': 'OpenRouter',
+                'isFallback': True, 'isSynthetic': False, 'provider': 'OpenRouter',
+                'model': openrouter_model, 'apiCallPerformed': api_attempts > 0,
+                'apiAttempts': api_attempts, 'attemptedModels': attempted_models,
                 'modelUsed': openrouter_model,
                 'durationMs': round((time.time() - start_time) * 1000, 2),
             }
@@ -292,8 +304,13 @@ async def normalize_student_address(
     det_res.update({
         'modeUsed': mode,
         'isLive': is_live,
-        'isFallback': (mode == 'live' or is_fallback),
+        'isFallback': True,
         'isSynthetic': (mode == 'mock'),
+        'provider': 'DETERMINISTIC_PARSER',
+        'model': 'deterministic-regex',
+        'apiCallPerformed': api_attempts > 0,
+        'apiAttempts': api_attempts,
+        'attemptedModels': attempted_models,
         'modelUsed': used_model,
         'durationMs': round((time.time() - start_time) * 1000, 2)
     })

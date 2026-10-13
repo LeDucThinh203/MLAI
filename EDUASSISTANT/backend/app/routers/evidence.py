@@ -41,12 +41,20 @@ async def upload_evidence_ocr_endpoint(
 
     saved_file['ocrData'] = ocr_res.get('data')
     saved_file['ocrProvider'] = ocr_res.get('provider')
+    saved_file['ocrModel'] = ocr_res.get('model')
     saved_file['ocrIsLive'] = ocr_is_live
     saved_file['modeUsed'] = ocr_res.get('modeUsed', 'mock')
     saved_file['isFallback'] = ocr_res.get('isFallback', True)
     saved_file['isSynthetic'] = ocr_res.get('isSynthetic', True)
+    saved_file['apiCallPerformed'] = ocr_res.get('apiCallPerformed', False)
+    saved_file['apiAttempts'] = ocr_res.get('apiAttempts', 0)
+    saved_file['ocrDurationMs'] = ocr_res.get('durationMs')
 
-    return api_response(201, True, 'Tải lên và phân tích OCR minh chứng thành công.', {
+    message = 'Tải tệp minh chứng thành công.'
+    if not ocr_res.get('success'):
+        message += ' Không trích xuất được OCR; hệ thống không tự điền thông tin suy đoán.'
+
+    return api_response(201, True, message, {
         'file': saved_file,
         'ocr': ocr_res,
         **saved_file
@@ -79,12 +87,20 @@ async def upload_evidence_endpoint(
 
     saved_file['ocrData'] = ocr_res.get('data')
     saved_file['ocrProvider'] = ocr_res.get('provider')
+    saved_file['ocrModel'] = ocr_res.get('model')
     saved_file['ocrIsLive'] = ocr_is_live
     saved_file['modeUsed'] = ocr_res.get('modeUsed', 'mock')
     saved_file['isFallback'] = ocr_res.get('isFallback', True)
     saved_file['isSynthetic'] = ocr_res.get('isSynthetic', True)
+    saved_file['apiCallPerformed'] = ocr_res.get('apiCallPerformed', False)
+    saved_file['apiAttempts'] = ocr_res.get('apiAttempts', 0)
+    saved_file['ocrDurationMs'] = ocr_res.get('durationMs')
 
-    return api_response(201, True, 'Tải lên và phân tích OCR minh chứng thành công.', {
+    message = 'Tải tệp minh chứng thành công.'
+    if not ocr_res.get('success'):
+        message += ' Không trích xuất được OCR; hệ thống không tự điền thông tin suy đoán.'
+
+    return api_response(201, True, message, {
         'file': saved_file,
         'ocr': ocr_res,
         **saved_file
