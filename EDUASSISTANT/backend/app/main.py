@@ -27,7 +27,8 @@ from app.routers import (
     notifications,
     health,
     verify,
-    judge
+    judge,
+    agent
 )
 
 app = FastAPI(
@@ -119,6 +120,22 @@ app.include_router(notifications.router)
 app.include_router(health.router)
 app.include_router(verify.router)
 app.include_router(judge.router)
+app.include_router(agent.router)
+
+
+@app.on_event('startup')
+async def initialize_agent_knowledge_base():
+    """Create a fast local lexical index without making startup depend on Gemini."""
+    from app.services import agent_rag_service
+    from app.config import AGENT_ENABLED
+    if not AGENT_ENABLED:
+        return
+    try:
+        if agent_rag_service.status().get('chunks', 0) == 0:
+            result = await agent_rag_service.reindex(enable_embeddings=False)
+            print(f"[Agent RAG] Local index initialized: {result['documentsProcessed']} documents, {result['chunksCreated']} chunks.")
+    except Exception as exc:
+        print(f'[Agent RAG] Startup lexical indexing deferred ({type(exc).__name__}).')
 
 # Serve frontend build artifacts if present
 frontend_dist_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'frontend', 'dist')

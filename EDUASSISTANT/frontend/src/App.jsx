@@ -12,6 +12,7 @@ import AdminPortal from './pages/admin/AdminPortal';
 import AccountSettingsPortal from './pages/settings/AccountSettingsPortal';
 import PublicVerificationPage from './pages/public/PublicVerificationPage';
 import JudgeModePage from './pages/judge/JudgeModePage';
+import AgentChatWidget from './components/agent/AgentChatWidget';
 
 const portalTabsByRole = {
   ADMIN: ['admin_overview', 'admin_policies', 'admin_sis', 'admin_users', 'reviewer_queue', 'reviewer_audit', 'account_settings'],
@@ -87,6 +88,10 @@ function MainApp() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+
+      {user && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/verify') && !location.pathname.startsWith('/judge') && (
+        <AgentChatWidget user={user} onOpenCase={handleOpenCase} />
+      )}
 
       {/* Standalone Full-Screen 2FA Modal */}
       <TwoFactorModal
