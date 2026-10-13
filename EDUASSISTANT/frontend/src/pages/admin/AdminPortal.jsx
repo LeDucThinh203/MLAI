@@ -221,26 +221,6 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
     }
   };
 
-  const verifyDemoSis = async (record) => {
-    const warning = 'Chỉ đánh dấu đã kiểm tra dữ liệu mẫu nội bộ của EDUASSISTANT. Thao tác này không xác nhận dữ liệu với hệ thống chính thức của nhà trường.';
-    if (!window.confirm(warning)) return;
-    setSisSaving(true);
-    try {
-      const res = await axios.post(`${API_BASE}/admin/sis/${record.id}/verify-demo`, {
-        reason: 'Quản trị viên đã kiểm tra dữ liệu mẫu nội bộ; thao tác này không xác nhận dữ liệu với hệ thống chính thức của nhà trường.'
-      });
-      if (!res.data?.success) throw new Error(res.data?.message || 'Không thể xác nhận dữ liệu demo.');
-      const updated = res.data.data.record;
-      setSisRecords(items => items.map(item => item.id === updated.id ? updated : item));
-      setViewingSis(current => current?.id === updated.id ? updated : current);
-      setAdminMessage({ type: 'success', text: 'Đã xác nhận dữ liệu nội bộ cho mục đích demo.' });
-    } catch (err) {
-      setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể xác nhận dữ liệu demo.' });
-    } finally {
-      setSisSaving(false);
-    }
-  };
-
   const openCreateSis = async () => {
     setSisSaving(true);
     try {
@@ -416,10 +396,6 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
           </div>
         </div>
 
-        <div role="note" style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, .35)', background: 'rgba(245, 158, 11, .08)', color: 'var(--text-primary)', fontSize: '.82rem' }}>
-          Việc đánh dấu đã kiểm tra chỉ áp dụng cho dữ liệu mẫu nội bộ; thao tác này không xác nhận dữ liệu với hệ thống chính thức của nhà trường.
-        </div>
-
         <div style={{ display: 'flex', gap: '10px', marginBottom: '18px', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: '1 1 300px' }}>
             <Search size={16} style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
@@ -454,7 +430,6 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   <div style={{ display: 'inline-flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     <button type="button" className="btn-secondary" onClick={() => openSisDetails(record)} disabled={sisViewingLoading}>Xem</button>
                     <button type="button" className="btn-secondary" onClick={() => { setSisEditorMode('edit'); setEditingSis({ ...record, recordStatus: record.recordStatus || 'ACTIVE' }); }}>Cập nhật</button>
-                    {record.sourceType === 'INTERNAL_DEMO_SIS' && record.verificationStatus !== 'ADMIN_VERIFIED_DEMO' && <button type="button" className="btn-primary" onClick={() => verifyDemoSis(record)} disabled={sisSaving}>Xác nhận dữ liệu demo</button>}
                   </div>
                 </td>
               </tr>)}
