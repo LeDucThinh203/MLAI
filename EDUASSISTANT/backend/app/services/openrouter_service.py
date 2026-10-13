@@ -97,7 +97,8 @@ def _fetch_models(client: httpx.Client, api_key: str, *, vision: bool) -> list[s
 
 def _request_body(model: str, prompt: str, max_tokens: int,
                   image_data_url: str | None,
-                  image_data_urls: list[str] | None = None) -> dict[str, Any]:
+                  image_data_urls: list[str] | None = None,
+                  system_instruction: str | None = None) -> dict[str, Any]:
     content: Any = prompt
     image_urls = image_data_urls or ([image_data_url] if image_data_url else [])
     if image_urls:
@@ -105,9 +106,13 @@ def _request_body(model: str, prompt: str, max_tokens: int,
             {'type': 'text', 'text': prompt},
             *[{'type': 'image_url', 'image_url': {'url': url}} for url in image_urls],
         ]
+    messages = []
+    if system_instruction:
+        messages.append({'role': 'system', 'content': system_instruction})
+    messages.append({'role': 'user', 'content': content})
     return {
         'model': model,
-        'messages': [{'role': 'user', 'content': content}],
+        'messages': messages,
         'temperature': 0,
         'max_tokens': max_tokens,
     }
@@ -146,6 +151,7 @@ async def generate_vision_json(
 
 def generate_json_sync(
     prompt: str, *, max_tokens: int = 4000, validator: Callable[[dict[str, Any]], bool] | None = None,
+    system_instruction: str | None = None,
 ) -> tuple[dict[str, Any] | None, str | None, str | None, int]:
     api_key = os.environ.get('OPENROUTER_API_KEY', '').strip()
     if len(api_key) < 10:
@@ -159,7 +165,7 @@ def generate_json_sync(
                     calls += 1
                     response = client.post(
                         'https://openrouter.ai/api/v1/chat/completions', headers=_headers(api_key),
-                        json=_request_body(model, prompt, max_tokens, None),
+                        json=_request_body(model, prompt, max_tokens, None, system_instruction=system_instruction),
                     )
                     if response.status_code != 200:
                         errors.append(f'{model}: HTTP {response.status_code}')
@@ -181,6 +187,7 @@ def generate_json_sync(
 async def generate_json(
     prompt: str, *, max_tokens: int = 4000, image_data_url: str | None = None,
     validator: Callable[[dict[str, Any]], bool] | None = None,
+    system_instruction: str | None = None,
 ) -> tuple[dict[str, Any] | None, str | None, str | None, int]:
     api_key = os.environ.get('OPENROUTER_API_KEY', '').strip()
     if len(api_key) < 10:
@@ -220,7 +227,8 @@ async def generate_json(
                     calls += 1
                     response = await client.post(
                         'https://openrouter.ai/api/v1/chat/completions', headers=_headers(api_key),
-                        json=_request_body(model, prompt, max_tokens, image_data_url),
+                        json=_request_body(model, prompt, max_tokens, image_data_url,
+                                           system_instruction=system_instruction),
                     )
                     if response.status_code != 200:
                         errors.append(f'{model}: HTTP {response.status_code}')

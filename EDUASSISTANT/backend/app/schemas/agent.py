@@ -1,6 +1,6 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class StrictModel(BaseModel):
@@ -31,21 +31,26 @@ class AgentActionRequest(StrictModel):
 
 class PlannerToolCall(StrictModel):
     name: str = Field(min_length=1, max_length=100)
-    arguments: Dict[str, Any] = Field(default_factory=dict)
+    arguments: Dict[str, Any]
 
 
 class PlannerResponse(StrictModel):
-    responseType: str
-    message: str = ''
-    toolCalls: list[PlannerToolCall] = Field(default_factory=list)
+    responseType: Literal['ANSWER', 'TOOL_CALL']
+    message: str = Field(min_length=1, max_length=4000)
+    toolCalls: list[PlannerToolCall] = Field(max_length=4)
+
+    @model_validator(mode='after')
+    def validate_response_shape(self):
+        if self.responseType == 'ANSWER' and self.toolCalls:
+            raise ValueError('ANSWER responses cannot include tool calls.')
+        if self.responseType == 'TOOL_CALL' and not self.toolCalls:
+            raise ValueError('TOOL_CALL responses require at least one tool call.')
+        return self
 
     @classmethod
     def validate_shape(cls, data: dict) -> bool:
-        return (
-            data.get('responseType') in {'ANSWER', 'TOOL_CALL'}
-            and isinstance(data.get('message', ''), str)
-            and isinstance(data.get('toolCalls', []), list)
-            and (data.get('responseType') != 'ANSWER' or not data.get('toolCalls'))
-            and (data.get('responseType') != 'TOOL_CALL' or bool(data.get('toolCalls')))
-            and len(data.get('toolCalls', [])) <= 4
-        )
+        try:
+            cls.model_validate(data)
+        except (TypeError, ValueError):
+            return False
+        return True

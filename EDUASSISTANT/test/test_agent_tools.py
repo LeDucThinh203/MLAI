@@ -15,6 +15,51 @@ def test_tools_are_role_allowlisted_and_reviewer_cannot_admin():
     assert 'verify_demo_sis_record' not in reviewer_tools
 
 
+def test_empty_argument_read_tools_and_generic_registry_contract(monkeypatch):
+    empty_read_tools = ('get_my_sis_record', 'get_notifications', 'get_current_threshold', 'get_policy_registry')
+    for name in empty_read_tools:
+        role = 'STUDENT' if name in ('get_my_sis_record', 'get_notifications') else 'ADMIN'
+        args, spec = validate_tool_call(name, {}, role)
+        assert args == {}
+        assert spec is TOOL_REGISTRY[name]
+
+    for name, spec in TOOL_REGISTRY.items():
+        assert spec['name'] == name
+        assert spec['args'] is spec['argumentsSchema']
+        assert spec['args'].model_config.get('extra') == 'forbid'
+        assert bool(spec['requiresConfirmation']) is not bool(spec['readOnly'])
+        assert spec['allowedRoles']
+        assert set(spec['allowedRoles']) <= {'STUDENT', 'REVIEWER', 'ADMIN'}
+        schema = spec['args'].model_json_schema()
+        assert schema['type'] == 'object'
+        assert 'properties' in schema
+
+    calls = []
+    async def fake_read(name, args, _user):
+        calls.append((name, args))
+        return {'name': name}
+    monkeypatch.setattr(agent_tool_service, '_read_tool', fake_read)
+    async def invoke_all():
+        results = []
+        for name in empty_read_tools:
+            role = 'STUDENT' if name in ('get_my_sis_record', 'get_notifications') else 'ADMIN'
+            results.append(await agent_tool_service.invoke_read(name, {}, {'id': 'user-1', 'role': role}))
+        return results
+    results = asyncio.run(invoke_all())
+    assert [name for name, args in calls] == list(empty_read_tools)
+    assert all(args == {} for _, args in calls)
+    assert [result['name'] for result in results] == list(empty_read_tools)
+
+
+def test_mark_all_notifications_read_can_be_prepared_with_empty_arguments(monkeypatch):
+    async def run():
+        return await agent_tool_service.prepare_action(
+            'mark_all_notifications_read', {}, {'id': 'student-1', 'role': 'STUDENT'})
+    prepared, preview = asyncio.run(run())
+    assert prepared == {}
+    assert preview == {'toolName': 'mark_all_notifications_read'}
+
+
 def test_student_cannot_read_another_students_case(monkeypatch):
     async def other_case(_case_id):
         return {'id': 'CASE-2026-1234', 'studentId': 'student-other', 'status': 'UNDER_REVIEW'}
