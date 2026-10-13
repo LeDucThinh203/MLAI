@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from app.db.db import db_service
 from app.services.upload_service import (
     UPLOAD_DIR,
+    MAX_EVIDENCE_SIZE_BYTES,
     process_and_save_file,
     process_and_save_avatar
 )
@@ -15,12 +16,23 @@ from app.core.dependencies import get_current_user
 router = APIRouter(tags=["Evidence & Uploads"])
 
 
+async def _read_evidence_upload(evidence: UploadFile) -> bytes | None:
+    if evidence.size is not None and evidence.size > MAX_EVIDENCE_SIZE_BYTES:
+        return None
+    file_bytes = await evidence.read(MAX_EVIDENCE_SIZE_BYTES + 1)
+    if len(file_bytes) > MAX_EVIDENCE_SIZE_BYTES:
+        return None
+    return file_bytes
+
+
 @router.post("/api/upload/evidence-ocr")
 async def upload_evidence_ocr_endpoint(
     evidence: UploadFile = File(...),
     user: dict = Depends(get_current_user)
 ):
-    file_bytes = await evidence.read()
+    file_bytes = await _read_evidence_upload(evidence)
+    if file_bytes is None:
+        return api_response(413, False, 'Tệp vượt quá giới hạn 10 MB.', None, 'FILE_TOO_LARGE')
     try:
         saved_file = await process_and_save_file(file_bytes, evidence.filename or 'evidence_file', user, db_service)
     except Exception as e:
@@ -66,7 +78,9 @@ async def upload_evidence_endpoint(
     evidence: UploadFile = File(...),
     user: dict = Depends(get_current_user)
 ):
-    file_bytes = await evidence.read()
+    file_bytes = await _read_evidence_upload(evidence)
+    if file_bytes is None:
+        return api_response(413, False, 'Tệp vượt quá giới hạn 10 MB.', None, 'FILE_TOO_LARGE')
     try:
         saved_file = await process_and_save_file(file_bytes, evidence.filename or 'evidence_file', user, db_service)
     except Exception as e:

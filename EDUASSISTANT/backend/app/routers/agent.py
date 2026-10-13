@@ -16,7 +16,9 @@ def _error(exc: agent_service.AgentError):
 @router.post('/api/agent/chat')
 async def chat(request: AgentChatRequest, user: dict = Depends(require_roles('STUDENT'))):
     try:
-        result = await agent_service.chat(user, request.message, request.conversationId)
+        result = await agent_service.chat(
+            user, request.message, request.conversationId, request.evidenceFileName
+        )
         return api_response(200, True, 'Agent đã xử lý yêu cầu.', result)
     except agent_service.AgentError as exc:
         return _error(exc)

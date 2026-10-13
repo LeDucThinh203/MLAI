@@ -26,6 +26,7 @@ def get_upload_dir() -> str:
     return d
 
 UPLOAD_DIR = get_upload_dir()
+MAX_EVIDENCE_SIZE_BYTES = 10 * 1024 * 1024
 
 
 def validate_file_buffer(buffer: bytes) -> dict:
@@ -68,6 +69,9 @@ async def process_and_save_file(file_bytes: bytes, original_name: str, actor: di
     """
     Xử lý lưu file minh chứng & kiểm tra Magic Bytes chặt chẽ.
     """
+    if len(file_bytes) > MAX_EVIDENCE_SIZE_BYTES:
+        raise ValueError('Tệp vượt quá giới hạn 10 MB.')
+
     magic_check = validate_file_buffer(file_bytes)
     if not magic_check['valid']:
         raise ValueError(magic_check.get('error') or 'Nội dung file bị hỏng hoặc không đúng định dạng chuẩn (Giả mạo phần mở rộng).')

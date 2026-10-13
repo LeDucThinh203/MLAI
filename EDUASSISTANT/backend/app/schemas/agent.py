@@ -10,6 +10,7 @@ class StrictModel(BaseModel):
 class AgentChatRequest(StrictModel):
     message: str = Field(min_length=1, max_length=12000)
     conversationId: Optional[str] = Field(default=None, max_length=100)
+    evidenceFileName: Optional[str] = Field(default=None, max_length=255)
 
 
 class AgentConversationCreate(StrictModel):

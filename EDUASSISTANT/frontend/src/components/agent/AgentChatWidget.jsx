@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { Bot, MessageCircle, Minus, Plus, Send, Trash2, X } from 'lucide-react';
+import { Bot, FileText, MessageCircle, Minus, Paperclip, Plus, Send, Trash2, X, XCircle } from 'lucide-react';
 import { API_BASE } from '../../api/client';
 import AgentMessage from './AgentMessage';
 import './AgentChatWidget.css';
@@ -10,6 +10,39 @@ const STUDENT_PROMPTS = [
   'Tôi cần chuẩn bị giấy tờ gì để nộp hồ sơ?',
   'Kiểm tra cách viết địa chỉ giúp tôi.'
 ];
+const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
+const DEFAULT_ATTACHMENT_MESSAGE = 'Hãy đọc và phân tích nội dung tài liệu này.';
+const ACCEPTED_ATTACHMENT_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf']);
+const EXTENSION_MIME_TYPES = {
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', pdf: 'application/pdf'
+};
+
+function attachmentMimeType(file) {
+  if (ACCEPTED_ATTACHMENT_TYPES.has(file.type)) return file.type;
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  return EXTENSION_MIME_TYPES[extension] || '';
+}
+
+function formatFileSize(bytes) {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function attachmentMetadataFromUpload(data, selected) {
+  const uploadedFile = data?.file || data || {};
+  const ocrData = uploadedFile.ocrData || data?.ocr?.data || {};
+  if (!uploadedFile.fileName) throw new Error('Máy chủ không trả về mã tệp đính kèm.');
+  return {
+    fileName: uploadedFile.fileName,
+    fileUrl: uploadedFile.fileUrl,
+    originalName: uploadedFile.metadata?.originalName || selected.file.name,
+    mimeType: uploadedFile.metadata?.mimeType || selected.mimeType,
+    ocrStatus: ocrData.extractionStatus || 'UNAVAILABLE',
+    ocrProvider: uploadedFile.ocrProvider || ocrData.provider || 'NO_OCR_FALLBACK',
+    ocrIsLive: uploadedFile.ocrIsLive === true || uploadedFile.ocrIsLive === 1
+  };
+}
 
 function responsePayload(response) {
   if (response?.data?.success) return response.data.data;
@@ -23,6 +56,9 @@ export default function AgentChatWidget({ user, onOpenCase }) {
   const [conversations, setConversations] = useState([]);
   const [conversationId, setConversationId] = useState(null);
   const [draft, setDraft] = useState('');
+  const [selectedAttachment, setSelectedAttachment] = useState(null);
+  const [uploadedAttachment, setUploadedAttachment] = useState(null);
+  const [loadingStage, setLoadingStage] = useState('');
   const [loading, setLoading] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -30,6 +66,54 @@ export default function AgentChatWidget({ user, onOpenCase }) {
   const [error, setError] = useState('');
   const endRef = useRef(null);
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const selectedAttachmentRef = useRef(null);
+  const pendingLocalMessageRef = useRef(null);
+
+  const revokePreview = (attachment) => {
+    if (attachment?.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
+  };
+
+  const clearAttachment = () => {
+    revokePreview(selectedAttachmentRef.current);
+    selectedAttachmentRef.current = null;
+    setSelectedAttachment(null);
+    setUploadedAttachment(null);
+    setError('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleAttachmentChange = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+      clearAttachment();
+      setError('Tệp tối đa 10 MB.');
+      return;
+    }
+    const mimeType = attachmentMimeType(file);
+    if (!mimeType) {
+      clearAttachment();
+      setError('Chỉ hỗ trợ ảnh PNG, JPEG, WebP hoặc tài liệu PDF.');
+      return;
+    }
+    setError('');
+    revokePreview(selectedAttachmentRef.current);
+    const nextAttachment = {
+      file,
+      mimeType,
+      previewUrl: mimeType.startsWith('image/') ? URL.createObjectURL(file) : null
+    };
+    selectedAttachmentRef.current = nextAttachment;
+    setSelectedAttachment(nextAttachment);
+    setUploadedAttachment(null);
+  };
+
+  useEffect(() => () => {
+    const previewUrl = selectedAttachmentRef.current?.previewUrl;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -72,6 +156,9 @@ export default function AgentChatWidget({ user, onOpenCase }) {
       const conversation = data.conversation;
       setConversationId(conversation.id);
       setMessages([]);
+      setDraft('');
+      pendingLocalMessageRef.current = null;
+      clearAttachment();
       await refreshConversations();
       textareaRef.current?.focus();
     } catch (err) {
@@ -83,6 +170,8 @@ export default function AgentChatWidget({ user, onOpenCase }) {
     const selected = event.target.value;
     setConversationId(selected || null);
     setMessages([]);
+    pendingLocalMessageRef.current = null;
+    clearAttachment();
     setError('');
     if (!selected) return;
     try {
@@ -94,26 +183,79 @@ export default function AgentChatWidget({ user, onOpenCase }) {
   };
 
   const sendMessage = async (value = draft) => {
-    const message = value.trim();
-    if (!message || loading) return;
+    const attachmentAtSend = selectedAttachment;
+    const message = value.trim() || (attachmentAtSend ? DEFAULT_ATTACHMENT_MESSAGE : '');
+    if ((!message && !attachmentAtSend) || loading) return;
     setError('');
-    setDraft('');
+    if (!attachmentAtSend) setDraft('');
     setLoading(true);
-    setMessages(current => [...current, { id: `local-user-${Date.now()}`, role: 'USER', content: message }]);
+    setLoadingStage(attachmentAtSend
+      ? (uploadedAttachment ? 'Trợ lý đang phân tích nội dung…' : 'Đang tải tài liệu và đọc OCR…')
+      : '');
+    const localMessageId = pendingLocalMessageRef.current || `local-user-${Date.now()}`;
+    if (!pendingLocalMessageRef.current) pendingLocalMessageRef.current = localMessageId;
+    const pendingAttachment = uploadedAttachment || (attachmentAtSend ? {
+      originalName: attachmentAtSend.file.name,
+      mimeType: attachmentAtSend.mimeType,
+      ocrStatus: 'UPLOADING'
+    } : null);
+    setMessages(current => {
+      const localMessage = {
+        id: localMessageId,
+        role: 'USER',
+        content: message,
+        ...(pendingAttachment ? { metadata: { attachment: pendingAttachment } } : {})
+      };
+      return current.some(item => item.id === localMessageId)
+        ? current.map(item => item.id === localMessageId ? localMessage : item)
+        : [...current, localMessage];
+    });
+    let fileReference = uploadedAttachment;
     try {
-      const data = responsePayload(await axios.post(`${API_BASE}/agent/chat`, { message, conversationId }));
+      if (attachmentAtSend && !fileReference) {
+        setLoadingStage('Đang tải tài liệu và đọc OCR…');
+        const formData = new FormData();
+        formData.append('evidence', attachmentAtSend.file);
+        const uploadData = responsePayload(await axios.post(`${API_BASE}/upload/evidence`, formData));
+        fileReference = attachmentMetadataFromUpload(uploadData, attachmentAtSend);
+        setUploadedAttachment(fileReference);
+        setMessages(current => current.map(item => item.id === localMessageId
+          ? { ...item, metadata: { ...item.metadata, attachment: fileReference } }
+          : item));
+      }
+      if (attachmentAtSend) setLoadingStage('Trợ lý đang phân tích nội dung…');
+      const data = responsePayload(await axios.post(`${API_BASE}/agent/chat`, {
+        message,
+        conversationId,
+        ...(fileReference ? { evidenceFileName: fileReference.fileName } : {})
+      }));
       setConversationId(data.conversationId);
-      setMessages(current => [...current, {
-        id: `local-agent-${Date.now()}`, role: 'ASSISTANT', content: data.message,
-        metadata: { ...data.provenance, sources: data.sources || [], dataSources: data.dataSources || [],
-          pendingAction: data.pendingAction, uiActions: data.uiActions || [] }
-      }]);
+      const savedAttachment = data.attachment || fileReference;
+      setMessages(current => [
+        ...current.map(item => item.id === localMessageId
+          ? { ...item, metadata: savedAttachment ? { ...item.metadata, attachment: savedAttachment } : undefined }
+          : item),
+        {
+          id: `local-agent-${Date.now()}`, role: 'ASSISTANT', content: data.message,
+          metadata: { ...data.provenance, sources: data.sources || [], dataSources: data.dataSources || [],
+            pendingAction: data.pendingAction, uiActions: data.uiActions || [] }
+        }
+      ]);
+      pendingLocalMessageRef.current = null;
+      setDraft('');
+      setError('');
+      if (attachmentAtSend) clearAttachment();
       await refreshConversations();
     } catch (err) {
       const messageText = err.response?.data?.message || err.message || 'Đã xảy ra lỗi khi gửi tin nhắn.';
       setError(messageText);
+      if (attachmentAtSend && !fileReference) {
+        setMessages(current => current.filter(item => item.id !== localMessageId));
+        pendingLocalMessageRef.current = null;
+      }
     } finally {
       setLoading(false);
+      setLoadingStage('');
       textareaRef.current?.focus();
     }
   };
@@ -176,6 +318,8 @@ export default function AgentChatWidget({ user, onOpenCase }) {
       setConversations(remaining);
       setMessages([]);
       setDraft('');
+      pendingLocalMessageRef.current = null;
+      clearAttachment();
       setError('');
       setConversationId(remaining[0]?.id || null);
       setConfirmDelete(false);
@@ -247,7 +391,7 @@ export default function AgentChatWidget({ user, onOpenCase }) {
               {conversations.length > 0 && (
                 <div className="agent-history-row">
                   <label htmlFor="agent-conversation-select">Hội thoại</label>
-                  <select id="agent-conversation-select" value={conversationId || ''} onChange={selectConversation} disabled={deleteBusy || confirmDelete}>
+                  <select id="agent-conversation-select" value={conversationId || ''} onChange={selectConversation} disabled={loading || deleteBusy || confirmDelete}>
                     {conversations.map(item => <option key={item.id} value={item.id}>{item.title || 'Cuộc trò chuyện'}</option>)}
                   </select>
                 </div>
@@ -266,7 +410,7 @@ export default function AgentChatWidget({ user, onOpenCase }) {
                   </div>
                 )}
                 {messages.map(item => <AgentMessage key={item.id} item={item} onConfirm={confirmAction} onCancel={cancelAction} busy={actionBusy} />)}
-                {loading && <div className="agent-loading" role="status"><span className="agent-loading-dot" />Đang kiểm tra thông tin…</div>}
+                {loading && <div className="agent-loading" role="status"><span className="agent-loading-dot" />{loadingStage || 'Đang kiểm tra thông tin…'}</div>}
                 {error && <div className="agent-error" role="alert">{error}</div>}
                 {messages.some(item => item.metadata?.uiActions?.length) && messages.flatMap(item => item.metadata?.uiActions || []).map(action => (
                     <button type="button" className="agent-open-case" key={`${action.type}-${action.caseId}`} onClick={() => openUiAction(action)}>
@@ -276,13 +420,37 @@ export default function AgentChatWidget({ user, onOpenCase }) {
                 <div ref={endRef} />
               </div>
               <div className="agent-compose-wrap">
+                {selectedAttachment && (
+                  <div className="agent-attachment-preview" aria-live="polite">
+                    {selectedAttachment.previewUrl
+                      ? <img src={selectedAttachment.previewUrl} alt="Xem trước tệp ảnh đính kèm" />
+                      : <FileText size={25} aria-hidden="true" />}
+                    <div className="agent-attachment-preview-copy">
+                      <strong title={selectedAttachment.file.name}>{selectedAttachment.file.name}</strong>
+                      <span>{formatFileSize(selectedAttachment.file.size)}</span>
+                    </div>
+                    <button type="button" aria-label="Bỏ tệp đính kèm" title="Bỏ tệp đính kèm"
+                      onClick={clearAttachment} disabled={loading || deleteBusy || confirmDelete}>
+                      <XCircle size={18} aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
                 <form className="agent-compose" onSubmit={event => { event.preventDefault(); sendMessage(); }}>
+                  <input ref={fileInputRef} className="sr-only" type="file"
+                    accept="image/png,image/jpeg,image/webp,application/pdf"
+                    aria-label="Đính kèm ảnh hoặc tài liệu" onChange={handleAttachmentChange} />
+                  <button type="button" className="agent-attach-button"
+                    aria-label="Đính kèm ảnh hoặc tài liệu" title="Đính kèm ảnh hoặc tài liệu"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={loading || deleteBusy || confirmDelete}>
+                    <Paperclip size={18} aria-hidden="true" />
+                  </button>
                   <label className="sr-only" htmlFor="agent-message-input">Tin nhắn cho trợ lý EDUASSISTANT</label>
                   <textarea id="agent-message-input" ref={textareaRef} value={draft} rows={1} maxLength={6000}
                     placeholder="Hỏi về hồ sơ hoặc quy trình của trường…" disabled={loading}
                     onChange={event => setDraft(event.target.value)}
                     onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} />
-                  <button type="submit" aria-label="Gửi tin nhắn" disabled={loading || !draft.trim()}><Send size={18} /></button>
+                  <button type="submit" aria-label="Gửi tin nhắn" disabled={loading || (!draft.trim() && !selectedAttachment)}><Send size={18} /></button>
                 </form>
                 <small>Enter để gửi · Shift+Enter xuống dòng · Không gửi thông tin đăng nhập</small>
               </div>
