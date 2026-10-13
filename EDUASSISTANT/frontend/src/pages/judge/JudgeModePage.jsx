@@ -320,7 +320,7 @@ export default function JudgeModePage({ onNavigateTab }) {
               <Shield size={13} />
               <span><strong>Deterministic Rule Engine Verification:</strong> 9 synthetic test fixtures, không gọi network, không ghi database, không thay đổi AI mode hoặc adaptive threshold.</span>
             </div>
-            {verifyResults.durationMs !== undefined && <p style={{ margin: '10px 0 0', color: '#94a3b8', fontSize: '.76rem' }}>Run {verifyResults.runId} · {verifyResults.durationMs} ms · {verifyResults.timestamp}</p>}
+            {verifyResults?.durationMs != null && <p style={{ margin: '10px 0 0', color: '#94a3b8', fontSize: '.76rem' }}>Run {verifyResults.runId} · {verifyResults.durationMs} ms · {verifyResults.timestamp}</p>}
           </div>
 
           {verifyResults && (
@@ -491,7 +491,7 @@ export default function JudgeModePage({ onNavigateTab }) {
       <section className="card-panel" style={{ padding: '18px 22px', border: '1px solid rgba(129, 140, 248, .35)' }}>
         <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>Optional Live AI Sanity Check</h3>
         <p style={{ margin: 0, color: '#cbd5e1', fontSize: '.82rem', lineHeight: 1.6 }}>
-          Chạy riêng bằng <code>python benchmark/run_live_ai_eval.py</code>. Kiểm tra Gemini thật khi đã cấu hình; nếu không, parser xác định sẽ được ghi rõ là fallback. Kết quả không làm thay đổi PASS/FAIL hoặc metric Track A. OpenRouter hiện không được dùng trong source.
+          Chạy riêng bằng <code>python benchmark/run_live_ai_eval.py</code>. Service thử Gemini trước, dùng OpenRouter làm fallback nếu được cấu hình; parser xác định được ghi rõ là fallback nếu không có kết quả AI dùng được. Kết quả không làm thay đổi PASS/FAIL hoặc metric Track A.
         </p>
         <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '.76rem' }}>
           AI confidence là score do model tạo, chưa được hiệu chỉnh thống kê trên production dataset.
