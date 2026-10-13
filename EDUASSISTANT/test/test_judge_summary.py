@@ -17,6 +17,10 @@ class JudgeSummaryTests(unittest.TestCase):
         body = __import__('json').loads(response.body)
         data = body['data']
         self.assertEqual(data['verifyHarness']['scenarioCount'], 9)
+        self.assertFalse(data['verifyHarness']['networkCallsPerformed'])
+        self.assertEqual(data['apiStatus'], 'AVAILABLE')
+        self.assertEqual(data['databaseStatus'], 'UNKNOWN')
+        self.assertNotIn('systemStatus', data)
         self.assertFalse(data['benchmark']['aiCallsPerformed'])
         self.assertNotIn('apiKey', str(data).lower())
         self.assertNotIn('token', str(data).lower())

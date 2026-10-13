@@ -22,6 +22,7 @@ Chạy in-memory hoàn toàn độc lập, không thay đổi dữ liệu thật
 
 import time
 import secrets
+import copy
 from datetime import datetime
 from typing import Dict, Any, List
 from app.services.rule_engine import evaluate_case
@@ -63,20 +64,20 @@ HARNESS_CASES = [
             'missingFields': [],
             'isComplete': True,
             'confidence': 0.98,
-            'source': 'gemini'
+            'source': 'fixed_test_fixture'
         },
         'ocr': {
             'studentCode': 'SV2026-1001',
             'tamperRisk': 'LOW',
             'confidenceScore': 0.98,
             'confidence': 0.98,
-            'modeUsed': 'live',
-            'isLive': True,
+            'modeUsed': 'fixture',
+            'isLive': False,
             'isFallback': False,
-            'isSynthetic': False
+            'isSynthetic': True
         },
         'files': [],
-        'aiMetadata': {'modeUsed': 'live', 'isLive': True, 'fallbackOccurred': False, 'isFallback': False, 'isSynthetic': False},
+        'aiMetadata': {'modeUsed': 'fixture', 'isLive': False, 'fallbackOccurred': False, 'isFallback': False, 'isSynthetic': True},
         'expectedDecision': 'AUTO_APPROVE',
         'expectedReason': None
     },
@@ -115,20 +116,20 @@ HARNESS_CASES = [
             'missingFields': [],
             'isComplete': True,
             'confidence': 0.95,
-            'source': 'gemini'
+            'source': 'fixed_test_fixture'
         },
         'ocr': {
             'studentCode': 'SV2026-1001',
             'tamperRisk': 'LOW',
             'confidenceScore': 0.95,
             'confidence': 0.95,
-            'modeUsed': 'live',
-            'isLive': True,
+            'modeUsed': 'fixture',
+            'isLive': False,
             'isFallback': False,
-            'isSynthetic': False
+            'isSynthetic': True
         },
         'files': [],
-        'aiMetadata': {'modeUsed': 'live', 'isLive': True, 'fallbackOccurred': False, 'isFallback': False, 'isSynthetic': False},
+        'aiMetadata': {'modeUsed': 'fixture', 'isLive': False, 'fallbackOccurred': False, 'isFallback': False, 'isSynthetic': True},
         'expectedDecision': 'AUTO_APPROVE',
         'expectedReason': None
     },
@@ -163,27 +164,27 @@ HARNESS_CASES = [
             'missingFields': ['ward'],
             'isComplete': False,
             'confidence': 0.60,
-            'source': 'gemini'
+            'source': 'fixed_test_fixture'
         },
         'ocr': {
             'studentCode': 'SV2026-1001',
             'tamperRisk': 'LOW',
             'confidenceScore': 0.60,
             'confidence': 0.60,
-            'modeUsed': 'live',
-            'isLive': True,
+            'modeUsed': 'fixture',
+            'isLive': False,
             'isFallback': False,
-            'isSynthetic': False
+            'isSynthetic': True
         },
         'files': [],
-        'aiMetadata': {'modeUsed': 'live', 'fallbackOccurred': False},
+        'aiMetadata': {'modeUsed': 'fixture', 'fallbackOccurred': False},
         'expectedDecision': 'ESCALATE_TO_HUMAN',
         'expectedReason': 'FACT_UNKNOWN'
     },
     {
         'id': 'HARNESS-04-TEMPORARY-ADDRESS',
-        'title': 'Kê khai Địa chỉ Tạm trú thay vì Thường trú bắt buộc',
-        'description': 'Theo Luật NVQS, giấy xác nhận hoãn NVQS bắt buộc gửi về nơi đăng ký thường trú.',
+        'title': 'Kê khai địa chỉ tạm trú ngoài cấu hình workflow',
+        'description': 'Workflow nội bộ hiện dùng địa chỉ thường trú làm dữ kiện đối chiếu.',
         'category': 'MILITARY_SERVICE_CONFIRMATION',
         'priority': 'MEDIUM',
         'student': {
@@ -209,20 +210,20 @@ HARNESS_CASES = [
             'missingFields': [],
             'isComplete': True,
             'confidence': 0.95,
-            'source': 'gemini'
+            'source': 'fixed_test_fixture'
         },
         'ocr': {
             'studentCode': 'SV2026-1001',
             'tamperRisk': 'LOW',
             'confidenceScore': 0.95,
             'confidence': 0.95,
-            'modeUsed': 'live',
-            'isLive': True,
+            'modeUsed': 'fixture',
+            'isLive': False,
             'isFallback': False,
-            'isSynthetic': False
+            'isSynthetic': True
         },
         'files': [],
-        'aiMetadata': {'modeUsed': 'live', 'fallbackOccurred': False},
+        'aiMetadata': {'modeUsed': 'fixture', 'fallbackOccurred': False},
         'expectedDecision': 'ESCALATE_TO_HUMAN',
         'expectedReason': 'DATA_CONFLICT'
     },
@@ -257,20 +258,20 @@ HARNESS_CASES = [
             'missingFields': [],
             'isComplete': True,
             'confidence': 0.95,
-            'source': 'gemini'
+            'source': 'fixed_test_fixture'
         },
         'ocr': {
             'studentCode': 'SV2026-1001',
             'tamperRisk': 'LOW',
             'confidenceScore': 0.95,
             'confidence': 0.95,
-            'modeUsed': 'live',
-            'isLive': True,
+            'modeUsed': 'fixture',
+            'isLive': False,
             'isFallback': False,
-            'isSynthetic': False
+            'isSynthetic': True
         },
         'files': [],
-        'aiMetadata': {'modeUsed': 'live', 'fallbackOccurred': False},
+        'aiMetadata': {'modeUsed': 'fixture', 'fallbackOccurred': False},
         'expectedDecision': 'ESCALATE_TO_HUMAN',
         'expectedReason': 'DATA_CONFLICT'
     },
@@ -305,20 +306,20 @@ HARNESS_CASES = [
             'missingFields': [],
             'isComplete': True,
             'confidence': 0.98,
-            'source': 'gemini'
+            'source': 'fixed_test_fixture'
         },
         'ocr': {
             'studentCode': 'SV2026-1001',
             'tamperRisk': 'LOW',
             'confidenceScore': 0.98,
             'confidence': 0.98,
-            'modeUsed': 'live',
-            'isLive': True,
+            'modeUsed': 'fixture',
+            'isLive': False,
             'isFallback': False,
-            'isSynthetic': False
+            'isSynthetic': True
         },
         'files': [],
-        'aiMetadata': {'modeUsed': 'live', 'fallbackOccurred': False},
+        'aiMetadata': {'modeUsed': 'fixture', 'fallbackOccurred': False},
         'expectedDecision': 'ESCALATE_TO_HUMAN',
         'expectedReason': 'AUTHORITY_REQUIRED'
     },
@@ -353,20 +354,20 @@ HARNESS_CASES = [
             'missingFields': [],
             'isComplete': True,
             'confidence': 0.98,
-            'source': 'gemini'
+            'source': 'fixed_test_fixture'
         },
         'ocr': {
             'studentCode': 'SV2026-1001',
             'tamperRisk': 'LOW',
             'confidenceScore': 0.98,
             'confidence': 0.98,
-            'modeUsed': 'live',
-            'isLive': True,
+            'modeUsed': 'fixture',
+            'isLive': False,
             'isFallback': False,
-            'isSynthetic': False
+            'isSynthetic': True
         },
         'files': [],
-        'aiMetadata': {'modeUsed': 'live', 'fallbackOccurred': False},
+        'aiMetadata': {'modeUsed': 'fixture', 'fallbackOccurred': False},
         'expectedDecision': 'ESCALATE_TO_HUMAN',
         'expectedReason': 'POLICY_OUT_OF_SCOPE'
     },
@@ -401,20 +402,20 @@ HARNESS_CASES = [
             'missingFields': [],
             'isComplete': True,
             'confidence': 0.98,
-            'source': 'gemini'
+            'source': 'fixed_test_fixture'
         },
         'ocr': {
             'studentCode': 'SV2026-9999',
             'tamperRisk': 'LOW',
             'confidenceScore': 0.98,
             'confidence': 0.98,
-            'modeUsed': 'live',
-            'isLive': True,
+            'modeUsed': 'fixture',
+            'isLive': False,
             'isFallback': False,
-            'isSynthetic': False
+            'isSynthetic': True
         },
         'files': [],
-        'aiMetadata': {'modeUsed': 'live', 'fallbackOccurred': False},
+        'aiMetadata': {'modeUsed': 'fixture', 'fallbackOccurred': False},
         'expectedDecision': 'ESCALATE_TO_HUMAN',
         'expectedReason': 'OWNERSHIP_UNCLEAR'
     },
@@ -459,7 +460,7 @@ HARNESS_CASES = [
             'modeUsed': 'mock',
             'isLive': False,
             'isFallback': True,
-            'isSynthetic': False
+            'isSynthetic': True
         },
         'files': [],
         'aiMetadata': {'modeUsed': 'mock', 'fallbackOccurred': True},
@@ -480,17 +481,26 @@ def run_verify_harness() -> Dict[str, Any]:
 
     passed_count = 0
     failed_count = 0
+    run_started = time.perf_counter()
 
     for item in HARNESS_CASES:
         t0 = time.time()
 
-        case_ai_meta = item.get('aiMetadata', {})
+        is_fallback_case = item.get('id') == 'HARNESS-09-NON-LIVE-FAILSAFE'
+        case_ai_meta = {
+            'modeUsed': 'mock' if is_fallback_case else 'fixture',
+            'isLive': False,
+            'isFallback': is_fallback_case,
+            'fallbackOccurred': is_fallback_case,
+            'isSynthetic': True,
+            'provider': 'FIXED_TEST_FIXTURE',
+            'apiCallPerformed': False,
+        }
 
         # Chuẩn bị hồ sơ sinh viên đầy đủ cho fixture kiểm thử
         st_info = dict(item.get('student', {}))
-        # Harness fixtures represent facts returned by the trusted SIS connector.
-        # The rule engine requires this provenance before it can auto-approve.
-        st_info.setdefault('source', 'VERIFIED_INSTITUTIONAL_SIS')
+        st_info['sourceType'] = 'SYNTHETIC_TEST_SIS'
+        st_info['verificationStatus'] = 'TEST_VERIFIED'
         if 'currentTermActive' not in st_info:
             st_info['currentTermActive'] = (st_info.get('academicStatus') == 'ACTIVE')
         if 'hasCurrentSchedule' not in st_info:
@@ -507,7 +517,7 @@ def run_verify_harness() -> Dict[str, Any]:
             'description': item['description'],
             'category': item['category'],
             'priority': item['priority'],
-            'evidenceFiles': item.get('files', []),
+            'evidenceFiles': copy.deepcopy(item.get('files', [])),
             'aiMetadata': case_ai_meta,
             'studentClaim': item.get('studentClaim', {}),
             'institutionalFacts': st_info,
@@ -524,7 +534,12 @@ def run_verify_harness() -> Dict[str, Any]:
             case_data=case_data,
             ocr_data=item.get('ocr'),
             student_user=st_info,
-            ai_context=case_ai_meta
+            ai_context=case_ai_meta,
+            evaluation_context={
+                'evaluationMode': 'DETERMINISTIC_TEST',
+                'allowSyntheticVerifiedInstitutionalFacts': True,
+                'allowSyntheticAIAnalysis': True,
+            },
         )
         duration_ms = round((time.time() - t0) * 1000, 2)
 
@@ -548,6 +563,7 @@ def run_verify_harness() -> Dict[str, Any]:
             'expectedReason': item['expectedReason'],
             'actualReason': actual_reason,
             'ruleMatched': verdict.get('ruleMatched'),
+            'institutionalTrust': verdict.get('institutionalTrust'),
             'explanation': verdict.get('explanation'),
             'confidence': verdict.get('confidence'),
             'pass': test_passed,
@@ -557,7 +573,12 @@ def run_verify_harness() -> Dict[str, Any]:
     return {
         'runId': run_id,
         'timestamp': timestamp,
-        'disclaimer': 'PASS/FAIL do bộ quy tắc xác định; Gemini chỉ rà soát bổ sung khi API khả dụng.',
+        'durationMs': round((time.perf_counter() - run_started) * 1000, 2),
+        'networkCallsPerformed': False,
+        'databaseCallsPerformed': False,
+        'databaseWritesPerformed': False,
+        'aiCallsPerformed': False,
+        'disclaimer': 'Deterministic Rule Engine Verification - Không gọi Gemini Live trong các fixture này.',
         'verificationType': 'DETERMINISTIC_RULE_ENGINE',
         'total': len(HARNESS_CASES),
         'passed': passed_count,

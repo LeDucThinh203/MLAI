@@ -31,9 +31,10 @@ def _benchmark_summary():
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     result_path = os.path.join(project_root, 'benchmark', 'results', 'latest.json')
     default = {
-        'benchmarkType': 'GEMINI_ASSISTED_END_TO_END_BENCHMARK', 'aiCallsPerformed': False,
-        'aiMode': None, 'aiProvider': None, 'aiModel': None, 'aiApiCalls': 0,
-        'aiCasesProcessed': 0, 'fallbackCases': 0, 'aiFallbackReason': None,
+        'benchmarkType': 'DETERMINISTIC_TRACK_A_DECISION_BENCHMARK',
+        'aiCallsPerformed': False,
+        'evaluationTarget': 'ESCALATION_DECISION_POLICY',
+        'scenarioCount': None,
         'totalCases': None, 'decisionAccuracy': None, 'automationRate': None,
         'escalationRate': None, 'missedEscalationRate': None,
         'unnecessaryEscalationRate': None,
@@ -46,8 +47,8 @@ def _benchmark_summary():
         result = dict(default)
         result['benchmarkType'] = data.get('benchmarkType', default['benchmarkType'])
         result['aiCallsPerformed'] = data.get('aiCallsPerformed', False)
-        for key in ('aiMode', 'aiProvider', 'aiModel', 'aiApiCalls', 'aiCasesProcessed', 'fallbackCases', 'aiFallbackReason'):
-            result[key] = data.get(key, default[key])
+        result['evaluationTarget'] = data.get('evaluationTarget', default['evaluationTarget'])
+        result['scenarioCount'] = data.get('scenarioCount', metrics.get('totalCases'))
         result['benchmarkRunId'] = data.get('benchmarkRunId')
         result['timestamp'] = data.get('timestamp')
         result['executionTimeSec'] = data.get('executionTimeSec')
@@ -66,12 +67,18 @@ async def get_judge_summary():
     openrouter_configured = len(os.environ.get('OPENROUTER_API_KEY', '').strip()) > 10
     configured = gemini_configured or openrouter_configured
     return api_response(200, True, 'Public judge summary loaded.', {
-        'systemStatus': 'AVAILABLE',
+        'apiStatus': 'AVAILABLE',
+        'databaseStatus': 'UNKNOWN',
         'ai': {'configured': configured, 'status': 'CONFIGURED' if configured else 'NOT_CONFIGURED',
                'providers': {'gemini': gemini_configured, 'openrouter': openrouter_configured}},
         'adaptiveThreshold': get_confidence_threshold(),
         'benchmark': _benchmark_summary(),
-        'verifyHarness': {'scenarioCount': len(HARNESS_CASES), 'type': 'DETERMINISTIC_RULE_ENGINE_VERIFICATION'},
+        'verifyHarness': {
+            'scenarioCount': len(HARNESS_CASES),
+            'type': 'DETERMINISTIC_RULE_ENGINE_VERIFICATION',
+            'networkCallsPerformed': False,
+            'databaseWritesPerformed': False,
+        },
     })
 
 

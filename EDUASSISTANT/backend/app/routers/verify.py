@@ -11,7 +11,6 @@ dành riêng cho Giám khảo và Kiểm thử hệ thống:
 from fastapi import APIRouter
 from app.core.responses import api_response
 from app.services.verify_harness_service import run_verify_harness
-from app.services.gemini_verify_service import add_gemini_review
 
 router = APIRouter(tags=["Verify Harness"])
 
@@ -32,5 +31,4 @@ async def execute_verify_harness_endpoint():
       9. AI fallback / fail-safe
     """
     result = run_verify_harness()
-    result = await add_gemini_review(result)
-    return api_response(200, True, 'Chạy Verify Harness kiểm chuẩn quy tắc thành công.', result)
+    return api_response(200, True, 'Chạy Verify Harness xác định thành công.', result)
