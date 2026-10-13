@@ -108,6 +108,21 @@ def test_widget_is_mounted_only_for_students_and_keeps_public_route_exclusions()
     app_source = (Path(__file__).parents[1] / 'frontend' / 'src' / 'App.jsx').read_text(encoding='utf-8')
     widget_source = (Path(__file__).parents[1] / 'frontend' / 'src' / 'components' / 'agent' / 'AgentChatWidget.jsx').read_text(encoding='utf-8')
 
+    assert "import StudentPortal from './pages/student/StudentPortal';" in app_source
+    assert "import ReviewerPortal from './pages/reviewer/ReviewerPortal';" in app_source
+    assert "import AdminPortal from './pages/admin/AdminPortal';" in app_source
+    assert "user?.role === 'ADMIN' && (" in app_source
+    assert '<AdminPortal ' in app_source
+    assert "user?.role === 'REVIEWER' && (" in app_source
+    assert '<ReviewerPortal ' in app_source
+    assert "user?.role === 'STUDENT' && (" in app_source
+    assert '<StudentPortal ' in app_source
+    assert "ADMIN: ['admin_overview', 'admin_policies', 'admin_sis', 'admin_users', 'reviewer_queue', 'reviewer_audit', 'account_settings']" in app_source
+    assert "REVIEWER: ['reviewer_queue', 'reviewer_audit', 'account_settings']" in app_source
+    assert "STUDENT: ['student_submit', 'student_cases', 'student_history', 'account_settings']" in app_source
+    assert "if (role === 'ADMIN') return 'admin_overview';" in app_source
+    assert "if (role === 'REVIEWER') return 'reviewer_queue';" in app_source
+
     assert "user?.role === 'STUDENT'" in app_source
     assert "!location.pathname.startsWith('/login')" in app_source
     assert "!location.pathname.startsWith('/verify')" in app_source

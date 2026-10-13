@@ -77,7 +77,7 @@ function MainApp() {
                     {user?.role === 'REVIEWER' && (
                       <ReviewerPortal activeTab={activeTab} setActiveTab={setActiveTab} caseToOpen={caseToOpen} onCaseOpened={() => setCaseToOpen(null)} />
                     )}
-                    {(user?.role === 'STUDENT' || (!['ADMIN', 'REVIEWER'].includes(user?.role))) && (
+                    {user?.role === 'STUDENT' && (
                       <StudentPortal activeTab={activeTab} setActiveTab={setActiveTab} caseToOpen={caseToOpen} onCaseOpened={() => setCaseToOpen(null)} />
                     )}
                   </>
