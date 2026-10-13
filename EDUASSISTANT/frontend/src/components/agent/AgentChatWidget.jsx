@@ -8,8 +8,7 @@ import './AgentChatWidget.css';
 const STUDENT_PROMPTS = [
   'Hồ sơ của tôi đang được xử lý đến đâu?',
   'Tôi cần chuẩn bị giấy tờ gì để nộp hồ sơ?',
-  'Kiểm tra cách viết địa chỉ giúp tôi.',
-  'Xem thông tin sinh viên nhà trường đang lưu.'
+  'Kiểm tra cách viết địa chỉ giúp tôi.'
 ];
 
 function responsePayload(response) {

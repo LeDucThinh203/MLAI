@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
   PlusCircle, RefreshCw, Paperclip, UploadCloud,
   CheckCircle2, AlertTriangle, Printer, Send, Building2, AlertCircle, QrCode,
-  MapPin, Shield, User, FileText, Check, AlertOctagon
+  MapPin, Shield, FileText, Check, AlertOctagon
 } from 'lucide-react';
 import { API_BASE, SERVER_BASE } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
@@ -292,17 +292,6 @@ const StudentPortal = ({ activeTab, setActiveTab, caseToOpen, onCaseOpened }) =>
           </div>
 
           <form onSubmit={handleSubmitCase} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Basic account identity only; institutional SIS details are admin-only. */}
-            <div style={{ background: '#0f172a', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: '10px', padding: '16px 20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#38bdf8', fontWeight: 700, fontSize: '0.86rem' }}>
-                <User size={16} /> Thông tin tài khoản
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', fontSize: '0.84rem' }}>
-                <div><span>Họ và tên</span><br /><strong>{user?.fullName || 'Chưa có thông tin'}</strong></div>
-                <div><span>Mã sinh viên</span><br /><strong>{user?.studentCode || 'Chưa có thông tin'}</strong></div>
-              </div>
-            </div>
-
             {/* KHỐI 2: MỤC ĐÍCH YÊU CẦU (READ-ONLY) */}
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', color: '#e2e8f0' }}>
