@@ -150,3 +150,108 @@
   .agent-loading-dot { animation: none; }
   .agent-launcher { transition: none; }
 }
+
+/* Reading-first typography and Markdown hierarchy for assistant replies. */
+.agent-widget {
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.agent-message {
+  border: 1px solid #e2e9f1;
+  border-radius: 16px;
+  padding: 13px 15px;
+  background: #f7f9fc;
+}
+
+.agent-message.is-user {
+  border-color: #d5def8;
+  background: #edf2ff;
+}
+
+.agent-message-label {
+  margin-bottom: 7px;
+  color: #52677f;
+  font-size: 11px;
+  letter-spacing: .01em;
+}
+
+.agent-message.is-agent .agent-message-label { color: #285d8c; }
+.agent-message.is-user .agent-message-label { color: #4058a0; }
+
+.agent-message-content {
+  overflow-wrap: anywhere;
+  color: #263b55;
+  font-size: 14.5px;
+  line-height: 1.72;
+  white-space: pre-wrap;
+}
+
+.agent-message.is-user .agent-message-content,
+.agent-message.is-system .agent-message-content {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.agent-message.is-agent .agent-message-content p { margin: 0; }
+.agent-message.is-agent .agent-message-content p + p { margin-top: 11px; }
+.agent-message.is-agent .agent-message-content strong { color: #173f68; font-size: 1.04em; font-weight: 800; }
+.agent-message.is-agent .agent-message-content em { color: #425a75; }
+.agent-message.is-agent .agent-message-content h3,
+.agent-message.is-agent .agent-message-content h4 {
+  margin: 15px 0 7px;
+  color: #1b426b;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+.agent-message.is-agent .agent-message-content h3:first-child,
+.agent-message.is-agent .agent-message-content h4:first-child { margin-top: 0; }
+.agent-message.is-agent .agent-message-content ul,
+.agent-message.is-agent .agent-message-content ol {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 4px;
+  padding-left: 22px;
+}
+.agent-message.is-agent .agent-message-content li { padding-left: 2px; }
+.agent-message.is-agent .agent-message-content li::marker { color: #5578a2; font-weight: 700; }
+.agent-message.is-agent .agent-message-content code {
+  border: 1px solid #dce5ef;
+  border-radius: 5px;
+  padding: 1px 5px;
+  background: #edf3f8;
+  color: #294e73;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: .88em;
+}
+.agent-message.is-agent .agent-message-content pre {
+  overflow-x: auto;
+  margin: 9px 0;
+  border: 1px solid #dce5ef;
+  border-radius: 9px;
+  padding: 11px 12px;
+  background: #eef3f8;
+  white-space: pre;
+}
+.agent-message.is-agent .agent-message-content pre code { border: 0; padding: 0; background: transparent; }
+.agent-message.is-agent .agent-message-content a { color: #155a93; font-weight: 700; text-underline-offset: 2px; }
+.agent-message.is-agent .agent-message-content blockquote {
+  margin: 9px 0;
+  border-left: 3px solid #9bb8d4;
+  padding: 2px 0 2px 11px;
+  color: #52677f;
+}
+.agent-message.is-agent .agent-message-content hr { margin: 12px 0; border: 0; border-top: 1px solid #dce5ef; }
+.agent-message-table-wrap { max-width: 100%; overflow-x: auto; margin: 10px 0; border: 1px solid #dce5ef; border-radius: 8px; }
+.agent-message-table-wrap table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; line-height: 1.5; }
+.agent-message-table-wrap th,
+.agent-message-table-wrap td { min-width: 90px; border-bottom: 1px solid #e5ebf2; padding: 8px 10px; text-align: left; vertical-align: top; }
+.agent-message-table-wrap th { background: #edf3f8; color: #294866; font-weight: 800; }
+.agent-message-table-wrap tr:last-child td { border-bottom: 0; }
+
+@media (max-width: 560px) {
+  .agent-message { max-width: 98%; padding: 12px 13px; }
+  .agent-message-content { font-size: 14px; line-height: 1.7; }
+  .agent-message.is-user .agent-message-content,
+  .agent-message.is-system .agent-message-content { font-size: 13.5px; }
+}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, Image as ImageIcon } from 'lucide-react';
 import AgentActionCard from './AgentActionCard';
+import AgentMessageContent from './AgentMessageContent';
 
 export default function AgentMessage({ item, onConfirm, onCancel, busy }) {
   const isUser = item.role === 'USER';
@@ -27,7 +28,9 @@ export default function AgentMessage({ item, onConfirm, onCancel, busy }) {
           </div>
         </div>
       )}
-      <div className="agent-message-content">{item.content}</div>
+      {isUser || isSystem
+        ? <div className="agent-message-content">{item.content}</div>
+        : <AgentMessageContent content={item.content} />}
       {!isUser && metadata.dataSources?.length > 0 && (
         <div className="agent-live-data">Đã tra cứu thông tin hệ thống{metadata.dataSources.filter(value => value.includes('CASE-')).length > 0 ? ` · ${metadata.dataSources.filter(value => value.includes('CASE-')).slice(0, 3).join(', ')}` : ''}</div>
       )}
