@@ -9,12 +9,14 @@ import time
 import unicodedata
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from typing import Any
 
 from pydantic import ValidationError
 
 from app.config import (AGENT_ACTION_TTL_SECONDS, AGENT_ENABLED, AGENT_HISTORY_MESSAGES,
-                        AGENT_MAX_MESSAGE_CHARS, AGENT_MAX_TOOL_STEPS, GEMINI_API_KEY)
+                        AGENT_MAX_MESSAGE_CHARS, AGENT_MAX_TOOL_STEPS, GEMINI_API_KEY,
+                        project_root)
 from app.db.db import db_service
 from app.schemas.agent import PlannerResponse
 from app.services import agent_repository, agent_rag_service, agent_tool_service
@@ -38,7 +40,13 @@ KNOWLEDGE_INTENT_TERMS = (
     'policy', 'chính sách', 'quy trình', 'quy định', 'thủ tục', 'workflow',
     'yêu cầu', 'cần chuẩn bị', 'giấy tờ', 'địa chỉ', 'tại sao', 'vì sao', 'why is', 'why does',
     'workflow rule', 'what documents', 'what is the policy', 'how do i apply', 'how can i apply',
-    'what is required', 'process steps',
+    'what is required', 'process steps', 'ý nghĩa trạng thái', 'nghĩa là gì', 'mã trạng thái',
+    'auto_approve', 'auto approve', 'escalate_to_human', 'escalate to human', 'ownership_unclear',
+    'ownership unclear', 'fact_unknown', 'fact unknown', 'data_conflict', 'data conflict',
+    'authority_required', 'authority required', 'policy_out_of_scope', 'policy out of scope',
+    'under_review', 'under review', 'requires_supplement', 'requires supplement',
+    'escalation', 'lý do chuyển cán bộ', 'xóa cuộc trò chuyện', 'xoa hoi thoai',
+    'delete conversation',
 )
 _CASE_ID = re.compile(r'\bCASE[-_ ]?\d{2,}(?:[A-Z0-9-]*)\b', re.I)
 _LEGAL_ELIGIBILITY_VI = re.compile(
@@ -368,8 +376,19 @@ def _user_explicitly_requested_write(message: str) -> bool:
     ))
 
 
+@lru_cache(maxsize=1)
+def _load_chat_response_guidelines() -> str:
+    prompt_path = os.path.join(project_root, 'backend', 'prompts', 'rag_chatbox_response_prompt.md')
+    try:
+        with open(prompt_path, 'r', encoding='utf-8') as prompt_file:
+            return prompt_file.read().strip()
+    except OSError:
+        return ('Trả lời thẳng câu hỏi, đủ thông tin cần thiết bằng tiếng Việt. Chọn độ dài và định dạng '
+                'theo nội dung; không thêm ý ngoài câu hỏi, lặp dữ liệu không cần thiết hoặc lời mời chung chung.')
+
+
 def _build_system_instruction(user: dict) -> str:
-    return """You are EDUASSISTANT Student AI Agent. You assist only the authenticated student. Reply in Vietnamese unless the student writes in another language.
+    base_instruction = """You are EDUASSISTANT Student AI Agent. You assist only the authenticated student. Reply in Vietnamese unless the student writes in another language.
 Never claim to be a reviewer, administrator, university officer, or military authority. Only access records belonging to the authenticated student through allowlisted tools. You may read the student's basic account profile (name and student code), explain the student's own case workflow status without accessing SIS facts, search policy/RAG, normalize an address, help prepare or supplement a case, add a comment to the student's case, and manage the student's notifications. SIS details such as faculty, academic status, course dates, current term, schedule, institutional address, record status, verification status, and SIS provenance are admin-only. Never retrieve, infer, or display those SIS details.
 You may not approve, reject, stop, override, or reroute a case; provide reviewer feedback; change adaptive thresholds; manage SIS records or users; access global audit logs; or perform administrator actions. The server is the final authority for tool authorization and record ownership.
 EDUASSISTANT only manages an internal student-status confirmation workflow. Never decide or promise legal eligibility for military-service deferment or exemption. A competent authority makes that decision. AUTO_APPROVE is only an internal workflow result, not an official certificate or legal decision. The deterministic Rule Engine owns workflow routing; never replace or override its result with model judgment.
@@ -378,6 +397,7 @@ Never request, repeat, or process passwords, API keys, tokens, database URLs, pr
 Student write actions may only be prepared as a preview. Never claim a write happened until the authenticated student confirms it through the separate confirmation endpoint. Do not try to confirm, simulate, or bypass that step.
 Do not invent live data, policy, or citations. Cite only source metadata provided by retrieval. If the knowledge base has no relevant evidence, say so.
 Return exactly one JSON object with keys responseType, message, and toolCalls. responseType is ANSWER or TOOL_CALL. ANSWER has an empty toolCalls array. TOOL_CALL has one to four calls; every call has a string name and an object arguments value. Do not add keys or markdown fences."""
+    return f'{base_instruction}\n\n{_load_chat_response_guidelines()}'
 
 
 def _build_agent_context(user: dict, message: str, history: list[dict], rag: dict,

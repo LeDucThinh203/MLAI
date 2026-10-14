@@ -125,15 +125,21 @@ app.include_router(agent.router)
 
 @app.on_event('startup')
 async def initialize_agent_knowledge_base():
-    """Create a fast local lexical index without making startup depend on Gemini."""
+    """Incrementally sync allowlisted RAG sources without embeddings or pruning custom entries."""
     from app.services import agent_rag_service
     from app.config import AGENT_ENABLED
     if not AGENT_ENABLED:
         return
     try:
-        if agent_rag_service.status().get('chunks', 0) == 0:
-            result = await agent_rag_service.reindex(enable_embeddings=False)
-            print(f"[Agent RAG] Local index initialized: {result['documentsProcessed']} documents, {result['chunksCreated']} chunks.")
+        result = await agent_rag_service.reindex(enable_embeddings=False, prune_obsolete=False)
+        if result['failedDocuments']:
+            print(f"[Agent RAG] Source sync incomplete: {result['failedDocuments']}")
+        else:
+            print('[Agent RAG] Sources synchronized: '
+                  f"{result['documentsProcessed']} documents, "
+                  f"{result['chunksCreated']} new chunks, "
+                  f"{result['chunksUpdated']} updated, "
+                  f"{result['documentsSkipped']} unchanged.")
     except Exception as exc:
         print(f'[Agent RAG] Startup lexical indexing deferred ({type(exc).__name__}).')
 

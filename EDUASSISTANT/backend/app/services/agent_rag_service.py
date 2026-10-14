@@ -21,7 +21,10 @@ from app.services import agent_repository
 
 
 _SOURCES = (
-    ('policy:student-service', 'docs/policies/student_service_policy.md', 'Chính sách nghiệp vụ NVQS', 'POLICY_DOCUMENT', 1.0),
+    ('policy:student-service', 'docs/policies/student_service_policy.md',
+     'Chính sách nghiệp vụ NVQS', 'POLICY_DOCUMENT', 1.0),
+    ('policy:student-agent-guide', 'docs/policies/student_agent_faq.md',
+     'Hướng dẫn nghiệp vụ cho Student Agent', 'STUDENT_GUIDANCE', 0.88),
     ('docs:system-overview', 'docs/SYSTEM_OVERVIEW.md', 'EDUASSISTANT System Overview', 'SYSTEM_DOCUMENTATION', 0.72),
     ('docs:architecture', 'docs/architecture/ARCHITECTURE.md', 'EDUASSISTANT Architecture', 'SYSTEM_DOCUMENTATION', 0.60),
 )
@@ -214,12 +217,13 @@ async def _embed_many(texts: list[str]) -> list[list[float] | None]:
     return await asyncio.gather(*(one(text) for text in texts))
 
 
-async def reindex(*, enable_embeddings: bool = True) -> dict:
+async def reindex(*, enable_embeddings: bool = True, prune_obsolete: bool = True) -> dict:
     processed = skipped = created = updated = reused = embedding_calls = 0
     providers, models, failed = set(), set(), []
     sources = _all_sources()
     allowed_keys = [source['source_key'] for source in sources]
-    agent_repository.delete_obsolete_rag_documents(allowed_keys)
+    if prune_obsolete:
+        agent_repository.delete_obsolete_rag_documents(allowed_keys)
     for _, relative_path, _, _, _ in _SOURCES:
         if not (Path(project_root) / relative_path).is_file():
             failed.append({'sourceKey': relative_path, 'error': 'SOURCE_NOT_FOUND'})
