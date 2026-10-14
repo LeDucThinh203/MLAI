@@ -25,6 +25,23 @@ export const RULE_DECISION_LABELS = {
   ESCALATE_TO_HUMAN: 'Cần cán bộ kiểm tra thêm'
 };
 
+export const STUDENT_AGENT_TERM_LABELS = {
+  MILITARY_SERVICE_CONFIRMATION: 'xác nhận tình trạng sinh viên để hoàn thiện hồ sơ nghĩa vụ quân sự',
+  AUTO_APPROVE: 'được hệ thống xử lý tự động trong quy trình nội bộ',
+  ESCALATE_TO_HUMAN: 'cần cán bộ xem xét thêm',
+  REQUIRES_SUPPLEMENT: 'cần bổ sung thông tin',
+  INFO_REQUESTED: 'cần bổ sung thông tin',
+  UNDER_REVIEW: 'đang được xem xét',
+  PENDING_ACTION: 'đang chờ bạn xác nhận'
+};
+
+export function formatStudentAgentMessage(message) {
+  return Object.entries(STUDENT_AGENT_TERM_LABELS).reduce(
+    (text, [code, label]) => text.replace(new RegExp(`\\b${code}\\b`, 'g'), label),
+    String(message ?? '')
+  );
+}
+
 export const REVIEW_REASON_LABELS = {
   OWNERSHIP_UNCLEAR: 'Thông tin sinh viên chưa khớp',
   FACT_UNKNOWN: 'Thiếu thông tin hoặc giấy tờ cần thiết',

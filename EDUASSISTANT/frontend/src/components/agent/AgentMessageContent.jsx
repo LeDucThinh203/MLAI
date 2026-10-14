@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatStudentAgentMessage } from '../../utils/displayLabels';
 
 const BLOCK_START = /^(?:#{1,3}\s+|>\s?|\s*[-*•]\s+|\s*\d+[.)]\s+|\s*```|\s*(?:---+|___+|\*\*\*+)\s*$)/;
 
@@ -36,7 +37,7 @@ function isListLine(line) {
 }
 
 export default function AgentMessageContent({ content }) {
-  const lines = String(content ?? '').replace(/\r\n?/g, '\n').split('\n');
+  const lines = formatStudentAgentMessage(content).replace(/\r\n?/g, '\n').split('\n');
   const blocks = [];
   let index = 0;
 
