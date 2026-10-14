@@ -193,16 +193,26 @@
 }
 
 .agent-message.is-agent .agent-message-content p { margin: 0; }
-.agent-message.is-agent .agent-message-content p + p { margin-top: 11px; }
-.agent-message.is-agent .agent-message-content strong { color: #173f68; font-size: 1.04em; font-weight: 800; }
+.agent-message.is-agent .agent-message-content p + p { margin-top: 13px; }
+.agent-message.is-agent .agent-message-content strong {
+  color: #123f68;
+  font-size: 1.07em;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: #b8cfe5;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
 .agent-message.is-agent .agent-message-content em { color: #425a75; }
 .agent-message.is-agent .agent-message-content h3,
 .agent-message.is-agent .agent-message-content h4 {
-  margin: 15px 0 7px;
+  margin: 16px 0 8px;
   color: #1b426b;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 800;
+  letter-spacing: .07em;
   line-height: 1.4;
+  text-transform: uppercase;
 }
 .agent-message.is-agent .agent-message-content h3:first-child,
 .agent-message.is-agent .agent-message-content h4:first-child { margin-top: 0; }

@@ -73,8 +73,8 @@ _SIS_DETAIL_TERMS = (
 _SIS_CONTEXT_TERMS = ('thong tin sinh vien', 'ho so sinh vien', 'du lieu sinh vien', 'ho so hoc tap')
 _SIS_CONTEXT_MARKERS = ('cua toi', 'cua minh', 'nha truong', 'dang luu', 'sis')
 _SIS_ACCESS_NOTICE = (
-    'Chatbox không truy cập thông tin SIS của nhà trường. Các thông tin như khoa, tình trạng học, '
-    'lịch học, thời khóa biểu và địa chỉ do nhà trường lưu chỉ dành cho Quản trị viên.'
+    'Chatbox không thể xem **thông tin học tập do nhà trường lưu**, như khoa, tình trạng học, '
+    'lịch học hoặc địa chỉ thường trú. Những thông tin này chỉ dành cho quản trị viên.'
 )
 MAX_AGENT_ATTACHMENT_TEXT_CHARS = 12000
 _DOCUMENT_AUTHENTICITY_TERMS = (
@@ -93,12 +93,11 @@ _ATTACHMENT_CONTENT_TERMS = (
     'don vi cap', 'issuing authority', 'issue date', 'student code', 'student name',
 )
 _OCR_UNAVAILABLE_NOTICE = (
-    'Mình đã nhận được tệp nhưng OCR hiện chưa đọc được nội dung. Bạn có thể thử ảnh rõ hơn '
-    'hoặc kiểm tra lại tài liệu. Mình sẽ không tự suy đoán nội dung không đọc được.'
+    'Mình chưa đọc rõ nội dung tệp bạn gửi. Bạn thử tải lên ảnh sáng, rõ và chụp trọn trang nhé.\n\n'
+    'Mình sẽ không tự đoán phần nội dung chưa đọc được.'
 )
 _DOCUMENT_AUTHENTICITY_NOTICE = (
-    'Mình chỉ có thể đọc nội dung nhìn thấy trong tài liệu; hệ thống OCR không xác định tính '
-    'xác thực hoặc hiệu lực pháp lý của tài liệu.'
+    'Mình có thể giúp đọc nội dung nhìn thấy, nhưng không thể xác nhận **giấy tờ là thật hoặc còn hiệu lực**.'
 )
 
 _rate_lock = asyncio.Lock()
@@ -459,23 +458,52 @@ def _fallback_read_intent(message: str, role: str = 'STUDENT') -> tuple[str, dic
     return None
 
 
+_STUDENT_FALLBACK_CASE_STATUSES = {
+    'SUBMITTED': 'đã tiếp nhận, chờ xem xét',
+    'RESUBMITTED': 'đã nhận thông tin bổ sung',
+    'UNDER_REVIEW': 'đang được xem xét',
+    'APPROVED': 'đã chấp thuận trong quy trình nội bộ',
+    'REJECTED': 'chưa được chấp thuận trong quy trình nội bộ',
+    'REQUIRES_SUPPLEMENT': 'cần bổ sung thông tin',
+    'INFO_REQUESTED': 'cần bổ sung thông tin',
+    'STOPPED': 'đã dừng xử lý',
+    'PENDING': 'đang chờ xác nhận',
+    'EXECUTING': 'đang được xử lý',
+    'EXECUTED': 'đã hoàn tất',
+    'CANCELLED': 'đã hủy',
+    'FAILED': 'chưa thực hiện được',
+}
+
+
+def _student_fallback_case_status(status: Any) -> str:
+    return _STUDENT_FALLBACK_CASE_STATUSES.get(str(status or '').upper(), 'đang được cập nhật')
+
+
 def _fallback_text(message: str, rag: dict, tool_results: list[dict], failed_api: bool) -> str:
     if tool_results:
         result = tool_results[-1].get('result', {})
         if isinstance(result, dict) and result.get('cases'):
             cases = result['cases'][:8]
-            return 'Dữ liệu hồ sơ trực tiếp:\n' + '\n'.join(f"• {case.get('id')}: {case.get('status')} — {case.get('title', '')}" for case in cases)
+            lines = [
+                f"- **{case.get('title') or 'Hồ sơ'}:** {_student_fallback_case_status(case.get('status'))}."
+                for case in cases
+            ]
+            return '**Hồ sơ của bạn**\n\n' + '\n'.join(lines)
         if isinstance(result, dict) and result.get('id') and result.get('status'):
-            return f"Hồ sơ {result.get('id')} hiện ở trạng thái {result.get('status')}. Đây là trạng thái workflow nội bộ."
-        return 'Đã truy vấn dữ liệu hệ thống được phép. Mình đang dùng chế độ trả lời dự phòng nên chỉ có thể tóm tắt dữ liệu có sẵn.'
+            title = result.get('title')
+            subject = f"**{title}**" if title else 'Hồ sơ của bạn'
+            return f"{subject} đang **{_student_fallback_case_status(result.get('status'))}**."
+        return 'Mình đã kiểm tra thông tin bạn được phép xem, nhưng chưa thể tóm tắt chính xác lúc này. Bạn thử lại sau nhé.'
     chunks = rag.get('chunks') or []
     if chunks:
-        content = chunks[0]['content'][:900]
-        return f"AI generation hiện không khả dụng; mình tìm được thông tin trong knowledge base:\n\n{content}"
+        return 'Mình tìm thấy tài liệu liên quan nhưng chưa thể tóm tắt chính xác lúc này. Bạn thử lại sau nhé.'
     if any(term in message.lower() for term in ('hoãn nghĩa vụ', 'được hoãn', 'chắc chắn')):
-        return 'EDUASSISTANT chỉ quản lý workflow xác nhận tình trạng sinh viên nội bộ. Hệ thống không kết luận bạn có đủ điều kiện hoãn nghĩa vụ hay không; cơ quan có thẩm quyền quyết định việc đó.'
-    return ('AI generation hiện không khả dụng. Mình không tìm thấy thông tin này trong knowledge base hiện tại.'
-            if failed_api else 'Mình không tìm thấy thông tin này trong knowledge base hiện tại.')
+        return ('EDUASSISTANT không thể quyết định **bạn có được hoãn nghĩa vụ quân sự hay không**. '
+                'Việc này do cơ quan có thẩm quyền xem xét.\n\n'
+                'Mình có thể hỗ trợ bạn chuẩn bị yêu cầu xác nhận tình trạng sinh viên.')
+    if failed_api:
+        return 'Mình chưa thể trả lời chính xác lúc này. Bạn thử lại sau nhé.'
+    return 'Mình chưa tìm thấy thông tin đủ căn cứ để trả lời câu hỏi này. Bạn thử hỏi cụ thể hơn nhé.'
 
 
 def _matches_knowledge_intent(message: str) -> bool:
@@ -515,10 +543,10 @@ def _safe_final_message(message: str, user_message: str | None = None) -> str:
     if user_message and _is_legal_eligibility_request(user_message):
         normalized_user_message = _normalize_intent_text(user_message)
         if re.search(r"\b(?:am i|do i|can i|will i|eligible|qualify)\b", normalized_user_message):
-            return ('EDUASSISTANT does not decide legal eligibility for military-service deferment. '
-                    'AUTO_APPROVE is only an internal workflow result; the competent authority decides deferment.')
-        return ('EDUASSISTANT kh\u00f4ng quy\u1ebft \u0111\u1ecbnh t\u01b0 c\u00e1ch ph\u00e1p l\u00fd \u0111\u1ec3 \u0111\u01b0\u1ee3c t\u1ea1m ho\u00e3n ngh\u0129a v\u1ee5 qu\u00e2n s\u1ef1. '
-                'AUTO_APPROVE ch\u1ec9 l\u00e0 k\u1ebft qu\u1ea3 x\u1eed l\u00fd n\u1ed9i b\u1ed9; c\u01a1 quan c\u00f3 th\u1ea9m quy\u1ec1n quy\u1ebft \u0111\u1ecbnh vi\u1ec7c t\u1ea1m ho\u00e3n.')
+            return ('EDUASSISTANT does not decide **whether you qualify for military-service deferment**. '
+                    'A competent authority makes that decision.')
+        return ('EDUASSISTANT kh\u00f4ng th\u1ec3 quy\u1ebft \u0111\u1ecbnh **b\u1ea1n c\u00f3 \u0111\u01b0\u1ee3c ho\u00e3n ngh\u0129a v\u1ee5 qu\u00e2n s\u1ef1 hay kh\u00f4ng**. '
+                'Vi\u1ec7c n\u00e0y do c\u01a1 quan c\u00f3 th\u1ea9m quy\u1ec1n xem x\u00e9t.')
 
     lowered = _normalize_intent_text(message)
     eligibility_intent = ('du dieu kien' in lowered and any(word in lowered for word in ('hoan', 'mien')))
@@ -528,7 +556,7 @@ def _safe_final_message(message: str, user_message: str | None = None) -> str:
         'co duoc mien nghia vu', 'am i eligible', 'legally eligible', 'qualify for deferment',
         'will i receive deferment',
     )):
-        return ('EDUASSISTANT ch\u1ec9 qu\u1ea3n l\u00fd quy tr\u00ecnh x\u00e1c nh\u1eadn t\u00ecnh tr\u1ea1ng sinh vi\u00ean n\u1ed9i b\u1ed9. '
+        return ('EDUASSISTANT ch\u1ec9 h\u1ed7 tr\u1ee3 x\u00e1c nh\u1eadn t\u00ecnh tr\u1ea1ng sinh vi\u00ean. '
                 'H\u1ec7 th\u1ed1ng kh\u00f4ng x\u00e1c \u0111\u1ecbnh \u0111i\u1ec1u ki\u1ec7n t\u1ea1m ho\u00e3n ngh\u0129a v\u1ee5 qu\u00e2n s\u1ef1; c\u01a1 quan c\u00f3 th\u1ea9m quy\u1ec1n quy\u1ebft \u0111\u1ecbnh vi\u1ec7c \u0111\u00f3.')
     return message[:4000]
 

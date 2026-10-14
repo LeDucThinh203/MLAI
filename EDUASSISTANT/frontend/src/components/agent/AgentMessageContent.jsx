@@ -36,6 +36,29 @@ function isListLine(line) {
   return /^\s*(?:[-*•]\s+|\d+[.)]\s+)/.test(line);
 }
 
+function splitLongParagraph(text) {
+  const value = text.trim();
+  if (value.length < 240 || !Intl.Segmenter) return [value];
+
+  const sentences = Array.from(
+    new Intl.Segmenter('vi', { granularity: 'sentence' }).segment(value),
+    part => part.segment.trim()
+  ).filter(Boolean);
+  if (sentences.length < 2) return [value];
+
+  const paragraphs = [];
+  let current = '';
+  for (const sentence of sentences) {
+    if (current && current.length + sentence.length + 1 > 220) {
+      paragraphs.push(current);
+      current = '';
+    }
+    current = current ? `${current} ${sentence}` : sentence;
+  }
+  if (current) paragraphs.push(current);
+  return paragraphs;
+}
+
 export default function AgentMessageContent({ content }) {
   const lines = formatStudentAgentMessage(content).replace(/\r\n?/g, '\n').split('\n');
   const blocks = [];
@@ -127,9 +150,18 @@ export default function AgentMessageContent({ content }) {
       paragraphLines.push(lines[index]);
       index += 1;
     }
-    blocks.push(<p key={`paragraph-${blocks.length}`}>{paragraphLines.map((part, partIndex) => (
-      <React.Fragment key={partIndex}>{partIndex > 0 && <br />}{renderInlineMarkdown(part)}</React.Fragment>
-    ))}</p>);
+    const paragraphText = paragraphLines.join(' ').trim();
+    if (paragraphText.length >= 240) {
+      splitLongParagraph(paragraphText).forEach((paragraph, paragraphIndex) => {
+        blocks.push(<p key={`paragraph-${blocks.length}-${paragraphIndex}`}>{renderInlineMarkdown(paragraph)}</p>);
+      });
+    } else if (paragraphLines.length === 1) {
+      blocks.push(<p key={`paragraph-${blocks.length}`}>{renderInlineMarkdown(paragraphLines[0])}</p>);
+    } else {
+      blocks.push(<p key={`paragraph-${blocks.length}`}>{paragraphLines.map((part, partIndex) => (
+        <React.Fragment key={partIndex}>{partIndex > 0 && <br />}{renderInlineMarkdown(part)}</React.Fragment>
+      ))}</p>);
+    }
   }
 
   return <div className="agent-message-content">{blocks}</div>;
