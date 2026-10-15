@@ -19,7 +19,7 @@ def test_legal_eligibility_guard_uses_user_intent_without_blocking_status():
     question = 'T\u00f4i c\u00f3 \u0111\u1ee7 \u0111i\u1ec1u ki\u1ec7n \u0111\u01b0\u1ee3c t\u1ea1m ho\u00e3n ngh\u0129a v\u1ee5 qu\u00e2n s\u1ef1 kh\u00f4ng?'
     assert agent_service._is_legal_eligibility_request(question)
     response = agent_service._safe_final_message('You qualify for deferment.', question)
-    assert 'kh\u00f4ng quy\u1ebft \u0111\u1ecbnh t\u01b0 c\u00e1ch ph\u00e1p l\u00fd' in response
+    assert 'kh\u00f4ng th\u1ec3 quy\u1ebft \u0111\u1ecbnh' in response
     assert 'c\u01a1 quan c\u00f3 th\u1ea9m quy\u1ec1n' in response
 
     assert agent_service._is_legal_eligibility_request('Am I eligible for military-service deferment?')
@@ -134,5 +134,6 @@ def test_legal_eligibility_question_cannot_prepare_a_write(monkeypatch):
 
     assert response['pendingAction'] is None
     assert response['toolEvents'] == [{'name': 'create_case', 'status': 'blocked_legal_scope'}]
-    assert 'kh\u00f4ng quy\u1ebft \u0111\u1ecbnh t\u01b0 c\u00e1ch ph\u00e1p l\u00fd' in response['message']
+    assert 'kh\u00f4ng th\u1ec3 quy\u1ebft \u0111\u1ecbnh' in response['message']
+    assert 'c\u01a1 quan c\u00f3 th\u1ea9m quy\u1ec1n xem x\u00e9t' in response['message']
     assert len(stored_messages) == 2

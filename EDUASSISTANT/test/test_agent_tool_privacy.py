@@ -28,6 +28,7 @@ def test_student_case_projection_omits_reviewer_feedback():
     })
 
     assert result['id'] == 'CASE-2026-1234'
-    assert result['ruleEngine']['decision'] == 'ESCALATE_TO_HUMAN'
+    assert 'ruleEngine' not in result
     assert 'reviewerFeedback' not in result
     assert 'reviewResult' not in result
+    assert 'staff-only' not in str(result)

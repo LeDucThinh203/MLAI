@@ -132,7 +132,7 @@ def test_policy_answer_without_retrieved_evidence_is_replaced_with_safe_fallback
 
     response = __import__('asyncio').run(agent_service.chat(
         {'id': 'student-1', 'role': 'STUDENT'}, 'What is the policy for approval?'))
-    assert 'knowledge base' in response['message']
+    assert 'chưa thể trả lời chính xác' in response['message']
     assert 'within two days' not in response['message']
     assert response['sources'] == []
 

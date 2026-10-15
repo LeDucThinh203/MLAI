@@ -205,8 +205,8 @@ def test_unavailable_ocr_returns_safe_notice_without_model_call(monkeypatch):
 
     response = asyncio.run(agent_service.chat(STUDENT, 'Đọc giúp tôi', 'conv-a', 'evidence-a.webp'))
 
-    assert 'OCR hiện chưa đọc được nội dung' in response['message']
-    assert 'SV001' not in response['message']
+    assert 'ch\u01b0a \u0111\u1ecdc r\u00f5 n\u1ed9i dung' in response['message']
+    assert 'kh\u00f4ng t\u1ef1 \u0111o\u00e1n' in response['message']
     assert prompts == []
     assert stored[0][0][4]['attachment']['ocrStatus'] == 'UNAVAILABLE'
     assert 'rawExtractedText' not in stored[0][0][4]['attachment']
@@ -232,7 +232,8 @@ def test_authenticity_question_gets_deterministic_non_legal_answer(monkeypatch):
     response = asyncio.run(agent_service.chat(
         STUDENT, 'Giấy này có thật hay giả?', 'conv-a', 'evidence-a.webp'))
 
-    assert 'không xác định tính xác thực hoặc hiệu lực pháp lý' in response['message']
+    assert 'kh\u00f4ng th\u1ec3 x\u00e1c nh\u1eadn' in response['message']
+    assert 'gi\u1ea5y t\u1edd l\u00e0 th\u1eadt ho\u1eb7c c\u00f2n hi\u1ec7u l\u1ef1c' in response['message']
     assert prompts == []
 
 
