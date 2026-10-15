@@ -2,49 +2,47 @@
 
 ## A. Operability
 
-| Criterion | Repository evidence | Status |
+| Criterion | Evidence | Status |
 | --- | --- | --- |
-| Live URL | `https://edu-sp.pages.dev`; `/` returned HTTP 200 on 2026-10-15. | VERIFIED |
-| Judge page | `/judge` returned HTTP 200. Current deployed summary returned `apiStatus=AVAILABLE` but `databaseStatus=UNKNOWN`; the updated local source queries PostgreSQL safely. | PARTIAL |
-| Verify page and API | `/verify` returned HTTP 200; live `GET /api/verify/run` returned 9/9 with no network calls or database writes. | VERIFIED |
-| Health | Live backend `GET /api/health` returned HTTP 200, `healthy`, and `postgresql: connected`. | VERIFIED |
-| CI | `.github/workflows/ci.yml` separates backend unit, frontend, and PostgreSQL-backed competition readiness jobs. | PARTIAL until a post-change GitHub run completes |
-| Runbook | `RUNBOOK.md` documents configuration, startup, demo accounts, Judge, and test commands. | PARTIAL |
-| Demo accounts | Student, Reviewer, and Admin demo accounts are described as demo-only; production seeding is disabled. | PARTIAL |
-| Deterministic Verify Harness | Nine in-memory cases; no network, AI, DB reads/writes, or threshold mutation. | VERIFIED by local run recorded in `EVALUATION_EVIDENCE.md` |
-
-**Operability status: PARTIAL** because the deployed Judge summary still reports `databaseStatus=UNKNOWN` and no post-change GitHub Actions run was triggered. No deployment was made in this task.
+| Live URL | `https://edu-sp.pages.dev`; `/`, `/judge`, and `/verify` returned HTTP 200 in read-only checks on 2026-10-15. | VERIFIED live at check time |
+| Judge and database visibility | Local Judge source reports database availability safely and separates Verify, the 18-case development benchmark, and the frozen holdout. Live Judge still serves the earlier deployed version; its summary reported `databaseStatus=AVAILABLE` but has no `frozenHoldout` field. | Local change NOT DEPLOYED; live API VERIFIED at check time |
+| Verify page and API | Live `/verify` returned HTTP 200; live `GET /api/verify/run` returned 9/9 without network calls or database writes. | VERIFIED live at check time; local rerun NOT RUN |
+| Health | Live `GET /api/health` returned HTTP 200, healthy, with PostgreSQL connected. | VERIFIED live at check time |
+| CI | Workflow includes critical backend tests, attachment coverage, frontend checks, and an isolated PostgreSQL readiness job. This unpushed working tree has no post-change Actions result. | CONFIGURED; RUN NOT VERIFIED |
+| Runbook | `EDUASSISTANT/RUNBOOK.md` is canonical; `EDUASSISTANT/docs/runbook/RUNBOOK.md` points to it. | DOCUMENTED; commands NOT RUN this turn |
+| Demo accounts | Documentation describes demo-only roles and disables production demo SIS by default. Production logins were not tested. | DOCUMENTED; login NOT VERIFIED |
+| Deterministic Verify Harness | Nine deterministic in-memory cases are documented as isolated from AI, network, database writes, and threshold changes. | Prior local run recorded; current rerun NOT RUN |
 
 ## B. Real users
 
 - Status: **PENDING**.
-- No participants, feedback, quotes, scores, screenshots, or completed sessions are recorded in this task.
+- No participants, feedback, quotes, scores, screenshots, or completed sessions are recorded for this task.
 - Preparation package: [`docs/user-validation/`](../user-validation/).
-- User Validation must remain PENDING until real sessions occur.
+- Keep User Validation pending until real sessions occur.
 
-## C. Human-in-the-loop + Audit
-
-| Criterion | Evidence | Status |
-| --- | --- | --- |
-| Reviewer queue and case details | `frontend/src/pages/reviewer/ReviewerPortal.jsx`; `backend/app/routers/cases.py`. | PARTIAL |
-| APPROVE, REJECT, REQUEST_INFO, OVERRIDE, STOP | Reviewer actions pass through `workflow_guard`; override requires a reason. | PARTIAL pending PostgreSQL integration run |
-| Reviewer feedback | `CORRECT`, `MISSED_ESCALATION`, and `UNNECESSARY_ESCALATION`; Student role is denied. | PARTIAL pending PostgreSQL integration run |
-| Audit trail | Case, override, reviewer feedback, and stop events record actor, role, case reference, input, result, timestamp, and reason as applicable. | PARTIAL pending PostgreSQL integration run |
-| Threshold history | PostgreSQL transaction locks policy state and writes old/new threshold, reviewer ID, event type, and timestamp. | PARTIAL pending PostgreSQL integration run |
-
-**HITL + Audit status: PARTIAL** until the PostgreSQL competition integration job passes against its isolated database.
-
-## D. Track A specific
+## C. Human-in-the-loop and audit
 
 | Criterion | Evidence | Status |
 | --- | --- | --- |
-| Adaptive confidence threshold | Default 0.75; bounds 0.65–0.90; step 0.02. Missed escalation raises it, unnecessary escalation lowers it, and correct feedback leaves it unchanged. | PARTIAL pending DB integration run |
-| Reviewer feedback loop | Feedback updates threshold and creates case, audit, and threshold-history records. Student feedback is rejected. | PARTIAL pending DB integration run |
-| Missed Escalation | Fixed benchmark reports count, expected-escalation denominator, and rate. | See verified run in `EVALUATION_EVIDENCE.md` |
-| Unnecessary Escalation | Fixed benchmark reports count, expected-auto-approval denominator, and rate. | See verified run in `EVALUATION_EVIDENCE.md` |
-| Deterministic benchmark | `benchmark/fixed_synthetic_cases.json` and `benchmark/run_benchmark.py`; label remains fixed synthetic. | VERIFIED by local run recorded in `EVALUATION_EVIDENCE.md` |
-| Independent evaluation | Frozen external/independent cases and provenance required; `cases.json` is intentionally absent. | **PENDING** |
+| Reviewer queue and case details | Reviewer portal and case router. | Implemented; current PostgreSQL integration NOT RUN |
+| APPROVE, REJECT, REQUEST_INFO, OVERRIDE, STOP | Reviewer actions pass through the workflow guard; override requires a reason. | Implemented; current PostgreSQL integration NOT RUN |
+| Reviewer feedback | `CORRECT`, `MISSED_ESCALATION`, and `UNNECESSARY_ESCALATION`; Student role is denied. | Implemented; current PostgreSQL integration NOT RUN |
+| Audit trail | Case, override, feedback, and stop events record applicable actor, role, case, input, result, time, and reason. | Implemented; current PostgreSQL integration NOT RUN |
+| Threshold history | PostgreSQL transaction locks policy state and records threshold changes and reviewer metadata. | Implemented; current PostgreSQL integration NOT RUN |
+
+**HITL and audit status:** source is present; integration behavior on this working tree is not verified because the PostgreSQL suite was not run.
+
+## D. Track A evidence
+
+| Criterion | Evidence | Status |
+| --- | --- | --- |
+| Rule Engine and five escalation reasons | Deterministic routing retains `OWNERSHIP_UNCLEAR`, `FACT_UNKNOWN`, `DATA_CONFLICT`, `AUTHORITY_REQUIRED`, and `POLICY_OUT_OF_SCOPE`. | Source present; current tests NOT RUN |
+| Adaptive threshold | Default 0.75; bounds 0.65–0.90; step 0.02; feedback-driven updates are handled by the escalation policy service. | Source present; PostgreSQL integration NOT RUN |
+| Reviewer feedback loop and workflow guard | Feedback and reviewer actions use guarded routes and audit/history persistence. | Source present; PostgreSQL integration NOT RUN |
+| Fixed Synthetic Development Benchmark | 18 fixed synthetic scenarios with exact denominators and dataset SHA-256 provenance. Last recorded run is historical to this working tree. | Historical result: 18/18; current rerun NOT RUN |
+| Frozen Holdout | Static 36-case v1 dataset with explicit expected labels, manifest, and exact SHA-256; separate manual runner verifies bytes before evaluation. No result artifact exists. | FROZEN; **NOT RUN** |
+| Runtime, CI, and unit-test separation | Holdout data is not imported by application runtime, routine CI, or tests; tests use temporary fixtures. | Source/configuration present; current test run NOT RUN |
 
 ## Domain boundary
 
-The only use case is `MILITARY_SERVICE_CONFIRMATION`, an internal student-status confirmation workflow supporting military-service paperwork. `AUTO_APPROVE` is an internal workflow outcome. EDUASSISTANT does not decide military-service deferment or exemption and does not issue a legal certificate.
+The only use case is `MILITARY_SERVICE_CONFIRMATION`, an internal student-status confirmation workflow supporting military-service paperwork. `AUTO_APPROVE` is an internal workflow outcome. EDUASSISTANT does not decide military-service deferment or exemption and does not issue a legal certificate. User Validation remains pending.

@@ -29,7 +29,7 @@ Hệ thống tập trung toàn bộ năng lực vào một nghiệp vụ chuẩn
 - **Tên danh mục nghiệp vụ:** `MILITARY_SERVICE_CONFIRMATION`
 - **Workflow owner:** Internal reviewer or office configured by the institution
 - **Cơ chế:** `AUTO_APPROVE` nghĩa là workflow nội bộ đủ điều kiện tự động xử lý; `ESCALATE_TO_HUMAN` chuyển hồ sơ cho cán bộ xem xét. Bản in là bản ghi workflow, không phải giấy xác nhận chính thức hoặc quyết định của cơ quan quân sự.
-- **SIS:** Registry nội bộ chứa dữ liệu demo; không có connector SIS đại học bên ngoài. Production không coi bản ghi demo do Admin xác nhận là dữ liệu có thẩm quyền (`ALLOW_ADMIN_VERIFIED_DEMO_SIS=false`).
+- **SIS:** Registry nội bộ chứa dữ liệu demo; không có connector SIS đại học bên ngoài. Production không tin bản ghi `INTERNAL_DEMO_SIS` để `AUTO_APPROVE` (`ALLOW_ADMIN_VERIFIED_DEMO_SIS=false`); Admin portal hiện không có hành động xác nhận SIS demo.
 
 ---
 
@@ -64,6 +64,8 @@ Hệ thống tập trung toàn bộ năng lực vào một nghiệp vụ chuẩn
 > [!IMPORTANT]
 > **Quy Tắc An Toàn AI Cốt Lõi:**  
 > Gemini được dùng để phân tích và chuẩn hóa địa chỉ; OpenRouter có thể chạy làm provider fallback khi được cấu hình. Rule Engine quyết định routing theo workflow nội bộ, không xác nhận tư cách pháp lý hay quyết định tạm hoãn NVQS. AI confidence là score do model tạo và chưa được hiệu chỉnh thống kê trên production dataset. Khi các provider không trả kết quả dùng được, address service dùng deterministic parser.
+
+Student Portal hỗ trợ tạo yêu cầu, theo dõi hồ sơ của chính sinh viên, bổ sung thông tin, comments và notifications. Student AI Agent cung cấp hướng dẫn RAG và OCR attachment PNG/JPEG/WebP/PDF tối đa 10 MB cùng chuẩn hóa địa chỉ. Agent chỉ dành cho Student, kiểm tra ownership và không cung cấp quyền đọc raw SIS; Reviewer/Admin không có Agent chat hoặc Agent tools.
 
 ---
 
@@ -124,14 +126,16 @@ Kết quả đạt/chưa đạt được trả về sau mỗi lần chạy trên
 
 ---
 
-## 6. TRACK A DECISION BENCHMARK (18 KỊCH BẢN CỐ ĐỊNH)
+## 6. FIXED SYNTHETIC DEVELOPMENT BENCHMARK (18 KỊCH BẢN CỐ ĐỊNH)
 
-Benchmark chính dùng fixed synthetic scenarios để đo quyết định escalation. Nó chạy không phụ thuộc database/network và không gọi AI. Scenario set hiện tại chưa được mô tả là independent/held-out:
+Benchmark phát triển dùng fixed synthetic scenarios để đo quyết định escalation. Nó chạy không phụ thuộc database/network và không gọi AI. Đây không phải production validation hay bộ frozen holdout:
 ```powershell
 python benchmark/run_benchmark.py
 ```
 
-### Latest local result — fixed synthetic benchmark (2026-10-15 03:56:08 UTC)
+### Last recorded result — prior local benchmark run (2026-10-15 03:56:08 UTC)
+
+This is a real recorded result from before the current holdout/preflight changes; the development benchmark has **not been re-run on this working tree**.
 ```text
 ======================================================================
 📊 KẾT QUẢ ĐO LƯỜNG CHUẨN XÁC (MEASUREMENT REPORT):
@@ -145,7 +149,21 @@ python benchmark/run_benchmark.py
   • AI calls performed:            false
 ======================================================================
 ```
-*Kết quả chi tiết được tự động xuất ra `benchmark/results/latest.json` và `latest.csv`.*
+*Kết quả chi tiết, SHA-256 của dataset, timestamp, case results và metrics được xuất ra `benchmark/results/latest.json` và `latest.csv`.*
+
+## 6.1. FROZEN HOLDOUT — ĐÁNH GIÁ CUỐI RIÊNG BIỆT
+
+Bộ `benchmark/holdout/track_a_holdout_v1.json` gồm 36 kịch bản tổng hợp, có expected labels viết tĩnh và SHA-256 đóng băng trong `manifest.json`. Bộ này tách khỏi benchmark phát triển 18 ca; không được đọc bởi runtime, CI, training hoặc unit tests. Dataset do nhóm dự án soạn và không được nhận là độc lập/được tác giả bên ngoài kiểm định.
+
+Chỉ chạy thủ công sau khi hoàn tất thay đổi kỹ thuật:
+
+```powershell
+python benchmark/run_holdout_eval.py
+```
+
+Runner kiểm tra SHA trước khi đánh giá và ghi `benchmark/holdout/results/latest.json` cùng `.csv`. Không sửa v1 hoặc Rule Engine để làm đẹp kết quả; nếu cần chỉnh bộ dữ liệu, tạo version mới và ghi rõ lý do.
+
+**Trạng thái hiện tại:** result file chưa tồn tại; chưa chạy trên working tree này.
 
 ---
 
@@ -168,7 +186,7 @@ npm run dev
 
 ## 8. TÀI KHOẢN THỬ NGHIỆM MẶC ĐỊNH (DEMO ACCOUNTS)
 
-Demo credentials are for local/demo use only. Accounts are seeded only when `SEED_DEMO_DATA=true`; production must set it to `false`.
+These are credentials for explicitly seeded local demo accounts. The production configuration uses `SEED_DEMO_DATA=false` and does not auto-seed demo accounts; the existing public competition database may already contain prepared accounts. Live account availability must be checked against the live environment before claiming these credentials work there.
 
 | Vai Trò | Username | Password | Quyền Hạn & Tính Năng Nổi Bật |
 | :--- | :--- | :--- | :--- |
@@ -186,6 +204,8 @@ python test/test_competition_features.py
 ```
 This integration suite requires the PostgreSQL-backed application environment. The database-free CI regressions and deterministic checks run separately.
 
+Chạy final local preflight bằng `python scripts/final_preflight.py`. Script chạy critical backend suite, Verify Harness, benchmark phát triển, kiểm tra provenance, frontend lint/build và báo trạng thái holdout; script không gọi production API, không tự chạy holdout và không deploy.
+
 ---
 
 ## 10. BẰNG CHỨNG THỬ NGHIỆM NGƯỜI DÙNG (USER VALIDATION EVIDENCE)
@@ -199,7 +219,7 @@ Live AI sanity check là evaluation riêng, không thay thế metric Track A:
 python benchmark/run_live_ai_eval.py
 ```
 
-Verify Harness: 9 deterministic cases · Track benchmark: 18 fixed scenarios · User validation: **PENDING** nếu chưa có evidence thật.
+Verify Harness: 9 deterministic cases · Development Benchmark: 18 fixed scenarios · Frozen Holdout: 36 fixed scenarios, metrics đọc từ result artifact · User validation: **PENDING** until real evidence exists.
 
 **EDUASSISTANT Team 1 - MLAI Hackathon 2026** — Internal student-service confirmation workflow. HMAC-SHA256 is an integrity authentication token, not a PKI or legal digital signature.
 

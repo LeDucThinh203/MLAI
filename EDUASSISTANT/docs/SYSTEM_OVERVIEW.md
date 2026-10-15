@@ -23,13 +23,18 @@ Judge page: <https://edu-sp.pages.dev/judge>
 2. Address AI returns parsed fields, confidence, provider/model, and call/fallback provenance.
 3. The Rule Engine checks institutional trust provenance, identity, academic facts, address completeness, conflicts, and AI provenance.
 4. It either routes the case to a human reviewer or marks it eligible for internal automatic processing.
-5. Reviewer actions and Admin SIS changes are written to the audit trail.
+5. For escalated cases, the human reviewer is the final internal decision maker. Reviewer actions, Rule Engine evaluations, and important Admin SIS changes are written to the audit trail.
+
+AI supports address analysis, attachment OCR, and student guidance; it does not
+own the final routing decision. The deterministic Rule Engine is the routing
+authority. Legal eligibility and military-service deferment decisions remain
+outside EDUASSISTANT.
 
 The five escalation categories (`OWNERSHIP_UNCLEAR`, `FACT_UNKNOWN`, `DATA_CONFLICT`, `AUTHORITY_REQUIRED`, and `POLICY_OUT_OF_SCOPE`) are Team 1's implemented taxonomy, not a required Hackathon naming standard.
 
 ## Institutional trust
 
-Production rules accept an external record only with `sourceType=EXTERNAL_INSTITUTIONAL_SIS` and `verificationStatus=EXTERNAL_VERIFIED`. Internal records use `sourceType=INTERNAL_DEMO_SIS`; Admin confirmation sets `verificationStatus=ADMIN_VERIFIED_DEMO` and means the facts were checked for this demo workflow only. This trust is disabled by default in production and is controlled by `ALLOW_ADMIN_VERIFIED_DEMO_SIS`.
+No external university SIS connector is present. Production configuration sets `ALLOW_ADMIN_VERIFIED_DEMO_SIS=false`, so `INTERNAL_DEMO_SIS` facts cannot authorize `AUTO_APPROVE`. A local demo may explicitly enable Admin-checked internal records; that label does not make them verified university facts. Future external facts require `sourceType=EXTERNAL_INSTITUTIONAL_SIS` and `verificationStatus=EXTERNAL_VERIFIED`.
 
 Benchmark and Verify Harness fixtures use `SYNTHETIC_TEST_SIS` plus `TEST_VERIFIED`. They are accepted only when the caller passes an explicit deterministic test evaluation context. Production routes do not pass that context.
 
@@ -38,11 +43,11 @@ Benchmark and Verify Harness fixtures use `SYNTHETIC_TEST_SIS` plus `TEST_VERIFI
 | Path | Cases | Network or database writes | Purpose |
 | --- | ---: | --- | --- |
 | Verify Harness | 9 | None | Fast deterministic Rule Engine check |
-| Fixed Synthetic Benchmark | 18 | None | Fixed synthetic scenarios for escalation-policy metrics |
-| Independent Evaluation | Pending dataset | None | Frozen independent cases; currently pending |
+| Fixed Synthetic Development Benchmark | 18 | None | Fixed development scenarios for escalation-policy metrics |
+| Frozen Holdout | 36 | None | Manual final evaluation on a separate frozen synthetic set |
 | Live AI E2E sanity check | 5 | Gemini and configured OpenRouter fallback | Optional address extraction check; separate from Track metrics |
 
-The fixed synthetic benchmark writes its latest result to `benchmark/results/latest.json` and `.csv`. It reports `benchmarkType=DETERMINISTIC_TRACK_A_DECISION_BENCHMARK`, `aiCallsPerformed=false`, and raw counts with denominators. The scenario set is fixed but is not independent or held out. Independent evaluation remains **PENDING** until a frozen independent dataset is supplied.
+The 18-case fixed synthetic benchmark writes its result and exact dataset SHA-256 to `benchmark/results/latest.json` and `.csv`. It is development evidence, not an independent or held-out score. The 36-case frozen holdout has a separate manifest and runner; it is not read by runtime code or routine CI and is not claimed as externally authored. Read its latest result only from `benchmark/holdout/results/latest.json`; if absent, it has not been run.
 
 ## Integrity token and confidence limits
 

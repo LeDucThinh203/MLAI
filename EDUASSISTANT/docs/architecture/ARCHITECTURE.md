@@ -16,10 +16,39 @@ flowchart LR
     Auto --> HMAC[HMAC-SHA256 integrity token]
 ```
 
+## Application surfaces and responsibilities
+
+- **Student Portal:** creates requests, follows the student's own cases, adds
+  requested information, comments, and notifications. Student SIS reads remain
+  restricted to the explicit student-facing allowlist.
+- **Student AI Agent:** authenticated Student accounts only. It offers RAG
+  guidance and typed, ownership-scoped tools. Reviewer and Admin accounts do
+  not receive Agent chat or Agent tools.
+- **Reviewer Portal:** handles escalated cases using `APPROVE`, `REJECT`,
+  `REQUEST_INFO`, `OVERRIDE`, or `STOP`. Overrides require a reason; reviewer
+  actions and feedback are audited.
+- **Admin Portal:** manages internal demo registry and operational controls.
+  The production configuration sets `ALLOW_ADMIN_VERIFIED_DEMO_SIS=false`, so
+  internal demo records cannot authorize `AUTO_APPROVE` in production.
+- **Rule Engine:** deterministic authority for internal workflow routing.
+  Adaptive threshold feedback is bounded from 0.65 to 0.90, starts at 0.75,
+  and moves by 0.02 for missed or unnecessary escalations.
+- **Audit:** records rule evaluations and important human transitions with
+  actor, action, case, input, result, and timestamp; secrets are excluded.
+- **OCR and RAG:** student image/PDF attachments pass validation and ownership
+  checks before OCR. RAG uses an explicit policy/document allowlist; it does not
+  index uploads, user records, benchmark datasets, or operational runbooks.
+- **Judge / Verify:** `/judge` is public and displays safe aggregate metadata.
+  Verify Harness is a deterministic nine-case in-memory check.
+- **Development benchmark:** the 18-case fixed synthetic suite measures the
+  policy against development fixtures and records dataset provenance.
+- **Frozen Holdout:** a separate manually run 36-case final evaluation. Its
+  dataset is not read by runtime application code, CI, training, or unit tests.
+
 ## Trust boundaries
 
 - `EXTERNAL_INSTITUTIONAL_SIS` plus `EXTERNAL_VERIFIED` is the external trust path for a future connector. No such connector currently exists.
-- `INTERNAL_DEMO_SIS` plus `ADMIN_VERIFIED_DEMO` is accepted only when `ALLOW_ADMIN_VERIFIED_DEMO_SIS=true`. In production this setting defaults to false. The label means Admin checked internal demo facts, not that a university SIS verified them.
+- `INTERNAL_DEMO_SIS` plus `ADMIN_VERIFIED_DEMO` is accepted only in an explicitly enabled local demo context. Production sets `ALLOW_ADMIN_VERIFIED_DEMO_SIS=false`; internal demo records are not authoritative university facts.
 - `SYNTHETIC_TEST_SIS` plus `TEST_VERIFIED` is accepted only under an explicit `DETERMINISTIC_TEST` evaluation context. Production request handlers never set that context.
 - Missing provenance, `UNVERIFIED`, and `LEGACY_ACCOUNT` records escalate as `FACT_UNKNOWN`.
 
@@ -33,6 +62,7 @@ AI confidence is a model-generated score, not a calibrated probability. The Rule
 
 - Verify Harness: 9 in-memory Rule Engine cases. It performs no network calls, database reads/writes, global AI-mode changes, or threshold mutation.
 - Track A Decision Benchmark: 18 fixed synthetic scenarios. `benchmark/run_benchmark.py` performs no AI calls or network access and writes only the local `benchmark/results/latest.json` and `.csv` artifacts.
+- Frozen Holdout: 36 static synthetic cases in `benchmark/holdout/`. `benchmark/run_holdout_eval.py` verifies the manifest digest before evaluating. It is a manual final evaluation, is not in routine CI, and is not claimed as externally authored.
 - Live AI E2E check: `benchmark/run_live_ai_eval.py` runs five address examples separately. It does not alter Track benchmark metrics.
 
 The five escalation categories are the taxonomy implemented by Team 1; they are not claimed as mandatory Hackathon category names.

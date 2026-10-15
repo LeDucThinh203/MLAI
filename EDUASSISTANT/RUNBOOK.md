@@ -12,15 +12,16 @@
 4. [Khởi Chạy Hệ Thống Thủ Công (2 Terminal)](#4-khởi-chạy-hệ-thống-thủ-công-2-terminal)
 5. [Tài Khoản Thử Nghiệm Mặc Định](#5-tài-khoản-thử-nghiệm-mặc-định)
 6. [Cổng Giám Khảo & Verify Harness (/judge)](#6-cổng-giám-khảo--verify-harness-judge)
-7. [Verify Harness và Track A Benchmark](#7-verify-harness-và-track-a-benchmark)
-8. [Bộ Kiểm Thử Toàn Diện (Security & Competition Suites)](#8-bộ-kiểm-thử-toàn-diện-security--competition-suites)
-9. [Xử Lý Sự Cố Thường Gặp (Troubleshooting)](#9-xử-lý-sự-cố-thường-gặp-troubleshooting)
+7. [Verify Harness, Benchmark và Frozen Holdout](#7-verify-harness-benchmark-và-frozen-holdout)
+8. [Bộ Kiểm Thử Toàn Diện](#8-bộ-kiểm-thử-toàn-diện)
+9. [Final Preflight](#9-final-preflight)
+10. [Xử Lý Sự Cố](#10-xử-lý-sự-cố-thường-gặp-troubleshooting)
 
 ---
 
 ## 1. Yêu Cầu Môi Trường
 * **Python**: Phiên bản `>= 3.11`
-* **Node.js**: Phiên bản `>= 20.19`
+* **Node.js**: Phiên bản `22` (giống CI)
 * **NPM**: Phiên bản `>= 10`
 * **Hệ cơ sở dữ liệu**: PostgreSQL 15/16 (`DATABASE_URL` required by the backend)
 * **Cổng mạng (Ports)**:
@@ -59,7 +60,7 @@ APP_ENV=development
 SEED_DEMO_DATA=true
 PORT=3001
 DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/eduassistant
-ALLOW_ADMIN_VERIFIED_DEMO_SIS=true
+ALLOW_ADMIN_VERIFIED_DEMO_SIS=false
 AI_MODE=live
 GEMINI_API_KEY=your_gemini_api_key
 JWT_SECRET=replace_with_a_random_secret
@@ -108,7 +109,7 @@ npm run dev
 
 ## 5. Tài Khoản Demo Công Khai / Local
 
-These credentials are for the explicitly seeded local/public demo only. They are not production credentials. Production must set `SEED_DEMO_DATA=false`.
+These credentials are for explicitly seeded local demo accounts. Production uses `SEED_DEMO_DATA=false` and does not auto-seed accounts; the existing public competition database may already contain prepared accounts. Check live account availability before claiming these credentials work there.
 
 | Vai trò | Tên đăng nhập | Mật khẩu | Quyền hạn chính |
 | :--- | :--- | :--- | :--- |
@@ -128,9 +129,9 @@ Cho phép:
 
 ---
 
-## 7. Verify Harness và Track A Benchmark
+## 7. Verify Harness, Benchmark và Frozen Holdout
 
-Fixed Synthetic Track A Benchmark đo chính sách escalation trên 18 tình huống tổng hợp cố định. Đây không phải dữ liệu production hay independent/held-out dataset:
+Fixed Synthetic Development Benchmark đo chính sách escalation trên 18 tình huống tổng hợp cố định. Đây không phải production validation hay frozen holdout:
 ```powershell
 cd EDUASSISTANT
 python benchmark/run_benchmark.py
@@ -139,7 +140,13 @@ Runner deterministic, không gọi Gemini/OpenRouter, không phụ thuộc netwo
 * `benchmark/results/latest.json`
 * `benchmark/results/latest.csv`
 
-Lệnh độc lập là `python benchmark/independent/run_independent_eval.py`. Khi chưa có `cases.json`, trạng thái là `INDEPENDENT_EVALUATION_PENDING` và không tạo kết quả.
+Frozen Holdout là bộ riêng 36 tình huống tĩnh. Chạy thủ công sau khi hoàn tất thay đổi kỹ thuật:
+
+```powershell
+python benchmark/run_holdout_eval.py
+```
+
+Runner xác thực SHA-256 theo manifest trước khi gọi Rule Engine; nó không gọi AI, network, database và không đổi adaptive threshold. Không sửa v1 sau khi xem kết quả. Dataset không được đọc bởi runtime, routine CI, training hoặc unit tests và không được nhận là độc lập/được tác giả bên ngoài kiểm định.
 
 Live AI E2E sanity check là lệnh riêng, tùy chọn; kết quả của nó không thay metric Track A:
 ```powershell
@@ -186,9 +193,23 @@ python test/test_competition_features.py
 
 The database in this command must be a dedicated disposable local test database.
 
+## 9. Final Preflight
+
+From `EDUASSISTANT/`, run:
+
+```powershell
+python scripts/final_preflight.py
+```
+
+This executes the critical backend test suite, Verify Harness, 18-case
+development benchmark, benchmark provenance check, frontend lint and build,
+and reports the frozen holdout artifact status and `User Validation: PENDING`.
+It does not run the final holdout, call production APIs, deploy, or write to a
+database.
+
 ---
 
-## 9. Xử Lý Sự Cố Thường Gặp (Troubleshooting)
+## 10. Xử Lý Sự Cố Thường Gặp (Troubleshooting)
 
 1. **Lỗi cổng 3001 bị chiếm dụng:**
    ```powershell

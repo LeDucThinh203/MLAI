@@ -1,42 +1,44 @@
 # Final Submission Checklist
 
-Items remain unchecked until the corresponding evidence is reviewed for the final submission.
+Check an item only after reviewing evidence for the final submission revision.
+User Validation items must remain unchecked until real sessions are complete.
 
-## Repository
+## Live product
 
-- [ ] Main branch clean
-- [ ] No secrets
-- [ ] CI green on the final commit
+- [ ] Live URL opens
+- [ ] `/judge` opens without login
+- [ ] Student login works
+- [ ] Reviewer login works
+- [ ] Admin login works
+- [ ] Student creates a case
+- [ ] Rule Engine evaluates the case
+- [ ] Escalated case reaches Reviewer
+- [ ] Reviewer action works
+- [ ] Reviewer feedback changes or preserves threshold as expected
+- [ ] Audit record exists
 
-## Live
+## Evaluation and build
 
-- [ ] `/`
-- [ ] `/judge`
-- [ ] `/verify`
-- [ ] `/api/health`
+- [ ] Verify Harness returns 9/9 with no network calls or DB writes
+- [ ] Fixed Synthetic Development Benchmark runs 18 scenarios
+- [ ] Frozen Holdout result is recorded and matches its manifest
+- [ ] GitHub Actions is green on the final commit
+- [ ] Frontend lint passes
+- [ ] Frontend build passes
 
-## Track A
+## Submission material
 
-- [ ] Reviewer feedback
-- [ ] Adaptive threshold
-- [ ] Audit
-- [ ] Missed escalation metric
-- [ ] Unnecessary escalation metric
+- [ ] README reflects current source
+- [ ] Canonical runbook is current
+- [ ] Real-user validation completed with real participants
+- [ ] Product improvement is based on participant feedback
+- [ ] Five-slide content is final
+- [ ] Eight-minute demo rehearsal is complete
 
-## Evaluation
+## Optional repository setting
 
-- [ ] Verify Harness 9
-- [ ] Fixed synthetic benchmark 18
-- [ ] Independent evaluation
-- [ ] User validation with more than 3 real participants
+- [ ] Optional: enable branch protection and require CI on `main`
 
-## Docs
-
-- [ ] README
-- [ ] Runbook
-- [ ] Architecture
-- [ ] Limitations
-- [ ] Exactly 5 slides
-- [ ] 8-minute demo script
-
-**Current real-user validation item: PENDING.** Independent evaluation is also PENDING until a real frozen dataset is supplied.
+`USER VALIDATION: PENDING`. The real-user validation and product-improvement
+items above remain unchecked; do not report competition completion before the
+evidence exists.
