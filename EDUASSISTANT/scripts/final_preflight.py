@@ -145,6 +145,8 @@ def main() -> int:
     tests_ok = _run('Backend tests', [sys.executable, '-m', 'pytest', '-q', *CRITICAL_TESTS], env)
     checks.append(tests_ok)
 
+    verify_ok = False
+    verify: dict = {}
     try:
         verify_ok, verify = _verify_harness()
         print('\n--- Verify Harness ---')
@@ -159,6 +161,8 @@ def main() -> int:
     benchmark_ok = _run('Fixed Synthetic Development Benchmark',
                         [sys.executable, 'benchmark/run_benchmark.py'], env)
     checks.append(benchmark_ok)
+    provenance_ok = False
+    benchmark: dict = {}
     try:
         provenance_ok, benchmark = _check_benchmark_provenance()
         metrics = benchmark.get('metrics') or {}
@@ -176,6 +180,8 @@ def main() -> int:
     if npm is None:
         print('\nFrontend lint: FAIL (npm not found)')
         print('Frontend build: FAIL (npm not found)')
+        lint_ok = False
+        build_ok = False
         checks.extend((False, False))
     else:
         print('\n--- Frontend lint ---', flush=True)
@@ -194,7 +200,21 @@ def main() -> int:
     print(f'\nFrozen Holdout: {holdout_result} · {holdout_detail}')
     if holdout_result == 'FAIL':
         checks.append(False)
-    print('User Validation: PENDING')
+    summary_rows = [
+        ('Backend unit', 'PASS' if tests_ok else 'FAIL'),
+        ('Verify', 'PASS' if verify_ok else 'FAIL'),
+        ('Development benchmark', 'PASS' if benchmark_ok and provenance_ok else 'FAIL'),
+        ('Frontend lint', 'PASS' if lint_ok else 'FAIL'),
+        ('Frontend build', 'PASS' if build_ok else 'FAIL'),
+        ('Frozen holdout', holdout_result),
+        ('PostgreSQL competition integration', 'CI REQUIRED'),
+        ('User validation', 'PENDING'),
+    ]
+    print('\n--- Final status ---')
+    print(f"{'Check':<39} Status")
+    print('-' * 57)
+    for label, status in summary_rows:
+        print(f'{label:<39} {status}')
     print('=' * 52)
     passed = all(checks)
     print(f"Mandatory technical checks: {'PASS' if passed else 'FAIL'}")
