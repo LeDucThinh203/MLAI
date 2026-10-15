@@ -110,6 +110,7 @@ def set_confidence_threshold(
         'newThreshold': round(clamped, 4),
         'caseId': 'MANUAL_OVERRIDE',
         'feedbackType': 'MANUAL_SET',
+        'reviewerId': reviewer_id,
         'reviewerName': actor,
         'note': reason
     })
@@ -129,6 +130,56 @@ def get_threshold_history(limit: int = 50) -> List[Dict[str, Any]]:
     except Exception:
         pass
     return list(reversed(_fallback_history[-limit:]))
+
+
+def get_public_policy_summary() -> Dict[str, Any]:
+    """Return aggregate policy metadata without reviewer or case details."""
+    state = None
+    feedback_count = None
+    last_updated = None
+    if get_one:
+        try:
+            state = get_one(
+                "SELECT currentThreshold, minThreshold, maxThreshold, stepSize, updatedAt "
+                "FROM escalation_policy_state WHERE id = %s",
+                (POLICY_ID,)
+            )
+        except Exception:
+            pass
+        try:
+            aggregate = get_one(
+                "SELECT COUNT(*) AS event_count, MAX(createdAt) AS last_updated_at "
+                "FROM escalation_threshold_history "
+                "WHERE feedbackType IN (%s, %s, %s)",
+                ('CORRECT', 'MISSED_ESCALATION', 'UNNECESSARY_ESCALATION')
+            )
+            if aggregate:
+                feedback_count = int(aggregate.get('event_count') or 0)
+                last_updated = aggregate.get('last_updated_at')
+        except Exception:
+            pass
+
+    feedback_events = [
+        item for item in _fallback_history
+        if item.get('feedbackType') in ('CORRECT', 'MISSED_ESCALATION', 'UNNECESSARY_ESCALATION')
+    ]
+    if feedback_count is None:
+        feedback_count = len(feedback_events)
+    if last_updated is None and feedback_events:
+        last_updated = feedback_events[-1].get('createdAt')
+
+    threshold = state or {}
+    current = threshold.get('currentThreshold')
+    if current is None:
+        current = get_confidence_threshold()
+    return {
+        'currentThreshold': round(float(current), 4),
+        'minThreshold': float(threshold.get('minThreshold', MIN_THRESHOLD)),
+        'maxThreshold': float(threshold.get('maxThreshold', MAX_THRESHOLD)),
+        'step': float(threshold.get('stepSize', STEP_SIZE)),
+        'feedbackEventCount': feedback_count,
+        'lastUpdatedAt': last_updated or threshold.get('updatedAt'),
+    }
 
 
 def _record_feedback_transaction(case_id: str, feedback_type: str, reviewer: str,
@@ -253,6 +304,7 @@ def record_reviewer_feedback(
         'newThreshold': round(new_threshold, 4),
         'caseId': case_id,
         'feedbackType': ft,
+        'reviewerId': reviewer_id,
         'reviewerName': reviewer,
         'note': reason
     }

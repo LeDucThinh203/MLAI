@@ -507,7 +507,8 @@ async def submit_case_feedback(
         case_id=case_id,
         feedback_type=fb_type,
         reviewer=user.get('fullName') or user.get('username'),
-        note=req.note
+        note=req.note,
+        reviewer_id=user.get('id')
     )
 
     feedback_entry = {
