@@ -390,7 +390,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             <button type="button" className="btn-secondary" onClick={() => setSisPage(1)} disabled={sisLoading}>
               <RefreshCw size={15} className={sisLoading ? 'animate-spin' : ''} /> Làm mới
             </button>
-            <button type="button" className="btn-primary" onClick={() => setSisNoAvailableStudent(true)}>
+            <button type="button" className="btn-primary" onClick={openCreateSis} disabled={sisSaving}>
               Thêm thông tin sinh viên
             </button>
           </div>
