@@ -267,10 +267,14 @@ def run_tests():
             "evidenceFiles": []
         }
         res_create = session_stu.post(f"{base_url}/api/cases", json=case_payload)
-        created_resp = res_create.json() if res_create.status_code == 200 else {}
+        create_succeeded = res_create.status_code in (200, 201)
+        created_resp = res_create.json() if create_succeeded else {}
         created_data = (created_resp.get("data") or {}) if isinstance(created_resp, dict) else {}
         cid = created_data.get("id") or (created_data.get("case", {}) or {}).get("id")
-        record_assertion("Student case creation persists against the isolated PostgreSQL database", bool(cid))
+        record_assertion(
+            "Student case creation returns HTTP 201 and persists against isolated PostgreSQL",
+            res_create.status_code == 201 and bool(cid)
+        )
 
         if cid:
             # 4. Unknown action -> HTTP 400
@@ -282,10 +286,11 @@ def run_tests():
             record_assertion("OVERRIDE thiếu overrideReason bị từ chối 400 OVERRIDE_REASON_REQUIRED", ov_no_reason.status_code == 400 and "OVERRIDE_REASON_REQUIRED" in ov_no_reason.text)
 
             # 6. OVERRIDE hợp lệ có overrideReason -> Phê duyệt thành công và audit HUMAN_OVERRIDE
+            override_reason = "Hội đồng khoa đã họp xem xét và đồng ý đặc cách"
             ov_valid = session_rev.post(f"{base_url}/api/cases/{cid}/review", json={
                 "action": "OVERRIDE",
                 "overrideDecision": "APPROVED",
-                "overrideReason": "Hội đồng khoa đã họp xem xét và đồng ý đặc cách",
+                "overrideReason": override_reason,
                 "note": "Phê duyệt đặc cách"
             })
             record_assertion("OVERRIDE có overrideReason được chấp thuận 200 OK", ov_valid.status_code == 200)
@@ -294,7 +299,20 @@ def run_tests():
             res_audits_raw = session_rev.get(f"{base_url}/api/audits").json()
             res_audits = (res_audits_raw.get("data") or {}).get("audits", []) if isinstance(res_audits_raw, dict) else []
             override_audit = next((a for a in res_audits if a.get("action") == "HUMAN_OVERRIDE" and a.get("caseId") == cid), None)
-            record_assertion("Ghi nhận Audit Trail HUMAN_OVERRIDE với đầy đủ lý do", override_audit is not None and "đặc cách" in str(override_audit.get("reason", "")))
+            override_input = (override_audit or {}).get("input") or {}
+            override_actor = (override_audit or {}).get("actor") or {}
+            record_assertion(
+                "HUMAN_OVERRIDE audit contains reviewer identity, case, input, result, timestamp, and reason",
+                bool(override_audit
+                     and override_actor.get("id")
+                     and override_actor.get("role") == "REVIEWER"
+                     and override_audit.get("caseId") == cid
+                     and override_audit.get("timestamp")
+                     and override_input.get("humanAction") == "OVERRIDE"
+                     and override_input.get("targetStatus") == "APPROVED"
+                     and override_audit.get("result") == "OVERRIDDEN_TO_APPROVED"
+                     and override_audit.get("reason") == override_reason)
+            )
 
             # ----------------------------------------------------
             # TEST 7: Workflow Transition Guard
@@ -307,25 +325,39 @@ def run_tests():
             # TEST 8: Persist Audit input and result
             # ----------------------------------------------------
             print("\n[TEST 8] Kiểm tra Lưu Trữ & Trả Về Dữ Liệu Input + Result trong Audit Trail", flush=True)
-            c2_raw = session_stu.post(f"{base_url}/api/cases", json=case_payload).json()
+            c2_response = session_stu.post(f"{base_url}/api/cases", json=case_payload)
+            c2_succeeded = c2_response.status_code in (200, 201)
+            c2_raw = c2_response.json() if c2_succeeded else {}
             c2_data = (c2_raw.get("data") or {}) if isinstance(c2_raw, dict) else {}
             c2_id = c2_data.get("id") or (c2_data.get("case", {}) or {}).get("id")
-            record_assertion("Second student case is persisted for audit and feedback checks", bool(c2_id))
-            stop_response = session_rev.post(f"{base_url}/api/cases/{c2_id}/review", json={"action": "STOP", "note": "Tạm dừng xử lý do phát hiện nghi vấn"})
-            record_assertion("Reviewer STOP action succeeds", stop_response.status_code == 200)
-            
-            audits_list_raw = session_rev.get(f"{base_url}/api/audits").json()
-            audits_list = (audits_list_raw.get("data") or {}).get("audits", []) if isinstance(audits_list_raw, dict) else []
-            stop_audit = next((a for a in audits_list if a.get("caseId") == c2_id and a.get("action") == "CASE_STATUS_STOPPED"), None)
-            has_input_result = stop_audit is not None and "input" in stop_audit and "result" in stop_audit
-            record_assertion("Audit Trail lưu trữ và trả về cả 'input' lẫn 'result' qua API", has_input_result)
-        else:
-            record_assertion("Unknown review action is rejected by the live API", False)
-            record_assertion("OVERRIDE without a reason is rejected by the live API", False)
-            record_assertion("OVERRIDE with a reason is accepted by the live API", False)
-            record_assertion("HUMAN_OVERRIDE is persisted in the audit trail", False)
-            record_assertion("Terminal workflow transition is rejected by the live API", False)
-            record_assertion("STOP and audit input/result are persisted in PostgreSQL", False)
+            record_assertion(
+                "Second case creation returns HTTP 201 and persists for audit/feedback checks",
+                c2_response.status_code == 201 and bool(c2_id)
+            )
+            if c2_id:
+                stop_response = session_rev.post(f"{base_url}/api/cases/{c2_id}/review", json={"action": "STOP", "note": "Tạm dừng xử lý do phát hiện nghi vấn"})
+                record_assertion("Reviewer STOP action succeeds", stop_response.status_code == 200)
+
+                if stop_response.status_code == 200:
+                    audits_list_raw = session_rev.get(f"{base_url}/api/audits").json()
+                    audits_list = (audits_list_raw.get("data") or {}).get("audits", []) if isinstance(audits_list_raw, dict) else []
+                    stop_audit = next((a for a in audits_list if a.get("caseId") == c2_id and a.get("action") == "CASE_STATUS_STOPPED"), None)
+                    stop_input = (stop_audit or {}).get("input") or {}
+                    stop_actor = (stop_audit or {}).get("actor") or {}
+                    has_stop_audit_fields = bool(
+                        stop_audit
+                        and stop_actor.get("id")
+                        and stop_actor.get("role") == "REVIEWER"
+                        and stop_audit.get("caseId") == c2_id
+                        and stop_audit.get("timestamp")
+                        and stop_input.get("newStatus") == "STOPPED"
+                        and stop_audit.get("result") == "SUCCESS"
+                        and stop_audit.get("reason")
+                    )
+                    record_assertion(
+                        "STOP audit contains reviewer identity, case, input, result, timestamp, and reason",
+                        has_stop_audit_fields
+                    )
 
         # ----------------------------------------------------
         # TEST 9: Verify Harness
@@ -383,7 +415,8 @@ def run_tests():
         # TEST 13-14: Reviewer Feedback Endpoint RBAC
         # ----------------------------------------------------
         print("\n[TEST 13-14] Kiểm tra Reviewer Feedback Endpoint & Phân Quyền RBAC", flush=True)
-        if cid:
+        from app.db.database import get_all, get_one
+        if cid and c2_id:
             # Sinh viên gọi feedback -> 403
             fb_stu = session_stu.post(f"{base_url}/api/cases/{c2_id}/feedback", json={
                 "type": "CORRECT",
@@ -398,68 +431,97 @@ def run_tests():
             })
             record_assertion("Cán bộ (REVIEWER) gửi feedback thành công 200 OK", fb_rev.status_code == 200)
 
-            from app.db.database import get_all, get_one
-            persisted_feedback = get_one(
-                "SELECT * FROM escalation_threshold_history WHERE caseId = %s AND feedbackType = %s ORDER BY createdAt DESC LIMIT 1",
-                (c2_id, 'CORRECT')
-            )
-            record_assertion(
-                "Feedback history persists reviewer identity and an unchanged threshold",
-                bool(persisted_feedback and persisted_feedback.get('reviewerId')
-                     and persisted_feedback.get('oldThreshold') == persisted_feedback.get('newThreshold'))
-            )
-            audit_response = session_rev.get(f"{base_url}/api/audits")
-            feedback_audits = (audit_response.json().get('data') or {}).get('audits', []) if audit_response.ok else []
-            feedback_audit = next((item for item in feedback_audits
-                                   if item.get('caseId') == c2_id
-                                   and item.get('action') == 'REVIEWER_FEEDBACK_SUBMITTED'), None)
-            record_assertion(
-                "Reviewer feedback audit persists actor, input, result, and case reference",
-                bool(feedback_audit and feedback_audit.get('input') and feedback_audit.get('result')
-                     and feedback_audit.get('actorRole') == 'REVIEWER')
-            )
-
-            policy_response = session_adm.get(f"{base_url}/api/admin/policies")
-            policy_data = (policy_response.json().get('data') or {}) if policy_response.ok else {}
-            threshold_history = policy_data.get('thresholdHistory') or []
-            record_assertion(
-                "Admin policy endpoint exposes the persisted feedback threshold history",
-                any(item.get('caseId') == c2_id and item.get('feedbackType') == 'CORRECT'
-                    and item.get('reviewerId') for item in threshold_history)
-            )
-
-            reset_threshold()
-            concurrent_count = 8
-            concurrent_prefix = f'CASE-CONCURRENT-{secrets.token_hex(4)}-'
-            def concurrent_missed_feedback(index):
-                return record_reviewer_feedback(
-                    case_id=f'{concurrent_prefix}{index}',
-                    feedback_type='MISSED_ESCALATION',
-                    reviewer='competition-test-reviewer',
-                    reviewer_id='competition-test-reviewer-id',
+            if fb_rev.status_code == 200:
+                reviewer_record = get_one("SELECT * FROM users WHERE username = %s", ("reviewer1",)) or {}
+                persisted_feedback = get_one(
+                    "SELECT * FROM escalation_threshold_history WHERE caseId = %s AND feedbackType = %s ORDER BY createdAt DESC LIMIT 1",
+                    (c2_id, 'CORRECT')
                 )
-            with ThreadPoolExecutor(max_workers=concurrent_count) as executor:
-                concurrent_results = list(executor.map(concurrent_missed_feedback, range(concurrent_count)))
-            final_threshold = get_confidence_threshold()
-            concurrent_history = get_all(
-                "SELECT * FROM escalation_threshold_history WHERE caseId LIKE %s AND feedbackType = %s",
-                (f'{concurrent_prefix}%', 'MISSED_ESCALATION')
-            )
-            record_assertion(
-                "Concurrent reviewer feedback serializes threshold updates without losing events",
-                len(concurrent_results) == concurrent_count
-                and abs(final_threshold - MAX_THRESHOLD) < 1e-4
-                and len(concurrent_history) == concurrent_count
-                and all(item.get('reviewerId') == 'competition-test-reviewer-id' for item in concurrent_history)
-            )
-            reset_threshold()
+                record_assertion(
+                    "Feedback history persists case, type, threshold values, reviewer, note, and timestamp",
+                    bool(persisted_feedback
+                         and persisted_feedback.get('caseId') == c2_id
+                         and persisted_feedback.get('feedbackType') == 'CORRECT'
+                         and persisted_feedback.get('reviewerId') == reviewer_record.get('id')
+                         and persisted_feedback.get('reviewerName') == reviewer_record.get('fullName')
+                         and persisted_feedback.get('note')
+                         and persisted_feedback.get('createdAt')
+                         and persisted_feedback.get('oldThreshold') == persisted_feedback.get('newThreshold'))
+                )
+                audit_response = session_rev.get(f"{base_url}/api/audits")
+                feedback_audits = (audit_response.json().get('data') or {}).get('audits', []) if audit_response.ok else []
+                feedback_audit = next((item for item in feedback_audits
+                                       if item.get('caseId') == c2_id
+                                       and item.get('action') == 'REVIEWER_FEEDBACK_SUBMITTED'), None)
+                feedback_input = (feedback_audit or {}).get('input') or {}
+                feedback_actor = (feedback_audit or {}).get('actor') or {}
+                record_assertion(
+                    "Reviewer feedback audit persists actor ID/role, case, feedback input, result, and timestamp",
+                    bool(feedback_audit
+                         and feedback_actor.get('id') == reviewer_record.get('id')
+                         and feedback_actor.get('role') == 'REVIEWER'
+                         and feedback_audit.get('caseId') == c2_id
+                         and feedback_audit.get('timestamp')
+                         and feedback_input.get('feedbackType') == 'CORRECT'
+                         and feedback_input.get('note') == "Quyết định chuyển trạng thái của hệ thống rất chuẩn xác"
+                         and feedback_input.get('oldThreshold') == feedback_input.get('newThreshold')
+                         and feedback_audit.get('result') == 'SUCCESS')
+                )
+
+                policy_response = session_adm.get(f"{base_url}/api/admin/policies")
+                policy_data = (policy_response.json().get('data') or {}) if policy_response.ok else {}
+                threshold_history = policy_data.get('thresholdHistory') or []
+                record_assertion(
+                    "Admin policy endpoint exposes the persisted feedback threshold history",
+                    any(item.get('caseId') == c2_id and item.get('feedbackType') == 'CORRECT'
+                        and item.get('reviewerId') for item in threshold_history)
+                )
         else:
-            record_assertion("Student is denied reviewer feedback by the live API", False)
-            record_assertion("Reviewer feedback succeeds against a persisted case", False)
-            record_assertion("Feedback history persists reviewer identity", False)
-            record_assertion("Feedback audit persists actor, input, result, and case", False)
-            record_assertion("Admin can read persisted threshold history", False)
-            record_assertion("Concurrent threshold feedback preserves every update", False)
+            # Do not turn a failed/missing case creation into a cascade of
+            # unrelated downstream API assertion failures.
+            print("  SKIP: feedback API checks need both created case IDs.", flush=True)
+
+        reset_threshold()
+        concurrent_count = 8
+        concurrent_prefix = f'CASE-CONCURRENT-{secrets.token_hex(4)}-'
+        def concurrent_missed_feedback(index):
+            return record_reviewer_feedback(
+                case_id=f'{concurrent_prefix}{index}',
+                feedback_type='MISSED_ESCALATION',
+                reviewer='competition-test-reviewer',
+                reviewer_id='competition-test-reviewer-id',
+            )
+        with ThreadPoolExecutor(max_workers=concurrent_count) as executor:
+            concurrent_results = list(executor.map(concurrent_missed_feedback, range(concurrent_count)))
+        final_threshold = get_confidence_threshold()
+        concurrent_history = get_all(
+            "SELECT * FROM escalation_threshold_history WHERE caseId LIKE %s AND feedbackType = %s",
+            (f'{concurrent_prefix}%', 'MISSED_ESCALATION')
+        )
+        expected_old_thresholds = [0.75, 0.77, 0.79, 0.81, 0.83, 0.85, 0.87, 0.89]
+        expected_new_thresholds = [0.77, 0.79, 0.81, 0.83, 0.85, 0.87, 0.89, 0.90]
+        actual_old_thresholds = sorted(round(float(item['oldThreshold']), 2) for item in concurrent_history)
+        actual_new_thresholds = sorted(round(float(item['newThreshold']), 2) for item in concurrent_history)
+        record_assertion(
+            "Concurrent reviewer feedback preserves every bounded, valid threshold transition",
+            len(concurrent_results) == concurrent_count
+            and abs(final_threshold - MAX_THRESHOLD) < 1e-4
+            and len(concurrent_history) == concurrent_count
+            and len({item.get('caseId') for item in concurrent_history}) == concurrent_count
+            and actual_old_thresholds == expected_old_thresholds
+            and actual_new_thresholds == expected_new_thresholds
+            and all(
+                MIN_THRESHOLD <= item['oldThreshold'] <= MAX_THRESHOLD
+                and MIN_THRESHOLD <= item['newThreshold'] <= MAX_THRESHOLD
+                and 0 < item['newThreshold'] - item['oldThreshold'] <= 0.02
+                and item.get('reviewerId') == 'competition-test-reviewer-id'
+                and item.get('reviewerName') == 'competition-test-reviewer'
+                and item.get('note')
+                and item.get('createdAt')
+                for item in concurrent_history
+            )
+        )
+        reset_threshold()
 
         # ----------------------------------------------------
         # TEST 15: Benchmark Formulas Correctness
