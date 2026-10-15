@@ -201,8 +201,15 @@ def _record_feedback_transaction(case_id: str, feedback_type: str, reviewer: str
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO NOTHING
             """, (POLICY_ID, DEFAULT_THRESHOLD, MIN_THRESHOLD, MAX_THRESHOLD, STEP_SIZE, now_iso, 'SYSTEM_INIT'))
-            cur.execute("SELECT currentThreshold FROM escalation_policy_state WHERE id = %s FOR UPDATE", (POLICY_ID,))
+            cur.execute("""
+                SELECT currentThreshold AS "currentThreshold"
+                FROM escalation_policy_state
+                WHERE id = %s
+                FOR UPDATE
+            """, (POLICY_ID,))
             row = cur.fetchone()
+            if not row or row.get('currentThreshold') is None:
+                raise RuntimeError('Adaptive policy state could not be locked/read.')
             old = float(row['currentThreshold'])
             delta = STEP_SIZE if feedback_type == 'MISSED_ESCALATION' else (-STEP_SIZE if feedback_type == 'UNNECESSARY_ESCALATION' else 0)
             new = max(MIN_THRESHOLD, min(MAX_THRESHOLD, round(old + delta, 4)))
