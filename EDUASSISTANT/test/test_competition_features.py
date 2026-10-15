@@ -30,6 +30,8 @@ import shutil
 import secrets
 import subprocess
 import requests
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlsplit
 
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -74,15 +76,45 @@ def wait_for_server(base_url: str, timeout: float = 30.0):
         time.sleep(0.2)
     raise RuntimeError("Máy chủ Backend Python không sẵn sàng sau 30 giây.")
 
+
+def require_isolated_test_environment():
+    """Refuse to run unless the target is a disposable local PostgreSQL database."""
+    required_environment = {
+        'APP_ENV': 'test',
+        'NODE_ENV': 'test',
+        'AI_MODE': 'mock',
+        'SEED_DEMO_DATA': 'true',
+        'ALLOW_ADMIN_VERIFIED_DEMO_SIS': 'false',
+    }
+    for key, expected in required_environment.items():
+        if os.environ.get(key, '').strip().lower() != expected:
+            raise RuntimeError(f'{key} must be set to {expected} for competition integration tests.')
+    if os.environ.get('GEMINI_API_KEY', '').strip() or os.environ.get('OPENROUTER_API_KEY', '').strip():
+        raise RuntimeError('Live AI keys must be empty for competition integration tests.')
+
+    database_url = os.environ.get('DATABASE_URL', '').strip()
+    parsed = urlsplit(database_url)
+    database_name = parsed.path.lstrip('/').lower()
+    local_hosts = {'localhost', '127.0.0.1', '::1', 'postgres'}
+    isolated_database = database_name == 'eduassistant_test' or database_name.endswith(('_test', '_test_db'))
+    if parsed.scheme not in {'postgres', 'postgresql'} or parsed.hostname not in local_hosts or not isolated_database:
+        raise RuntimeError('DATABASE_URL must point to a local, disposable PostgreSQL database ending in _test.')
+
 def run_tests():
+    require_isolated_test_environment()
     data_dir = tempfile.mkdtemp(prefix="eduassistant-competition-test-")
     port = find_available_port()
     base_url = f"http://127.0.0.1:{port}"
 
+    os.environ['APP_ENV'] = 'test'
     os.environ['NODE_ENV'] = 'test'
     os.environ['PORT'] = str(port)
     os.environ['DATA_DIR'] = data_dir
     os.environ['AI_MODE'] = 'mock'
+    os.environ['SEED_DEMO_DATA'] = 'true'
+    os.environ['ALLOW_ADMIN_VERIFIED_DEMO_SIS'] = 'false'
+    os.environ['GEMINI_API_KEY'] = ''
+    os.environ['OPENROUTER_API_KEY'] = ''
     os.environ['JWT_SECRET'] = secrets.token_hex(32)
     os.environ['REFRESH_SECRET'] = secrets.token_hex(32)
     os.environ['SIGNATURE_KEY'] = secrets.token_hex(32)
@@ -238,10 +270,7 @@ def run_tests():
         created_resp = res_create.json() if res_create.status_code == 200 else {}
         created_data = (created_resp.get("data") or {}) if isinstance(created_resp, dict) else {}
         cid = created_data.get("id") or (created_data.get("case", {}) or {}).get("id")
-
-        from app.services.workflow_guard import validate_status_transition
-
-        VALID_ACTIONS = {'APPROVE', 'APPROVED', 'REJECT', 'REJECTED', 'REQUEST_INFO', 'REQUIRE_SUPPLEMENT', 'REQUIRES_SUPPLEMENT', 'OVERRIDE', 'STOP'}
+        record_assertion("Student case creation persists against the isolated PostgreSQL database", bool(cid))
 
         if cid:
             # 4. Unknown action -> HTTP 400
@@ -281,7 +310,9 @@ def run_tests():
             c2_raw = session_stu.post(f"{base_url}/api/cases", json=case_payload).json()
             c2_data = (c2_raw.get("data") or {}) if isinstance(c2_raw, dict) else {}
             c2_id = c2_data.get("id") or (c2_data.get("case", {}) or {}).get("id")
-            session_rev.post(f"{base_url}/api/cases/{c2_id}/review", json={"action": "STOP", "note": "Tạm dừng xử lý do phát hiện nghi vấn"})
+            record_assertion("Second student case is persisted for audit and feedback checks", bool(c2_id))
+            stop_response = session_rev.post(f"{base_url}/api/cases/{c2_id}/review", json={"action": "STOP", "note": "Tạm dừng xử lý do phát hiện nghi vấn"})
+            record_assertion("Reviewer STOP action succeeds", stop_response.status_code == 200)
             
             audits_list_raw = session_rev.get(f"{base_url}/api/audits").json()
             audits_list = (audits_list_raw.get("data") or {}).get("audits", []) if isinstance(audits_list_raw, dict) else []
@@ -289,28 +320,12 @@ def run_tests():
             has_input_result = stop_audit is not None and "input" in stop_audit and "result" in stop_audit
             record_assertion("Audit Trail lưu trữ và trả về cả 'input' lẫn 'result' qua API", has_input_result)
         else:
-            # Chế độ chạy Offline / Không kết nối PostgreSQL bên ngoài
-            bad_action_valid = "MAGIC_APPROVE" in VALID_ACTIONS
-            record_assertion("Unknown review action bị từ chối 400 INVALID_REVIEW_ACTION", not bad_action_valid)
-
-            override_reason_empty = ""
-            ov_empty_valid = bool(override_reason_empty and len(override_reason_empty.strip()) >= 3)
-            record_assertion("OVERRIDE thiếu overrideReason bị từ chối 400 OVERRIDE_REASON_REQUIRED", not ov_empty_valid)
-
-            override_reason_ok = "Hội đồng khoa đã họp xem xét và đồng ý đặc cách"
-            ov_ok_valid = bool(override_reason_ok and len(override_reason_ok.strip()) >= 3)
-            record_assertion("OVERRIDE có overrideReason được chấp thuận 200 OK", ov_ok_valid)
-            record_assertion("Ghi nhận Audit Trail HUMAN_OVERRIDE với đầy đủ lý do", "đặc cách" in override_reason_ok)
-
-            # TEST 7
-            print("\n[TEST 7] Kiểm tra Bảo Vệ Trạng Thái Luồng Công Việc (Workflow Guard)", flush=True)
-            valid_trans, trans_err = validate_status_transition("APPROVED", "REJECTED", "REVIEWER")
-            record_assertion("Cố tình chuyển trạng thái từ terminal APPROVED bị chặn 400 INVALID_STATUS_TRANSITION", not valid_trans and "APPROVED" in trans_err)
-
-            # TEST 8
-            print("\n[TEST 8] Kiểm tra Lưu Trữ & Trả Về Dữ Liệu Input + Result trong Audit Trail", flush=True)
-            mock_audit = {"action": "CASE_STATUS_STOPPED", "input": {"action": "STOP"}, "result": "STOPPED", "reason": "Tạm dừng"}
-            record_assertion("Audit Trail lưu trữ và trả về cả 'input' lẫn 'result' qua API", "input" in mock_audit and "result" in mock_audit)
+            record_assertion("Unknown review action is rejected by the live API", False)
+            record_assertion("OVERRIDE without a reason is rejected by the live API", False)
+            record_assertion("OVERRIDE with a reason is accepted by the live API", False)
+            record_assertion("HUMAN_OVERRIDE is persisted in the audit trail", False)
+            record_assertion("Terminal workflow transition is rejected by the live API", False)
+            record_assertion("STOP and audit input/result are persisted in PostgreSQL", False)
 
         # ----------------------------------------------------
         # TEST 9: Verify Harness
@@ -323,7 +338,7 @@ def run_tests():
         total_v = v_data.get("total", 0)
         passed_v = v_data.get("passed", 0)
         failed_v = v_data.get("failed", 0)
-        record_assertion(f"Verify Harness chạy {total_v} ca kiểm thử: 100% PASS ({passed_v}/{total_v})", total_v >= 4 and failed_v == 0 and passed_v == total_v)
+        record_assertion(f"Verify Harness returns all 9 deterministic cases ({passed_v}/{total_v})", total_v == 9 and failed_v == 0 and passed_v == total_v)
 
         # ----------------------------------------------------
         # TEST 10-12: Adaptive Escalation Threshold
@@ -382,15 +397,74 @@ def run_tests():
                 "note": "Quyết định chuyển trạng thái của hệ thống rất chuẩn xác"
             })
             record_assertion("Cán bộ (REVIEWER) gửi feedback thành công 200 OK", fb_rev.status_code == 200)
+
+            from app.db.database import get_all, get_one
+            persisted_feedback = get_one(
+                "SELECT * FROM escalation_threshold_history WHERE caseId = %s AND feedbackType = %s ORDER BY createdAt DESC LIMIT 1",
+                (c2_id, 'CORRECT')
+            )
+            record_assertion(
+                "Feedback history persists reviewer identity and an unchanged threshold",
+                bool(persisted_feedback and persisted_feedback.get('reviewerId')
+                     and persisted_feedback.get('oldThreshold') == persisted_feedback.get('newThreshold'))
+            )
+            audit_response = session_rev.get(f"{base_url}/api/audits")
+            feedback_audits = (audit_response.json().get('data') or {}).get('audits', []) if audit_response.ok else []
+            feedback_audit = next((item for item in feedback_audits
+                                   if item.get('caseId') == c2_id
+                                   and item.get('action') == 'REVIEWER_FEEDBACK_SUBMITTED'), None)
+            record_assertion(
+                "Reviewer feedback audit persists actor, input, result, and case reference",
+                bool(feedback_audit and feedback_audit.get('input') and feedback_audit.get('result')
+                     and feedback_audit.get('actorRole') == 'REVIEWER')
+            )
+
+            policy_response = session_adm.get(f"{base_url}/api/admin/policies")
+            policy_data = (policy_response.json().get('data') or {}) if policy_response.ok else {}
+            threshold_history = policy_data.get('thresholdHistory') or []
+            record_assertion(
+                "Admin policy endpoint exposes the persisted feedback threshold history",
+                any(item.get('caseId') == c2_id and item.get('feedbackType') == 'CORRECT'
+                    and item.get('reviewerId') for item in threshold_history)
+            )
+
+            reset_threshold()
+            concurrent_count = 8
+            concurrent_prefix = f'CASE-CONCURRENT-{secrets.token_hex(4)}-'
+            def concurrent_missed_feedback(index):
+                return record_reviewer_feedback(
+                    case_id=f'{concurrent_prefix}{index}',
+                    feedback_type='MISSED_ESCALATION',
+                    reviewer='competition-test-reviewer',
+                    reviewer_id='competition-test-reviewer-id',
+                )
+            with ThreadPoolExecutor(max_workers=concurrent_count) as executor:
+                concurrent_results = list(executor.map(concurrent_missed_feedback, range(concurrent_count)))
+            final_threshold = get_confidence_threshold()
+            concurrent_history = get_all(
+                "SELECT * FROM escalation_threshold_history WHERE caseId LIKE %s AND feedbackType = %s",
+                (f'{concurrent_prefix}%', 'MISSED_ESCALATION')
+            )
+            record_assertion(
+                "Concurrent reviewer feedback serializes threshold updates without losing events",
+                len(concurrent_results) == concurrent_count
+                and abs(final_threshold - MAX_THRESHOLD) < 1e-4
+                and len(concurrent_history) == concurrent_count
+                and all(item.get('reviewerId') == 'competition-test-reviewer-id' for item in concurrent_history)
+            )
+            reset_threshold()
         else:
-            allowed_feedback_roles = {'REVIEWER', 'ADMIN'}
-            record_assertion("Sinh viên (STUDENT) bị từ chối 403 khi gửi reviewer feedback", 'STUDENT' not in allowed_feedback_roles)
-            record_assertion("Cán bộ (REVIEWER) gửi feedback thành công 200 OK", 'REVIEWER' in allowed_feedback_roles)
+            record_assertion("Student is denied reviewer feedback by the live API", False)
+            record_assertion("Reviewer feedback succeeds against a persisted case", False)
+            record_assertion("Feedback history persists reviewer identity", False)
+            record_assertion("Feedback audit persists actor, input, result, and case", False)
+            record_assertion("Admin can read persisted threshold history", False)
+            record_assertion("Concurrent threshold feedback preserves every update", False)
 
         # ----------------------------------------------------
         # TEST 15: Benchmark Formulas Correctness
         # ----------------------------------------------------
-        print("\n[TEST 15] Kiểm tra Tính Toán Chỉ Số Benchmark & Công Thức Độc Lập", flush=True)
+        print("\n[TEST 15] Kiểm tra Tính Toán Chỉ Số Fixed Synthetic Benchmark", flush=True)
         from benchmark.run_benchmark import run_benchmark
         bench_result = run_benchmark()
         m = bench_result["metrics"]
@@ -401,11 +475,24 @@ def run_tests():
         expected_accuracy = (correct / total) * 100 if total > 0 else 0
         formula_acc_ok = abs(m["decisionAccuracy"] - expected_accuracy) < 0.01
 
-        # Missed escalation formula: missed / total expected escalate
-        # Unnecessary escalation formula: unnecessary / total expected auto approve
-        record_assertion("Benchmark runner trả về 100% trường hợp kiểm thử hợp lệ", total >= 10 and bench_result.get("metrics", {}).get("correctCases") == total)
+        expected_escalations = sum(item['expectedDecision'] == 'ESCALATE_TO_HUMAN' for item in bench_result['results'])
+        expected_auto_approvals = sum(item['expectedDecision'] == 'AUTO_APPROVE' for item in bench_result['results'])
+        raw_counts_ok = (
+            m['expectedEscalations'] == expected_escalations
+            and m['expectedAutoApprovals'] == expected_auto_approvals
+            and m['missedEscalationCount'] == sum(
+                item['expectedDecision'] == 'ESCALATE_TO_HUMAN' and item['actualDecision'] == 'AUTO_APPROVE'
+                for item in bench_result['results'])
+            and m['unnecessaryEscalationCount'] == sum(
+                item['expectedDecision'] == 'AUTO_APPROVE' and item['actualDecision'] == 'ESCALATE_TO_HUMAN'
+                for item in bench_result['results'])
+        )
+        record_assertion("Benchmark runner evaluates the fixed 18-case dataset without AI", total == 18 and bench_result['aiCallsPerformed'] is False)
         record_assertion("Công thức Decision Accuracy chính xác theo tỷ lệ trường hợp đúng", formula_acc_ok)
-        record_assertion("Tỷ lệ Missed Escalation & Unnecessary Escalation tính đúng toán học", 0.0 <= m["missedEscalationRate"] <= 100.0 and 0.0 <= m["unnecessaryEscalationRate"] <= 100.0)
+        missed_rate = (m['missedEscalationCount'] / m['expectedEscalations'] * 100) if m['expectedEscalations'] else 0.0
+        unnecessary_rate = (m['unnecessaryEscalationCount'] / m['expectedAutoApprovals'] * 100) if m['expectedAutoApprovals'] else 0.0
+        formulas_ok = abs(m['missedEscalationRate'] - missed_rate) < 0.01 and abs(m['unnecessaryEscalationRate'] - unnecessary_rate) < 0.01
+        record_assertion("Missed and unnecessary escalation counts retain the correct denominators and rates", raw_counts_ok and formulas_ok)
 
     finally:
         if server_process.poll() is None:
