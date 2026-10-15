@@ -526,7 +526,7 @@ def run_tests():
             and all(
                 MIN_THRESHOLD <= item['oldThreshold'] <= MAX_THRESHOLD
                 and MIN_THRESHOLD <= item['newThreshold'] <= MAX_THRESHOLD
-                and 0 < item['newThreshold'] - item['oldThreshold'] <= 0.02
+                and round(float(item['newThreshold']) - float(item['oldThreshold']), 2) in (0.01, 0.02)
                 and item.get('reviewerId') == 'competition-test-reviewer-id'
                 and item.get('reviewerName') == 'competition-test-reviewer'
                 and item.get('note')
