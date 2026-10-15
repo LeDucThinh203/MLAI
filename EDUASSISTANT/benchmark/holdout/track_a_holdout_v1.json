@@ -1,0 +1,1838 @@
+[
+    {
+        "id":  "HLD-001",
+        "name":  "Complete standard record in Ho Chi Minh City",
+        "scenarioGroup":  "valid_auto_approve",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-001",
+                                   "studentCode":  "HLD-SV-001",
+                                   "username":  "holdout001",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "58 Đường Nguyễn Du, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-001",
+                             "studentCode":  "HLD-SV-001",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "58",
+                                               "street":  "Đường Nguyễn Du",
+                                               "ward":  "Phường Bến Thành",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-002",
+        "name":  "Complete standard record in Da Nang",
+        "scenarioGroup":  "valid_auto_approve",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-002",
+                                   "studentCode":  "HLD-SV-002",
+                                   "username":  "holdout002",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "23 Đường Hùng Vương, Phường Hải Châu I, Quận Hải Châu, TP. Đà Nẵng"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-002",
+                             "studentCode":  "HLD-SV-002",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "23",
+                                               "street":  "Đường Hùng Vương",
+                                               "ward":  "Phường Hải Châu I",
+                                               "district":  "Quận Hải Châu",
+                                               "province":  "TP. Đà Nẵng"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-003",
+        "name":  "Complete standard record in Ha Noi",
+        "scenarioGroup":  "valid_auto_approve",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-003",
+                                   "studentCode":  "HLD-SV-003",
+                                   "username":  "holdout003",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "19 Đường Trần Phú, Phường Trần Phú, Quận Hoàn Kiếm, TP. Hà Nội"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-003",
+                             "studentCode":  "HLD-SV-003",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "19",
+                                               "street":  "Đường Trần Phú",
+                                               "ward":  "Phường Trần Phú",
+                                               "district":  "Quận Hoàn Kiếm",
+                                               "province":  "TP. Hà Nội"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-004",
+        "name":  "Complete standard record on a second Da Nang ward",
+        "scenarioGroup":  "valid_auto_approve",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-004",
+                                   "studentCode":  "HLD-SV-004",
+                                   "username":  "holdout004",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "7 Đường Lê Duẩn, Phường Chính Gián, Quận Thanh Khê, TP. Đà Nẵng"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-004",
+                             "studentCode":  "HLD-SV-004",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "7",
+                                               "street":  "Đường Lê Duẩn",
+                                               "ward":  "Phường Chính Gián",
+                                               "district":  "Quận Thanh Khê",
+                                               "province":  "TP. Đà Nẵng"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-005",
+        "name":  "Uppercase address formatting",
+        "scenarioGroup":  "format_invariance",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-005",
+                                   "studentCode":  "HLD-SV-005",
+                                   "username":  "holdout005",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "81 Đường Đồng Khởi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-005",
+                             "studentCode":  "HLD-SV-005",
+                             "declaredAddress":  "81 ĐƯỜNG ĐỒNG KHỞI, PHƯỜNG BẾN NGHÉ, QUẬN 1, TP. HỒ CHÍ MINH",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "81",
+                                               "street":  "Đường Đồng Khởi",
+                                               "ward":  "Phường Bến Nghé",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "81 ĐƯỜNG ĐỒNG KHỞI, PHƯỜNG BẾN NGHÉ, QUẬN 1, TP. HỒ CHÍ MINH",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-006",
+        "name":  "Lowercase address formatting",
+        "scenarioGroup":  "format_invariance",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-006",
+                                   "studentCode":  "HLD-SV-006",
+                                   "username":  "holdout006",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "13 Đường Pasteur, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-006",
+                             "studentCode":  "HLD-SV-006",
+                             "declaredAddress":  "13 đường pasteur, phường võ thị sáu, quận 3, tp. hồ chí minh",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "13",
+                                               "street":  "Đường Pasteur",
+                                               "ward":  "Phường Võ Thị Sáu",
+                                               "district":  "Quận 3",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "13 đường pasteur, phường võ thị sáu, quận 3, tp. hồ chí minh",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-007",
+        "name":  "Administrative abbreviations",
+        "scenarioGroup":  "format_invariance",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-007",
+                                   "studentCode":  "HLD-SV-007",
+                                   "username":  "holdout007",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "26 Đường Nguyễn Văn Linh, Phường Tân Phú, Quận 7, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-007",
+                             "studentCode":  "HLD-SV-007",
+                             "declaredAddress":  "26 Nguyễn Văn Linh, P. Tân Phú, Q. 7, TP. HCM",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "26",
+                                               "street":  "Đường Nguyễn Văn Linh",
+                                               "ward":  "Phường Tân Phú",
+                                               "district":  "Quận 7",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "26 Nguyễn Văn Linh, P. Tân Phú, Q. 7, TP. HCM",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-008",
+        "name":  "Unaccented administrative names",
+        "scenarioGroup":  "format_invariance",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-008",
+                                   "studentCode":  "HLD-SV-008",
+                                   "username":  "holdout008",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "42 Đường Lý Thường Kiệt, Phường Phan Chu Trinh, Quận Hoàn Kiếm, TP. Hà Nội"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-008",
+                             "studentCode":  "HLD-SV-008",
+                             "declaredAddress":  "42 duong ly thuong kiet, phuong phan chu trinh, quan hoan kiem, tp ha noi",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "42",
+                                               "street":  "Đường Lý Thường Kiệt",
+                                               "ward":  "Phường Phan Chu Trinh",
+                                               "district":  "Quận Hoàn Kiếm",
+                                               "province":  "TP. Hà Nội"
+                                           },
+                                "normalized":  "42 duong ly thuong kiet, phuong phan chu trinh, quan hoan kiem, tp ha noi",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-009",
+        "name":  "Declared address is missing its ward",
+        "scenarioGroup":  "fact_unknown",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "FACT_UNKNOWN",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-009",
+                                   "studentCode":  "HLD-SV-009",
+                                   "username":  "holdout009",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "15 Đường Nguyễn Trãi, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-009",
+                             "studentCode":  "HLD-SV-009",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "15",
+                                               "street":  "Đường Nguyễn Trãi",
+                                               "ward":  null,
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+                                                      "ward"
+                                                  ],
+                                "isComplete":  false,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-010",
+        "name":  "Declared address is missing its province",
+        "scenarioGroup":  "fact_unknown",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "FACT_UNKNOWN",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-010",
+                                   "studentCode":  "HLD-SV-010",
+                                   "username":  "holdout010",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "8 Đường Trần Hưng Đạo, Phường Cửa Nam, Quận Hoàn Kiếm"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-010",
+                             "studentCode":  "HLD-SV-010",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "8",
+                                               "street":  "Đường Trần Hưng Đạo",
+                                               "ward":  "Phường Cửa Nam",
+                                               "district":  "Quận Hoàn Kiếm",
+                                               "province":  null
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+                                                      "province"
+                                                  ],
+                                "isComplete":  false,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-011",
+        "name":  "Institutional permanent address is absent",
+        "scenarioGroup":  "fact_unknown",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "FACT_UNKNOWN",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-011",
+                                   "studentCode":  "HLD-SV-011",
+                                   "username":  "holdout011",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  null
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-011",
+                             "studentCode":  "HLD-SV-011",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "37",
+                                               "street":  "Đường Nguyễn Thị Minh Khai",
+                                               "ward":  "Phường Đa Kao",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-012",
+        "name":  "Address confidence is below the configured threshold",
+        "scenarioGroup":  "fact_unknown",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "FACT_UNKNOWN",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-012",
+                                   "studentCode":  "HLD-SV-012",
+                                   "username":  "holdout012",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "6 Đường Phan Đình Phùng, Phường 2, Quận Phú Nhuận, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-012",
+                             "studentCode":  "HLD-SV-012",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "6",
+                                               "street":  "Đường Phan Đình Phùng",
+                                               "ward":  "Phường 2",
+                                               "district":  "Quận Phú Nhuận",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.7,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-013",
+        "name":  "Temporary address type requires review",
+        "scenarioGroup":  "data_conflict",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "DATA_CONFLICT",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-013",
+                                   "studentCode":  "HLD-SV-013",
+                                   "username":  "holdout013",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "11 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-013",
+                             "studentCode":  "HLD-SV-013",
+                             "declaredAddress":  "",
+                             "addressType":  "TEMPORARY",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "11",
+                                               "street":  "Đường Nguyễn Huệ",
+                                               "ward":  "Phường Bến Nghé",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-014",
+        "name":  "Ward differs from the institutional record",
+        "scenarioGroup":  "data_conflict",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "DATA_CONFLICT",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-014",
+                                   "studentCode":  "HLD-SV-014",
+                                   "username":  "holdout014",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "10 Đường Nguyễn Huệ, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-014",
+                             "studentCode":  "HLD-SV-014",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "10",
+                                               "street":  "Đường Nguyễn Huệ",
+                                               "ward":  "Phường Bến Nghé",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-015",
+        "name":  "District differs from the institutional record",
+        "scenarioGroup":  "data_conflict",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "DATA_CONFLICT",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-015",
+                                   "studentCode":  "HLD-SV-015",
+                                   "username":  "holdout015",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "35 Đường Cách Mạng Tháng Tám, Phường 5, Quận 10, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-015",
+                             "studentCode":  "HLD-SV-015",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "35",
+                                               "street":  "Đường Cách Mạng Tháng Tám",
+                                               "ward":  "Phường 5",
+                                               "district":  "Quận 3",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-016",
+        "name":  "Province differs from the institutional record",
+        "scenarioGroup":  "data_conflict",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "DATA_CONFLICT",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-016",
+                                   "studentCode":  "HLD-SV-016",
+                                   "username":  "holdout016",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "54 Đường Trần Hưng Đạo, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-016",
+                             "studentCode":  "HLD-SV-016",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "54",
+                                               "street":  "Đường Trần Hưng Đạo",
+                                               "ward":  "Phường Phan Chu Trinh",
+                                               "district":  "Quận Hoàn Kiếm",
+                                               "province":  "TP. Hà Nội"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-017",
+        "name":  "House number differs from the institutional record",
+        "scenarioGroup":  "data_conflict",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "DATA_CONFLICT",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-017",
+                                   "studentCode":  "HLD-SV-017",
+                                   "username":  "holdout017",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "25 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-017",
+                             "studentCode":  "HLD-SV-017",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "52",
+                                               "street":  "Đường Lê Lợi",
+                                               "ward":  "Phường Bến Thành",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-018",
+        "name":  "Academic status is suspended",
+        "scenarioGroup":  "authority_required",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "AUTHORITY_REQUIRED",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-018",
+                                   "studentCode":  "HLD-SV-018",
+                                   "username":  "holdout018",
+                                   "academicStatus":  "SUSPENDED",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "21 Đường Hoàng Diệu, Phường Bình Hiên, Quận Hải Châu, TP. Đà Nẵng"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-018",
+                             "studentCode":  "HLD-SV-018",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "21",
+                                               "street":  "Đường Hoàng Diệu",
+                                               "ward":  "Phường Bình Hiên",
+                                               "district":  "Quận Hải Châu",
+                                               "province":  "TP. Đà Nẵng"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-019",
+        "name":  "Academic status is withdrawn",
+        "scenarioGroup":  "authority_required",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "AUTHORITY_REQUIRED",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-019",
+                                   "studentCode":  "HLD-SV-019",
+                                   "username":  "holdout019",
+                                   "academicStatus":  "WITHDRAWN",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "18 Đường Nguyễn Trãi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-019",
+                             "studentCode":  "HLD-SV-019",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "18",
+                                               "street":  "Đường Nguyễn Trãi",
+                                               "ward":  "Phường Bến Thành",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-020",
+        "name":  "Current-term enrollment is inactive",
+        "scenarioGroup":  "authority_required",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "AUTHORITY_REQUIRED",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-020",
+                                   "studentCode":  "HLD-SV-020",
+                                   "username":  "holdout020",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  false,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "4 Đường Phan Chu Trinh, Phường Hải Châu I, Quận Hải Châu, TP. Đà Nẵng"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-020",
+                             "studentCode":  "HLD-SV-020",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "4",
+                                               "street":  "Đường Phan Chu Trinh",
+                                               "ward":  "Phường Hải Châu I",
+                                               "district":  "Quận Hải Châu",
+                                               "province":  "TP. Đà Nẵng"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-021",
+        "name":  "Current-term academic evidence is missing",
+        "scenarioGroup":  "authority_required",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "AUTHORITY_REQUIRED",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-021",
+                                   "studentCode":  "HLD-SV-021",
+                                   "username":  "holdout021",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  null,
+                                   "hasCurrentSchedule":  null,
+                                   "registeredPermanentAddress":  "28 Đường Lý Tự Trọng, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-021",
+                             "studentCode":  "HLD-SV-021",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "28",
+                                               "street":  "Đường Lý Tự Trọng",
+                                               "ward":  "Phường Bến Nghé",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-022",
+        "name":  "Course dates are missing from institutional facts",
+        "scenarioGroup":  "authority_required",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "AUTHORITY_REQUIRED",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-022",
+                                   "studentCode":  "HLD-SV-022",
+                                   "username":  "holdout022",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  null,
+                                   "courseEndDate":  null,
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "17 Đường Trần Bình Trọng, Phường 5, Quận Bình Thạnh, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-022",
+                             "studentCode":  "HLD-SV-022",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "17",
+                                               "street":  "Đường Trần Bình Trọng",
+                                               "ward":  "Phường 5",
+                                               "district":  "Quận Bình Thạnh",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-023",
+        "name":  "Student requests an exception",
+        "scenarioGroup":  "policy_out_of_scope",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "POLICY_OUT_OF_SCOPE",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-023",
+                                   "studentCode":  "HLD-SV-023",
+                                   "username":  "holdout023",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "33 Đường Võ Văn Tần, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-023",
+                             "studentCode":  "HLD-SV-023",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Xin ngoại lệ vì hoàn cảnh đặc biệt."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "33",
+                                               "street":  "Đường Võ Văn Tần",
+                                               "ward":  "Phường Võ Thị Sáu",
+                                               "district":  "Quận 3",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-024",
+        "name":  "Student requests duration beyond the standard course window",
+        "scenarioGroup":  "policy_out_of_scope",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "POLICY_OUT_OF_SCOPE",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-024",
+                                   "studentCode":  "HLD-SV-024",
+                                   "username":  "holdout024",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "12 Đường Trần Quang Khải, Phường Tân Định, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-024",
+                             "studentCode":  "HLD-SV-024",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Xin vượt thời hạn khóa học hiện tại."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "12",
+                                               "street":  "Đường Trần Quang Khải",
+                                               "ward":  "Phường Tân Định",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-025",
+        "name":  "Student asks for an exemption decision",
+        "scenarioGroup":  "policy_out_of_scope",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "POLICY_OUT_OF_SCOPE",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-025",
+                                   "studentCode":  "HLD-SV-025",
+                                   "username":  "holdout025",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "16 Đường Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-025",
+                             "studentCode":  "HLD-SV-025",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Xin miễn nghĩa vụ theo trường hợp riêng."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "16",
+                                               "street":  "Đường Nguyễn Đình Chiểu",
+                                               "ward":  "Phường Đa Kao",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-026",
+        "name":  "Claimed student code belongs to another account",
+        "scenarioGroup":  "ownership_unclear",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "OWNERSHIP_UNCLEAR",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-026",
+                                   "studentCode":  "HLD-SV-026",
+                                   "username":  "holdout026",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "20 Đường Bạch Đằng, Phường Hải Châu I, Quận Hải Châu, TP. Đà Nẵng"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-026",
+                             "studentCode":  "HLD-SV-OTHER",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "20",
+                                               "street":  "Đường Bạch Đằng",
+                                               "ward":  "Phường Hải Châu I",
+                                               "district":  "Quận Hải Châu",
+                                               "province":  "TP. Đà Nẵng"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-027",
+        "name":  "Claimed student name does not match the account",
+        "scenarioGroup":  "ownership_unclear",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "OWNERSHIP_UNCLEAR",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-027",
+                                   "studentCode":  "HLD-SV-027",
+                                   "username":  "holdout027",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "27 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Different Synthetic Person",
+                             "studentCode":  "HLD-SV-027",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "27",
+                                               "street":  "Đường Lê Lợi",
+                                               "ward":  "Phường Bến Thành",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-028",
+        "name":  "Student code is absent from the facts and claim",
+        "scenarioGroup":  "ownership_unclear",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "OWNERSHIP_UNCLEAR",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-028",
+                                   "studentCode":  null,
+                                   "username":  "holdout028",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "38 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-028",
+                             "studentCode":  null,
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "38",
+                                               "street":  "Đường Nguyễn Huệ",
+                                               "ward":  "Phường Bến Nghé",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-029",
+        "name":  "Mock extraction provenance",
+        "scenarioGroup":  "failsafe_provenance",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "FACT_UNKNOWN",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-029",
+                                   "studentCode":  "HLD-SV-029",
+                                   "username":  "holdout029",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "44 Đường Nguyễn Thị Minh Khai, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-029",
+                             "studentCode":  "HLD-SV-029",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "44",
+                                               "street":  "Đường Nguyễn Thị Minh Khai",
+                                               "ward":  "Phường Đa Kao",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "mock",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "mock",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-030",
+        "name":  "Cached extraction provenance",
+        "scenarioGroup":  "failsafe_provenance",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "FACT_UNKNOWN",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-030",
+                                   "studentCode":  "HLD-SV-030",
+                                   "username":  "holdout030",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "9 Đường Trần Hưng Đạo, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-030",
+                             "studentCode":  "HLD-SV-030",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "9",
+                                               "street":  "Đường Trần Hưng Đạo",
+                                               "ward":  "Phường Bến Thành",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "cache",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  false,
+                           "provider":  "cache",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-031",
+        "name":  "Fallback extraction provenance",
+        "scenarioGroup":  "failsafe_provenance",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "FACT_UNKNOWN",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-031",
+                                   "studentCode":  "HLD-SV-031",
+                                   "username":  "holdout031",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "40 Đường Lê Duẩn, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-031",
+                             "studentCode":  "HLD-SV-031",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "40",
+                                               "street":  "Đường Lê Duẩn",
+                                               "ward":  "Phường Bến Nghé",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "live",
+                           "isLive":  true,
+                           "isFallback":  true,
+                           "fallbackOccurred":  true,
+                           "isSynthetic":  false,
+                           "provider":  "FIXTURE_FALLBACK",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-032",
+        "name":  "Confidence immediately below 0.75",
+        "scenarioGroup":  "threshold_boundary",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "ESCALATE_TO_HUMAN",
+        "expectedEscalationReason":  "FACT_UNKNOWN",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-032",
+                                   "studentCode":  "HLD-SV-032",
+                                   "username":  "holdout032",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "14 Đường Nguyễn Du, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-032",
+                             "studentCode":  "HLD-SV-032",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "14",
+                                               "street":  "Đường Nguyễn Du",
+                                               "ward":  "Phường Bến Thành",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.749,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-033",
+        "name":  "Confidence exactly at 0.75",
+        "scenarioGroup":  "threshold_boundary",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-033",
+                                   "studentCode":  "HLD-SV-033",
+                                   "username":  "holdout033",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "29 Đường Hùng Vương, Phường Hải Châu I, Quận Hải Châu, TP. Đà Nẵng"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-033",
+                             "studentCode":  "HLD-SV-033",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "29",
+                                               "street":  "Đường Hùng Vương",
+                                               "ward":  "Phường Hải Châu I",
+                                               "district":  "Quận Hải Châu",
+                                               "province":  "TP. Đà Nẵng"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.75,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-034",
+        "name":  "Confidence immediately above 0.75",
+        "scenarioGroup":  "threshold_boundary",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-034",
+                                   "studentCode":  "HLD-SV-034",
+                                   "username":  "holdout034",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "32 Đường Trần Phú, Phường Trần Phú, Quận Hoàn Kiếm, TP. Hà Nội"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-034",
+                             "studentCode":  "HLD-SV-034",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "32",
+                                               "street":  "Đường Trần Phú",
+                                               "ward":  "Phường Trần Phú",
+                                               "district":  "Quận Hoàn Kiếm",
+                                               "province":  "TP. Hà Nội"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.751,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-035",
+        "name":  "Identity casing and accent normalization",
+        "scenarioGroup":  "valid_auto_approve",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-035",
+                                   "studentCode":  "HLD-SV-035",
+                                   "username":  "holdout035",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "65 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh"
+                               },
+        "studentClaim":  {
+                             "fullName":  "student hld 035",
+                             "studentCode":  "HLD-SV-035",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "65",
+                                               "street":  "Đường Lê Lợi",
+                                               "ward":  "Phường Bến Thành",
+                                               "district":  "Quận 1",
+                                               "province":  "TP. Hồ Chí Minh"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.91,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    },
+    {
+        "id":  "HLD-036",
+        "name":  "High-confidence complete standard record",
+        "scenarioGroup":  "valid_auto_approve",
+        "description":  "Synthetic frozen holdout scenario; no real student data.",
+        "expectedDecision":  "AUTO_APPROVE",
+        "expectedEscalationReason":  "",
+        "institutionalFacts":  {
+                                   "fullName":  "Student HLD-036",
+                                   "studentCode":  "HLD-SV-036",
+                                   "username":  "holdout036",
+                                   "academicStatus":  "ACTIVE",
+                                   "courseStartDate":  "2022-09-01",
+                                   "courseEndDate":  "2030-06-30",
+                                   "currentTermActive":  true,
+                                   "hasCurrentSchedule":  true,
+                                   "registeredPermanentAddress":  "73 Đường Hùng Vương, Phường Hải Châu I, Quận Hải Châu, TP. Đà Nẵng"
+                               },
+        "studentClaim":  {
+                             "fullName":  "Student HLD-036",
+                             "studentCode":  "HLD-SV-036",
+                             "declaredAddress":  "",
+                             "addressType":  "PERMANENT",
+                             "requestReason":  "Standard student-status confirmation request."
+                         },
+        "addressAnalysis":  {
+                                "parsed":  {
+                                               "houseNumber":  "73",
+                                               "street":  "Đường Hùng Vương",
+                                               "ward":  "Phường Hải Châu I",
+                                               "district":  "Quận Hải Châu",
+                                               "province":  "TP. Đà Nẵng"
+                                           },
+                                "normalized":  "",
+                                "missingFields":  [
+
+                                                  ],
+                                "isComplete":  true,
+                                "confidence":  0.99,
+                                "source":  "frozen_holdout_fixture"
+                            },
+        "aiMetadata":  {
+                           "modeUsed":  "fixture",
+                           "isLive":  false,
+                           "isFallback":  false,
+                           "fallbackOccurred":  false,
+                           "isSynthetic":  true,
+                           "provider":  "FIXED_TEST_FIXTURE",
+                           "apiCallPerformed":  false
+                       }
+    }
+]

@@ -47,16 +47,14 @@ jobs:
           test/test_rule_engine_hardening.py
           test/test_judge_summary.py
           test/test_escalation_policy_service.py
-          test/test_independent_eval.py
+          test/test_holdout_eval.py
           test/test_ocr_service.py
           test/test_benchmark_provenance.py
       - run: >-
           python -c "import sys; sys.path.insert(0, 'backend'); from app.services.verify_harness_service import run_verify_harness; result = run_verify_harness(); assert result['total'] == 9 and result['failed'] == 0 and not result['networkCallsPerformed'] and not result['databaseWritesPerformed']"
       - run: python benchmark/run_benchmark.py
       - run: >-
-          python -c "from benchmark.run_benchmark import run_benchmark; result = run_benchmark(); assert result['scenarioCount'] == 18 and result['aiCallsPerformed'] is False"
-      - run: python benchmark/independent/run_independent_eval.py
-
+          python -c "import hashlib, json, pathlib; root = pathlib.Path('.'); dataset = root / 'benchmark' / 'fixed_synthetic_cases.json'; result = json.loads((root / 'benchmark' / 'results' / 'latest.json').read_text(encoding='utf-8')); assert result['scenarioCount'] == 18 and result['aiCallsPerformed'] is False and result['datasetSha256'] == hashlib.sha256(dataset.read_bytes()).hexdigest() and len(result['caseResults']) == 18"
   frontend:
     runs-on: ubuntu-latest
     defaults:

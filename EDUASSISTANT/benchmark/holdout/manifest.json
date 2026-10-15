@@ -1,0 +1,14 @@
+{
+    "dataset":  "track_a_holdout_v1.json",
+    "version":  "1.0",
+    "frozen":  true,
+    "scenarioCount":  36,
+    "sha256":  "b357bf066791b0c92ad0ee8362111a5cd865660a9e43eab5f627bca47d4b556a",
+    "purpose":  "Final frozen evaluation for Track A escalation routing",
+    "usedByRuntime":  false,
+    "usedByTraining":  false,
+    "usedByUnitTests":  false,
+    "createdAt":  "2026-10-15T04:29:58Z",
+    "frozenAt":  "2026-10-15T04:29:58Z",
+    "authorship":  "Authored for this repository; no external or independent authorship is claimed."
+}

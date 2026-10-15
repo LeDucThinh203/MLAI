@@ -24,6 +24,7 @@ import os
 import sys
 import json
 import csv
+import hashlib
 import time
 from datetime import datetime
 
@@ -97,8 +98,10 @@ def run_benchmark():
     if not os.path.exists(cases_file):
         raise FileNotFoundError(f"Không tìm thấy tệp dữ liệu kiểm thử: {cases_file}")
 
-    with open(cases_file, 'r', encoding='utf-8') as f:
-        cases = json.load(f)
+    with open(cases_file, 'rb') as f:
+        dataset_bytes = f.read()
+    dataset_sha256 = hashlib.sha256(dataset_bytes).hexdigest()
+    cases = json.loads(dataset_bytes.decode('utf-8'))
 
     print("\n" + "=" * 70)
     print("🚀 EDUASSISTANT BENCHMARK & MEASUREMENT RUNNER")
@@ -199,6 +202,7 @@ def run_benchmark():
         'aiCallsPerformed': False,
         'evaluationTarget': 'ESCALATION_DECISION_POLICY',
         'scenarioCount': total_cases,
+        'datasetSha256': dataset_sha256,
         'benchmarkRunId': f"BM-{int(datetime.now().timestamp())}",
         'timestamp': datetime.utcnow().isoformat() + 'Z',
         'executionTimeSec': total_duration_sec,
@@ -220,6 +224,9 @@ def run_benchmark():
             'shouldAutoApproveCount': should_auto_approve_count,
             'unnecessaryEscalateCount': unnecessary_escalate_count
         },
+        'caseResults': case_results,
+        # Keep the older key for existing local tooling while publishing the
+        # explicit provenance field used by Judge and preflight evidence.
         'results': case_results
     }
 
