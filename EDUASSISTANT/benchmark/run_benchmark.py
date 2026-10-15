@@ -210,6 +210,11 @@ def run_benchmark():
             'escalationRate': escalation_rate,
             'missedEscalationRate': missed_escalation_rate,
             'unnecessaryEscalationRate': unnecessary_escalation_rate,
+            'expectedEscalations': should_escalate_count,
+            'missedEscalationCount': missed_escalate_count,
+            'expectedAutoApprovals': should_auto_approve_count,
+            'unnecessaryEscalationCount': unnecessary_escalate_count,
+            # Keep the earlier aliases while consumers migrate to the explicit names.
             'shouldEscalateCount': should_escalate_count,
             'missedEscalateCount': missed_escalate_count,
             'shouldAutoApproveCount': should_auto_approve_count,
