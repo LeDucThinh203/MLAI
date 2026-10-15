@@ -21,17 +21,18 @@ This file contains slide content only. It is not a PowerPoint deck.
 
 ## Slide 3 — Impact and measurement
 
-- Historical fixed synthetic development result (2026-10-15 03:56:08 UTC; not
-  rerun on this working tree): Decision Accuracy **100.0% (18/18)**; Automation
-  Rate **27.78% (5/18)**; Escalation Rate **72.22% (13/18)**; Missed Escalation
-  **0.0% (0/13)**; Unnecessary Escalation **0.0% (0/5)**; AI calls **0**.
+- CI run [38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502)
+  on source revision `a6bf907` measured the fixed synthetic development set:
+  Decision Accuracy **100.0% (18/18)**; Automation Rate **27.78% (5/18)**;
+  Escalation Rate **72.22% (13/18)**; Missed Escalation **0.0% (0/13)**;
+  Unnecessary Escalation **0.0% (0/5)**; AI calls **0**.
 - Transparent reference: if every case were sent to a human, **18/18 (100%)**
   would receive manual review. On this synthetic set, EDUASSISTANT routed
   **13/18 (72.22%)** to a human and internally auto-processed **5/18
   (27.78%)**. The difference is a synthetic reviewer-workload reference of
   **5/18 (27.78%)**.
-- Label the comparison: **“Synthetic workload reference, not measured production impact.”** It is not a measured before/after user or production
-  result.
+- Label the comparison: **“Synthetic workload reference, not measured production
+  impact.”** It is not a measured before/after user or production result.
 - Frozen Holdout v1: **NOT RUN**; show no holdout metrics. User Validation:
   **PENDING**.
 - AI sanity checks are not Track A routing metrics.

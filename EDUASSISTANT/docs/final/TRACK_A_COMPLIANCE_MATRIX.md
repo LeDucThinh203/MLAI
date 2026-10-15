@@ -4,14 +4,14 @@
 
 | Criterion | Evidence | Status |
 | --- | --- | --- |
-| Live URL | `https://edu-sp.pages.dev`; `/`, `/judge`, and `/verify` returned HTTP 200 in read-only checks on 2026-10-15. | VERIFIED live at check time |
-| Judge and database visibility | Local Judge source reports database availability safely and separates Verify, the 18-case development benchmark, and the frozen holdout. Live Judge still serves the earlier deployed version; its summary reported `databaseStatus=AVAILABLE` but has no `frozenHoldout` field. | Local change NOT DEPLOYED; live API VERIFIED at check time |
-| Verify page and API | Live `/verify` returned HTTP 200; live `GET /api/verify/run` returned 9/9 without network calls or database writes. | VERIFIED live at check time; local rerun NOT RUN |
-| Health | Live `GET /api/health` returned HTTP 200, healthy, with PostgreSQL connected. | VERIFIED live at check time |
-| CI | Baseline `3f80e484e8c1c4da6d720b983ffac019258b8c25`: GitHub Actions run [38683292907](https://github.com/LeDucThinh203/MLAI/actions/runs/38683292907) had backend-unit and frontend PASS; competition-readiness FAILED at `test/test_competition_features.py`. Local fixes are uncommitted and have no rerun. | BASELINE FAILED; LOCAL DIFF NOT VERIFIED |
-| Runbook | `EDUASSISTANT/RUNBOOK.md` is canonical; `EDUASSISTANT/docs/runbook/RUNBOOK.md` points to it. | DOCUMENTED; commands NOT RUN this turn |
+| Live URL | `https://edu-sp.pages.dev`; `/`, `/judge`, and `/verify` returned HTTP 200 in read-only checks on 2026-10-15. | VERIFIED at check time; current source not deployed |
+| Judge and database visibility | Current source reports database availability safely and separates Verify, development benchmark, and frozen holdout status. The live Judge observation was from the earlier deployed version. | Source CI-VERIFIED; current source NOT DEPLOYED |
+| Verify page and API | CI asserted 9/9 with no network calls or database writes. Earlier read-only live `/verify` and API checks returned HTTP 200. | CI-VERIFIED; live check is from earlier deployed version |
+| Health | Live `GET /api/health` returned HTTP 200, healthy, with PostgreSQL connected in the read-only check on 2026-10-15. | VERIFIED at check time |
+| CI | Code revision `a6bf9076e8b6de471f42e936f7991991ab7cf3de`: GitHub Actions run [38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502) passed `backend-unit`, `competition-readiness`, and `frontend`. | PASS for tested code revision |
+| Runbook | `EDUASSISTANT/RUNBOOK.md` is canonical; `EDUASSISTANT/docs/runbook/RUNBOOK.md` points to it. | DOCUMENTED |
 | Demo accounts | Documentation describes demo-only roles and disables production demo SIS by default. Production logins were not tested. | DOCUMENTED; login NOT VERIFIED |
-| Deterministic Verify Harness | Nine deterministic in-memory cases are documented as isolated from AI, network, database writes, and threshold changes. | Prior local run recorded; current rerun NOT RUN |
+| Deterministic Verify Harness | Successful CI run asserted 9 total, 0 failed, no network calls, and no database writes. | CI-VERIFIED; local rerun NOT RUN |
 
 ## B. Real users
 
@@ -24,24 +24,24 @@
 
 | Criterion | Evidence | Status |
 | --- | --- | --- |
-| Reviewer queue and case details | Reviewer portal and case router. | Source present; current PostgreSQL integration NOT RUN |
-| APPROVE, REJECT, REQUEST_INFO, OVERRIDE, STOP | Reviewer actions pass through the workflow guard; override requires a reason. | Source present; current PostgreSQL integration NOT RUN |
-| Reviewer feedback | `CORRECT`, `MISSED_ESCALATION`, and `UNNECESSARY_ESCALATION`; Student role is denied. | Source present; current PostgreSQL integration NOT RUN |
-| Audit trail | Case, override, feedback, and stop events record applicable actor, role, case, input, result, time, and reason. | Source present; current PostgreSQL integration NOT RUN |
-| Threshold history | PostgreSQL transaction locks policy state and records threshold changes and reviewer metadata. | Source present; current PostgreSQL integration NOT RUN |
+| Reviewer queue and case details | Reviewer portal, case router, and PostgreSQL-backed integration coverage. | CI integration PASS |
+| APPROVE, REJECT, REQUEST_INFO, OVERRIDE, STOP | Reviewer actions pass through the workflow guard; override requires a reason. | CI integration PASS |
+| Reviewer feedback | `CORRECT`, `MISSED_ESCALATION`, and `UNNECESSARY_ESCALATION`; Student role is denied. | CI integration PASS |
+| Audit trail | Case, override, feedback, and stop events record applicable actor, role, case, input, result, time, and reason. | CI integration PASS |
+| Threshold history | PostgreSQL transaction locks policy state and records threshold changes and reviewer metadata. | CI integration PASS |
 
-**HITL and audit status:** source is present; regression assertions have been expanded, but integration behavior on this working tree is NOT VERIFIED because the PostgreSQL suite was not run.
+**HITL and audit status:** the PostgreSQL-backed competition-readiness suite passed in CI run [38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502). Local integration commands were not run because the local Python runtime is unavailable.
 
 ## D. Track A evidence
 
 | Criterion | Evidence | Status |
 | --- | --- | --- |
-| Rule Engine and five escalation reasons | Deterministic routing retains `OWNERSHIP_UNCLEAR`, `FACT_UNKNOWN`, `DATA_CONFLICT`, `AUTHORITY_REQUIRED`, and `POLICY_OUT_OF_SCOPE`. | Source present; current tests NOT RUN |
-| Adaptive threshold | Default 0.75; bounds 0.65–0.90; step 0.02; feedback-driven updates are handled by the escalation policy service. | Source present; PostgreSQL integration NOT RUN |
-| Reviewer feedback loop and workflow guard | Feedback and reviewer actions use guarded routes and audit/history persistence. | Source present; PostgreSQL integration NOT RUN |
-| Fixed Synthetic Development Benchmark | 18 fixed synthetic scenarios with exact denominators and dataset SHA-256 provenance. | Historical result: 18/18; current rerun NOT RUN |
+| Rule Engine and five escalation reasons | Deterministic routing retains `OWNERSHIP_UNCLEAR`, `FACT_UNKNOWN`, `DATA_CONFLICT`, `AUTHORITY_REQUIRED`, and `POLICY_OUT_OF_SCOPE`. | Backend and competition CI PASS |
+| Adaptive threshold | Default 0.75; bounds 0.65–0.90; step 0.02; feedback-driven updates are handled by the escalation policy service. | PostgreSQL integration CI PASS |
+| Reviewer feedback loop and workflow guard | Feedback and reviewer actions use guarded routes and audit/history persistence. | Competition integration CI PASS |
+| Fixed Synthetic Development Benchmark | 18 fixed synthetic scenarios; 100.0% decision accuracy (18/18), 27.78% automation (5/18), 72.22% escalation (13/18); dataset SHA-256 provenance checked. | CI PASS; synthetic development evidence only |
 | Frozen Holdout | Static 36-case v1 dataset with explicit expected labels, manifest, and exact SHA-256; separate manual runner verifies bytes before evaluation. No result artifact exists. | FROZEN; **NOT RUN** |
-| Runtime, CI, and unit-test separation | Holdout data is not imported by application runtime, routine CI, or tests; tests use temporary fixtures. | Source/configuration present; current test run NOT RUN |
+| Runtime, CI, and unit-test separation | Holdout data is not imported by application runtime; routine CI uses separate test fixtures. | Source/configuration present; standard CI PASS; holdout NOT RUN |
 
 ## Domain boundary
 
@@ -49,4 +49,4 @@ The only use case is `MILITARY_SERVICE_CONFIRMATION`, an internal student-status
 
 ## Current readiness
 
-**NOT READY.** Baseline competition-readiness CI failed; local fixes have not been executed or rerun in CI. Verify, benchmark, frontend, PostgreSQL integration, and final preflight remain unverified on this worktree. The frozen holdout remains **NOT RUN** and User Validation remains **PENDING**.
+**NOT READY.** CI is green for the tested code revision, including Verify, benchmark, frontend, and PostgreSQL integration. The separate local final preflight was not run. Frozen Holdout remains **NOT RUN** and User Validation remains **PENDING**, so full Track A readiness is not established.

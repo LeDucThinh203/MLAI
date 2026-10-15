@@ -204,7 +204,7 @@ python test/test_competition_features.py
 ```
 This integration suite requires the PostgreSQL-backed application environment. The database-free CI regressions and deterministic checks run separately.
 
-**Current readiness snapshot (2026-10-15):** GitHub Actions run [38683292907](https://github.com/LeDucThinh203/MLAI/actions/runs/38683292907) for baseline `3f80e484e8c1c4da6d720b983ffac019258b8c25` passed `backend-unit` and `frontend` but failed `competition-readiness`. Local fixes and added regressions are uncommitted and have not been rerun; CI is not green on the current changes. Python, Node.js, and npm checks are **NOT RUN** in this shell. Frozen Holdout is **NOT RUN** and User Validation is **PENDING**. See `docs/final/EVALUATION_EVIDENCE.md` for the evidence and its limits.
+**Current readiness snapshot (2026-10-15):** code revision `a6bf9076e8b6de471f42e936f7991991ab7cf3de` passed all GitHub Actions jobs in run [38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502): backend-unit, PostgreSQL-backed competition-readiness, and frontend. CI Verify returned 9/9 without network calls or database writes; the 18-case synthetic development benchmark and provenance check passed. Local Python, Node.js, and npm commands are **NOT RUN** in this shell. Frozen Holdout is **NOT RUN**, and User Validation is **PENDING**. This push did not deploy the source revision. See `docs/final/EVALUATION_EVIDENCE.md` for the evidence and its limits.
 
 Chạy final local preflight bằng `python scripts/final_preflight.py`. Script chạy critical backend suite, Verify Harness, benchmark phát triển, kiểm tra provenance, frontend lint/build và báo trạng thái holdout; script không gọi production API, không tự chạy holdout và không deploy.
 

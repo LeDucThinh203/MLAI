@@ -1,9 +1,9 @@
 # Final Submission Checklist
 
-Check an item only after reviewing evidence for the final submission revision.
+Check an item only when evidence exists for the code revision under review.
 User Validation items must remain unchecked until real sessions are complete.
 
-The latest observed CI run is for baseline `3f80e484e8c1c4da6d720b983ffac019258b8c25` and failed the competition-readiness job. Local fixes are unverified, so the final-commit CI item below remains unchecked. Frozen Holdout is **NOT RUN**; User Validation is **PENDING**.
+Code revision `a6bf9076e8b6de471f42e936f7991991ab7cf3de` passed all three GitHub Actions jobs in [run 38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502). The docs-only evidence update follows that tested code revision. Frozen Holdout is **NOT RUN**; User Validation is **PENDING**.
 
 ## Live product
 
@@ -21,25 +21,23 @@ The latest observed CI run is for baseline `3f80e484e8c1c4da6d720b983ffac019258b
 
 ## Evaluation and build
 
-- [ ] Verify Harness returns 9/9 with no network calls or DB writes
-- [ ] Fixed Synthetic Development Benchmark runs 18 scenarios
+- [x] CI Verify Harness returns 9/9 with no network calls or DB writes
+- [x] CI Fixed Synthetic Development Benchmark runs 18 scenarios and checks dataset provenance
 - [ ] Frozen Holdout result is recorded and matches its manifest
-- [ ] GitHub Actions is green on the final commit
-- [ ] Frontend lint passes
-- [ ] Frontend build passes
+- [x] GitHub Actions passes on the tested code revision (`a6bf907`)
+- [x] Frontend lint passes in CI
+- [x] Frontend build passes in CI
+- [x] PostgreSQL-backed competition integration suite passes in CI
+- [ ] Local final preflight is run
 
 ## Submission material
 
-- [ ] README reflects current source
-- [ ] Canonical runbook is current
+- [x] README reflects current source and CI evidence
+- [x] Canonical runbook reflects current checks and limitations
 - [ ] Real-user validation completed with real participants
 - [ ] Product improvement is based on participant feedback
-- [ ] Five-slide content is final
+- [x] Five-slide content reflects current benchmark and holdout status
 - [ ] Eight-minute demo rehearsal is complete
-
-## Optional repository setting
-
-- [ ] Optional: enable branch protection and require CI on `main`
 
 `USER VALIDATION: PENDING`. The real-user validation and product-improvement
 items above remain unchecked; do not report competition completion before the

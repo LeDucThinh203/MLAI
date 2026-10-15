@@ -2,36 +2,18 @@
 
 ## Revision and CI status
 
-- Reviewed baseline and current local `HEAD`: `3f80e484e8c1c4da6d720b983ffac019258b8c25` (`docs: align Track A submission evidence`). The worktree is based on this commit; the changes listed below are uncommitted.
-- GitHub Actions run [38683292907](https://github.com/LeDucThinh203/MLAI/actions/runs/38683292907), created 2026-10-15 04:47 UTC for that baseline, completed with **failure**. `backend-unit` and `frontend` passed; `competition-readiness` failed at `python test/test_competition_features.py`.
-- Source review confirmed two defects addressed in the local diff: case-creation test parsing assumed HTTP 200 although `POST /api/cases` returns 201, and the direct psycopg row lookup did not quote the `currentThreshold` alias. Local fixes and expanded regression assertions have not been rerun. This work has not been pushed, so there is no CI result for the changed files.
-- No push, deployment, history rewrite, or production database operation was performed.
-- User Validation remains **PENDING**. No participants, quotations, scores, screenshots, or feedback improvements were fabricated.
+- Code revision evaluated: `a6bf9076e8b6de471f42e936f7991991ab7cf3de` (`test: compare threshold steps with float tolerance`), pushed to `main`.
+- GitHub Actions run [38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502) completed successfully for this revision. `backend-unit`, `competition-readiness`, and `frontend` all passed.
+- `backend-unit` reported 142 passed and 9 subtests passed. The competition job passed the PostgreSQL integration suite, Verify Harness assertions, 18-case development benchmark, and benchmark provenance check. The frontend lint/build job passed.
+- The successful Verify Harness assertion reported 9 total, 0 failed, no network calls, and no database writes. The benchmark provenance assertion confirmed 18 results and the exact development dataset SHA-256 recorded below.
+- This checkout has no Python, Node.js, or npm runtime, so local test, lint, build, and preflight commands were **NOT RUN**. GitHub Actions executed the code checks listed above. The separate `scripts/final_preflight.py` command was not run.
+- No deployment or production database operation was part of this push. User Validation remains **PENDING**; no participant results or feedback improvements are claimed.
 
-## Checks on the current worktree
+## CI development benchmark
 
-Python, Node.js, npm, and GitHub CLI are not available in the local shell. An earlier attempt to prepare official runtimes was rejected by the execution policy; no runtime was installed. The following checks are **NOT RUN** on the current source changes:
-
-The CI critical pytest command, competition script, Verify command, development benchmark, final preflight, and frontend lint/build commands were attempted; PowerShell returned “command not recognized” for `python` or `npm` before any project code ran.
-
-- Critical backend unit tests and the new PostgreSQL-row regression tests
-- PostgreSQL competition integration suite
-- Verify Harness
-- Fixed Synthetic Development Benchmark rerun
-- Frontend install, lint, and build
-- `scripts/final_preflight.py`
-- Frozen Holdout evaluation
-
-The unit-style transaction test uses a psycopg `dict_row`-shaped row and verifies the quoted alias, retained `FOR UPDATE`, feedback transitions, missing-row failure, and rollback on history-insert failure. It still needs execution. The competition suite uses the disposable PostgreSQL 16 CI service configured in `.github/workflows/ci.yml`; it has not run for this local diff.
-
-## Historical backend and development evidence
-
-An earlier local run, before this working tree, reported `138 passed, 9 subtests passed`; Verify Harness reported 9/9 with zero network calls and zero database writes. Those are historical results, not reruns of the current source.
-
-The most recent recorded development benchmark artifact is `benchmark/results/latest.json` and `latest.csv`:
+The successful CI run generated and checked the fixed synthetic development benchmark:
 
 ```text
-timestamp: 2026-10-15T03:56:08.084643Z
 scenarioCount: 18
 correctCases: 18
 decisionAccuracy: 100.0% (18/18)
@@ -42,26 +24,25 @@ missedEscalationRate: 0.0% (0/13)
 expectedAutoApprovals: 5
 unnecessaryEscalationRate: 0.0% (0/5)
 aiCallsPerformed: false
+datasetSha256: 7a54df274f46e0ea3fa3d18b1f371f1826898897d6f95ef900fa55e13da1af58
 ```
 
-The fixed development dataset SHA-256 is `7a54df274f46e0ea3fa3d18b1f371f1826898897d6f95ef900fa55e13da1af58`. The recorded result predates the current worktree and is not a current rerun. It is synthetic development evidence, not production accuracy or user validation.
+These are results on a fixed synthetic development set, not production accuracy or user validation. The workload comparison with manual review of all 18 cases is a synthetic reference only, not measured production impact.
 
 ## Frozen Holdout
 
 - Dataset: `benchmark/holdout/track_a_holdout_v1.json`
 - Version: `1.0`
 - Scenario count: `36`
-- Frozen SHA-256, verified against the file on 2026-10-15: `b357bf066791b0c92ad0ee8362111a5cd865660a9e43eab5f627bca47d4b556a`
+- Frozen SHA-256: `b357bf066791b0c92ad0ee8362111a5cd865660a9e43eab5f627bca47d4b556a`
 - Status: **NOT RUN**; no result artifact exists.
-- The manifest says the dataset is not used by runtime, training, or unit tests. It was authored for this repository; no external or independent authorship is claimed. Do not tune on v1 or change its labels after evaluation.
-
-The frozen evaluation was not run because the required preceding checks and code freeze have not been completed.
+- The manifest says this dataset is not used by runtime, training, or unit tests. It was authored for this repository; no external or independent authorship is claimed. Keep v1 labels unchanged after evaluation.
 
 ## Frontend, operation, and scope
 
-- An earlier local run recorded `npm ci`, lint, and build as passing; Vite emitted a bundle-size warning. These checks have not been rerun on this source revision.
-- Prior read-only live checks on 2026-10-15 around 04:40 UTC observed HTTP 200 for the deployed frontend (`/`, `/judge`, `/verify`) and backend health/Judge endpoints; the deployed Judge reported 18-case metrics and no frozen holdout result. These observations describe the then-deployed revision, not this unpushed local source.
-- Production demo logins were not tested. No current deployment was performed or verified.
+- The frontend lint and build passed in the successful CI run above.
+- Read-only live checks on 2026-10-15 around 04:40 UTC observed HTTP 200 for the deployed frontend (`/`, `/judge`, `/verify`) and backend health/Judge endpoints. Those observations describe the deployed revision at that time; this push did not deploy the current source revision.
+- Production demo logins were not tested. No deployment was performed or verified as part of this task.
 - The product is an internal student-status confirmation workflow. `AUTO_APPROVE` is an internal workflow outcome; it does not determine military-service deferment or exemption and does not issue a legal certificate.
 
 ## User Validation

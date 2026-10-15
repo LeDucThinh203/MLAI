@@ -193,13 +193,13 @@ python test/test_competition_features.py
 
 The database in this command must be a dedicated disposable local test database.
 
-**Observed status for this worktree (2026-10-15):** baseline Actions run
-[38683292907](https://github.com/LeDucThinh203/MLAI/actions/runs/38683292907)
-passed backend-unit and frontend but failed competition-readiness at this
-script. Local source and regression-test fixes are uncommitted and have no
-rerun. The local shell has no Python, Node.js, or npm, so this integration
-suite and frontend checks are **NOT RUN** here. Frozen Holdout is **NOT RUN**.
-See `docs/final/EVALUATION_EVIDENCE.md` for the full status.
+**Observed status (2026-10-15):** code revision `a6bf907` passed all three
+GitHub Actions jobs in run
+[38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502),
+including this PostgreSQL-backed integration suite and the frontend checks.
+The local shell has no Python, Node.js, or npm, so local integration and
+frontend commands were **NOT RUN**. Frozen Holdout is **NOT RUN**, and User
+Validation is **PENDING**. See `docs/final/EVALUATION_EVIDENCE.md` for details.
 
 ## 9. Final Preflight
 
