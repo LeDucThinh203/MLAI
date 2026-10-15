@@ -58,7 +58,7 @@ Tạo `EDUASSISTANT/.env` từ các giá trị phù hợp với môi trường. 
 APP_ENV=development
 SEED_DEMO_DATA=true
 PORT=3001
-DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/eduassistant_db
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/eduassistant
 ALLOW_ADMIN_VERIFIED_DEMO_SIS=true
 AI_MODE=live
 GEMINI_API_KEY=your_gemini_api_key
@@ -106,11 +106,13 @@ npm run dev
 
 ---
 
-## 5. Tài Khoản Thử Nghiệm Mặc Định
+## 5. Tài Khoản Demo Công Khai / Local
+
+These credentials are for the explicitly seeded local/public demo only. They are not production credentials. Production must set `SEED_DEMO_DATA=false`.
 
 | Vai trò | Tên đăng nhập | Mật khẩu | Quyền hạn chính |
 | :--- | :--- | :--- | :--- |
-| **SINH VIÊN** | `student1` | `password123` | Nộp hồ sơ nội bộ, tải minh chứng, theo dõi workflow, tra cứu HMAC |
+| **SINH VIÊN** | `student1` | `password123` | Nộp hồ sơ, xem và bổ sung hồ sơ của mình, Student AI Agent, tra cứu HMAC theo quyền; không xem dữ kiện SIS chỉ dành cho Admin |
 | **THẨM ĐỊNH VIÊN** | `reviewer1` | `password123` | Thẩm định, Duyệt, Từ chối, Yêu cầu bổ sung, Override, Dừng, Feedback |
 | **QUẢN TRỊ VIÊN** | `admin1` | `password123` | Quản lý registry SIS demo, chính sách read-only, Audit Trail và dữ liệu vận hành |
 
@@ -128,7 +130,7 @@ Cho phép:
 
 ## 7. Verify Harness và Track A Benchmark
 
-Track A Decision Benchmark đo escalation policy trên 18 fixed synthetic scenarios. Đây không phải dữ liệu production hoặc independent/held-out dataset:
+Fixed Synthetic Track A Benchmark đo chính sách escalation trên 18 tình huống tổng hợp cố định. Đây không phải dữ liệu production hay independent/held-out dataset:
 ```powershell
 cd EDUASSISTANT
 python benchmark/run_benchmark.py
@@ -137,6 +139,8 @@ Runner deterministic, không gọi Gemini/OpenRouter, không phụ thuộc netwo
 * `benchmark/results/latest.json`
 * `benchmark/results/latest.csv`
 
+Lệnh độc lập là `python benchmark/independent/run_independent_eval.py`. Khi chưa có `cases.json`, trạng thái là `INDEPENDENT_EVALUATION_PENDING` và không tạo kết quả.
+
 Live AI E2E sanity check là lệnh riêng, tùy chọn; kết quả của nó không thay metric Track A:
 ```powershell
 python benchmark/run_live_ai_eval.py
@@ -144,7 +148,7 @@ python benchmark/run_live_ai_eval.py
 
 Production frontend: https://edu-sp.pages.dev · Judge: https://edu-sp.pages.dev/judge
 
-Internal SIS registry không kết nối SIS đại học bên ngoài. “Admin Verified – Demo” chỉ xác nhận facts nội bộ cho workflow demo. `AUTO_APPROVE` chỉ mô tả xử lý nội bộ, không phải quyết định tạm hoãn của cơ quan quân sự.
+Internal SIS registry contains demo data; no external university SIS connector exists. Production does not treat Admin-verified demo records as authoritative, and `ALLOW_ADMIN_VERIFIED_DEMO_SIS=false`. Deterministic evaluation uses explicitly synthetic test facts. `AUTO_APPROVE` describes internal processing only; it is not a military authority decision.
 
 ---
 
@@ -152,19 +156,35 @@ Internal SIS registry không kết nối SIS đại học bên ngoài. “Admin 
 
 ### 8.1. Security integration suite
 
-This legacy integration runner starts a local API and needs a reachable PostgreSQL
-database through `DATABASE_URL`. It was not run in the current database-free test
-environment.
+This legacy integration runner starts a local API and needs a disposable PostgreSQL
+test database. Never point it at production or a shared database.
 ```powershell
 cd EDUASSISTANT
 python test/run_security_suite.py
 ```
 
-### 8.2. Competition Features Suite (21 assertions)
+### 8.2. Competition Readiness Suite
+
+The suite starts FastAPI and checks real HTTP requests, database persistence,
+Reviewer authorization, audits, threshold history, and concurrent feedback. It
+refuses to run unless `DATABASE_URL` points to a local database ending in `_test`
+and live AI keys are empty. GitHub Actions provisions an isolated `postgres:16`
+service for this job.
+
 ```powershell
 cd EDUASSISTANT
+$env:APP_ENV = 'test'
+$env:NODE_ENV = 'test'
+$env:AI_MODE = 'mock'
+$env:SEED_DEMO_DATA = 'true'
+$env:ALLOW_ADMIN_VERIFIED_DEMO_SIS = 'false'
+$env:DATABASE_URL = 'postgresql://postgres:local_test_only@127.0.0.1:5432/eduassistant_test'
+$env:GEMINI_API_KEY = ''
+$env:OPENROUTER_API_KEY = ''
 python test/test_competition_features.py
 ```
+
+The database in this command must be a dedicated disposable local test database.
 
 ---
 

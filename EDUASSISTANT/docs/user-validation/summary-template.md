@@ -1,38 +1,40 @@
-# User Validation Session Summary Template
+# User Validation Summary Template
 
-## 1. Session Information
-- **Session ID:** `UVAL-YYYYMMDD-XX`
-- **Date & Time:** `YYYY-MM-DD HH:MM`
-- **Participant Role:** `[ Academic Affairs Officer / Student / Administrator ]`
-- **Moderator:** `[ Name / Team 1 Member ]`
-- **Use Case Evaluated:** `MILITARY_SERVICE_CONFIRMATION` (Cấp giấy xác nhận sinh viên tạm hoãn NVQS)
+**Overall status: PENDING.** No participant results are recorded in this template.
 
----
+## Session coverage
 
-## 2. Tested Scenarios & Tasks
-| Task # | Task Description | Target System Response | Observed Outcome | Participant Feedback |
-| :--- | :--- | :--- | :--- | :--- |
-| T1 | Sinh viên nộp đơn địa chỉ đầy đủ hợp lệ | AUTO_APPROVE | `[ PASS / ESCALATE ]` | |
-| T2 | Sinh viên khai báo địa chỉ tạm trú | ESCALATE (`DATA_CONFLICT`) | `[ PASS / FAIL ]` | |
-| T3 | Sinh viên thiếu thông tin Phường/Xã | ESCALATE (`FACT_UNKNOWN`) | `[ PASS / FAIL ]` | |
-| T4 | Cán bộ thẩm định thực hiện Override có lý do | Status Updated + Audit Log | `[ PASS / FAIL ]` | |
-| T5 | Cán bộ gửi Reviewer Feedback (Adaptive) | Threshold Updated | `[ PASS / FAIL ]` | |
+- Real participant count: [PENDING]
+- Roles represented: [PENDING]
+- Scenarios attempted: [PENDING]
+- Sessions with consent recorded: [PENDING]
+- Evidence location: `docs/user-validation/sessions/` and `docs/user-validation/assets/`
 
----
+## Observed workflow results
 
-## 3. Qualitative Usability Metrics
-- **Clarity of 3-Layer Information Display (Student Claim vs Institutional Facts vs AI Facts):** `[ 1-5 ]`
-- **Clarity of Escalation Reason & Suggested Action:** `[ 1-5 ]`
-- **Trust in Rule Engine & Provenance Transparency:** `[ 1-5 ]`
-- **Ease of Override / Stop Operations:** `[ 1-5 ]`
+| Scenario | Observed behavior | Completion time | Moderator help | Participant feedback |
+| --- | --- | --- | --- | --- |
+| UV-01 | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
+| UV-02 | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
+| UV-03 | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
+| UV-04 | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
+| UV-05 | [PENDING] | [PENDING] | [PENDING] | [PENDING] |
 
----
+## Product improvement from real feedback
 
-## 4. Participant Observations & Verbatim Notes
-> `[ Participant observations and raw feedback verbatim recorded here ]`
+Before:
+[PENDING]
 
----
+Participant feedback:
+[PENDING]
 
-## 5. Actionable Insights & System Improvements
-1. `[ Issue / Confusion observed -> Planned system improvement ]`
-2. `[ Issue / Confusion observed -> Planned system improvement ]`
+Change implemented:
+[PENDING]
+
+After:
+[PENDING]
+
+Evidence:
+[PENDING]
+
+Do not claim completion, quote participants, report scores, or describe product improvement until the corresponding real session and implementation evidence exist.

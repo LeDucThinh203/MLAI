@@ -38,10 +38,11 @@ Benchmark and Verify Harness fixtures use `SYNTHETIC_TEST_SIS` plus `TEST_VERIFI
 | Path | Cases | Network or database writes | Purpose |
 | --- | ---: | --- | --- |
 | Verify Harness | 9 | None | Fast deterministic Rule Engine check |
-| Track A Decision Benchmark | 18 | None | Fixed synthetic scenarios for escalation-policy metrics |
+| Fixed Synthetic Benchmark | 18 | None | Fixed synthetic scenarios for escalation-policy metrics |
+| Independent Evaluation | Pending dataset | None | Frozen independent cases; currently pending |
 | Live AI E2E sanity check | 5 | Gemini and configured OpenRouter fallback | Optional address extraction check; separate from Track metrics |
 
-The Track benchmark writes its latest result to `benchmark/results/latest.json` and `.csv`. It reports `benchmarkType=DETERMINISTIC_TRACK_A_DECISION_BENCHMARK` and `aiCallsPerformed=false`. The scenario set is fixed but is not described as independent or held out.
+The fixed synthetic benchmark writes its latest result to `benchmark/results/latest.json` and `.csv`. It reports `benchmarkType=DETERMINISTIC_TRACK_A_DECISION_BENCHMARK`, `aiCallsPerformed=false`, and raw counts with denominators. The scenario set is fixed but is not independent or held out. Independent evaluation remains **PENDING** until a frozen independent dataset is supplied.
 
 ## Integrity token and confidence limits
 
@@ -55,7 +56,7 @@ User validation remains **PENDING** until real participant evidence is recorded 
 
 Authenticated students can open the Student AI Agent from the application shell. Reviewer and Admin accounts do not have Agent chat or Agent tools. It combines Gemini planning, OpenRouter fallback, an allowlisted RAG index, and typed student tools over existing application services. The internal SIS registry remains demo data; no external university SIS connector is provided.
 
-The Agent's RAG sources are the student-service policy, system overview, architecture document, and runtime policy registry. The root runbook is excluded because it can contain deployment instructions and credentials. RAG is not used for live case lookup. Every live read checks the authenticated student's ownership. Writes are previewed and require explicit confirmation; the server revalidates the student's role and target before using existing business routes. Agent output cannot decide legal eligibility or replace Rule Engine results.
+The Agent's RAG sources are the student-service policy, student-agent FAQ, system overview, architecture document, and runtime policy registry. The root runbook is excluded because it can contain deployment instructions and credentials. RAG is not used for live case lookup. Every live read checks the authenticated student's ownership. Writes are previewed and require explicit confirmation; the server revalidates the student's role and target before using existing business routes. Agent output cannot decide legal eligibility or replace Rule Engine results.
 
 Students can delete one Agent conversation. Deletion removes its conversation, messages, and pending Agent actions. It preserves case and SIS records, workflow audit records, RAG knowledge, and the student account; the audit trail retains a minimal deletion event without chat content.
 

@@ -16,7 +16,7 @@
 6. [Track A Decision Benchmark (18 Kịch Bản Cố Định)](#6-track-a-decision-benchmark-18-kịch-bản-cố-định)
 7. [Hướng Dẫn Cài Đặt & Khởi Chạy (Quickstart)](#7-hướng-dẫn-cài-đặt--khởi-chạy-quickstart)
 8. [Tài Khoản Thử Nghiệm Mặc Định (Demo Accounts)](#8-tài-khoản-thử-nghiệm-mặc-định-demo-accounts)
-9. [Bộ Kiểm Thử Cuộc Thi (Competition Test Suite - 21/21 Pass)](#9-bộ-kiểm-thử-cuộc-thi-competition-test-suite---2121-pass)
+9. [Competition Readiness Tests](#9-competition-readiness-tests)
 10. [Bằng Chứng Thử Nghiệm Người Dùng (User Validation Evidence)](#10-bằng-chứng-thử-nghiệm-người-dùng-user-validation-evidence)
 
 ---
@@ -29,7 +29,7 @@ Hệ thống tập trung toàn bộ năng lực vào một nghiệp vụ chuẩn
 - **Tên danh mục nghiệp vụ:** `MILITARY_SERVICE_CONFIRMATION`
 - **Workflow owner:** Internal reviewer or office configured by the institution
 - **Cơ chế:** `AUTO_APPROVE` nghĩa là workflow nội bộ đủ điều kiện tự động xử lý; `ESCALATE_TO_HUMAN` chuyển hồ sơ cho cán bộ xem xét. Bản in là bản ghi workflow, không phải giấy xác nhận chính thức hoặc quyết định của cơ quan quân sự.
-- **SIS:** Admin-managed internal demo registry; không có connector SIS đại học bên ngoài. Demo facts chỉ được trust khi Admin xác nhận rõ là dữ liệu demo.
+- **SIS:** Internal demo registry; không có connector SIS đại học bên ngoài. Production không coi bản ghi demo do Admin xác nhận là dữ liệu có thẩm quyền (`ALLOW_ADMIN_VERIFIED_DEMO_SIS=false`).
 
 ---
 
@@ -108,19 +108,19 @@ Khi hai địa chỉ đã đầy đủ thành phần hành chính nhưng khác b
 Hệ thống tích hợp cổng Giám khảo trực quan tại **`/judge`** (`http://localhost:5173/judge`):
 - Nhấn nút **"Chạy Verify Harness"** (`POST /api/verify/run`) để thực thi tức thì 9 kịch bản kiểm thử xác định in-memory:
 
-| Mã Ca | Kịch Bản Nghiệp Vụ NVQS | Kết Quả Mong Đợi | Tỷ Lệ Đạt |
-| :---: | :--- | :---: | :---: |
-| `NVQS-01` | Hồ sơ NVQS hợp lệ tiêu chuẩn (Thường trú trùng khớp, Học vụ ACTIVE) | `AUTO_APPROVE` | 100% PASS |
-| `NVQS-02` | Khác biệt định dạng: Toàn bộ chữ HOA & viết tắt chuẩn `P.`, `Q.`, `TP.` | `AUTO_APPROVE` | 100% PASS |
-| `NVQS-03` | Khác biệt định dạng: Toàn bộ chữ thường không dấu & viết tắt `p`, `q1` | `AUTO_APPROVE` | 100% PASS |
-| `NVQS-04` | Thiếu Phường/Xã trong địa chỉ khai báo | `ESCALATE_TO_HUMAN` (`FACT_UNKNOWN`) | 100% PASS |
-| `NVQS-05` | Địa chỉ tạm trú được khai báo thay cho địa chỉ thường trú yêu cầu trong workflow | `ESCALATE_TO_HUMAN` (`DATA_CONFLICT`) | 100% PASS |
-| `NVQS-06` | Xung đột thực chất địa chỉ (Khai báo Quận 3 vs Hồ sơ Quận 1) | `ESCALATE_TO_HUMAN` (`DATA_CONFLICT`) | 100% PASS |
-| `NVQS-07` | Sinh viên đang bị tạm đình chỉ học tập (`SUSPENDED`) | `ESCALATE_TO_HUMAN` (`AUTHORITY_REQUIRED`) | 100% PASS |
-| `NVQS-08` | Đơn xin đặc cách hoãn NVQS vượt thời gian tối đa đào tạo | `ESCALATE_TO_HUMAN` (`POLICY_OUT_OF_SCOPE`) | 100% PASS |
-| `NVQS-09` | Nghi vấn chủ quyền: Khai báo MSSV không thuộc về sinh viên | `ESCALATE_TO_HUMAN` (`OWNERSHIP_UNCLEAR`) | 100% PASS |
+| Mã Ca | Kịch Bản Nghiệp Vụ | Kết Quả Mong Đợi |
+| :---: | :--- | :---: |
+| `NVQS-01` | Hồ sơ xác nhận tình trạng sinh viên hợp lệ tiêu chuẩn | `AUTO_APPROVE` nội bộ |
+| `NVQS-02` | Khác biệt định dạng: chữ hoa và viết tắt hành chính | `AUTO_APPROVE` nội bộ |
+| `NVQS-03` | Khác biệt định dạng: chữ thường không dấu | `AUTO_APPROVE` nội bộ |
+| `NVQS-04` | Thiếu Phường/Xã trong địa chỉ khai báo | `ESCALATE_TO_HUMAN` (`FACT_UNKNOWN`) |
+| `NVQS-05` | Địa chỉ tạm trú được khai báo thay cho thường trú | `ESCALATE_TO_HUMAN` (`DATA_CONFLICT`) |
+| `NVQS-06` | Xung đột thực chất giữa địa chỉ khai báo và dữ kiện lưu | `ESCALATE_TO_HUMAN` (`DATA_CONFLICT`) |
+| `NVQS-07` | Tình trạng học tập cần cơ quan có thẩm quyền kiểm tra | `ESCALATE_TO_HUMAN` (`AUTHORITY_REQUIRED`) |
+| `NVQS-08` | Yêu cầu ngoài phạm vi chính sách | `ESCALATE_TO_HUMAN` (`POLICY_OUT_OF_SCOPE`) |
+| `NVQS-09` | MSSV không khớp chủ sở hữu | `ESCALATE_TO_HUMAN` (`OWNERSHIP_UNCLEAR`) |
 
-👉 **Kết quả thực tế:** **9/9 KỊCH BẢN PASS (100.0%)**
+Kết quả đạt/chưa đạt được trả về sau mỗi lần chạy trên `/judge`; bảng trên chỉ nêu kỳ vọng.
 
 ---
 
@@ -131,7 +131,7 @@ Benchmark chính dùng fixed synthetic scenarios để đo quyết định escal
 python EDUASSISTANT/benchmark/run_benchmark.py
 ```
 
-### Kết Quả Đo Lường Toán Học Thực Tế:
+### Latest local result — fixed synthetic benchmark (2026-10-15 03:56:08 UTC)
 ```text
 ======================================================================
 📊 KẾT QUẢ ĐO LƯỜNG CHUẨN XÁC (MEASUREMENT REPORT):
@@ -140,7 +140,9 @@ python EDUASSISTANT/benchmark/run_benchmark.py
   • Escalation Rate:              72.22% (13/18)
   • Missed Escalation Rate:       0.0% (0/13)
   • Unnecessary Escalation Rate:  0.0% (0/5)
-  • Thời gian chạy lần gần nhất:  0.016s
+  • Expected escalations:         13
+  • Expected auto approvals:       5
+  • AI calls performed:            false
 ======================================================================
 ```
 *Kết quả chi tiết được tự động xuất ra `EDUASSISTANT/benchmark/results/latest.json` và `latest.csv`.*
@@ -169,36 +171,26 @@ npm run dev
 
 | Vai Trò | Username | Password | Quyền Hạn & Tính Năng Nổi Bật |
 | :--- | :--- | :--- | :--- |
-| 🎓 **Sinh Viên** | `student1` | `password123` | Nộp đơn NVQS, xem dữ kiện học vụ, live preview chuẩn hóa địa chỉ AI, tra cứu mã QR. |
+| 🎓 **Sinh Viên** | `student1` | `password123` | Nộp đơn, xem hồ sơ của mình, bổ sung thông tin, Student AI Agent, chuẩn hóa địa chỉ, tra cứu QR theo quyền. Không xem dữ kiện SIS chỉ dành cho Admin. |
 | 🔍 **Cán Bộ Đào Tạo** | `reviewer1` | `password123` | Hàng đợi thẩm định NVQS, thanh tra 3 lớp dữ kiện, Override (bắt buộc lý do), Dừng xử lý, gửi Reviewer Feedback. |
 | 🛡️ **Quản Trị Viên** | `admin1` | `password123` | Bảng điều khiển KPI, giám sát Audit Trail (lưu `input` & `result`), chỉ số Benchmark. |
 
 ---
 
-## 9. BỘ KIỂM THỬ CUỘC THI (COMPETITION TEST SUITE - 21/21 PASS)
+## 9. COMPETITION READINESS TESTS
 
 Chạy bộ kiểm thử tự động toàn diện:
 ```powershell
 python EDUASSISTANT/test/test_competition_features.py
 ```
-**Kết quả: `21 PASSED | 0 FAILED (100% ĐẠT CHUẨN)`**
-- ✅ Fail-Safe: Mock / Cache / Fallback chặn tự động duyệt (3/3 pass)
-- ✅ Human Review: Override lý do, Stop, từ chối action lạ (3/3 pass)
-- ✅ Workflow State Guard: Chặn thay đổi trạng thái từ terminal APPROVED (1/1 pass)
-- ✅ Audit Trail: Lưu trữ và trả về đầy đủ `input` và `result` qua API (1/1 pass)
-- ✅ Verify Harness: 9/9 kịch bản xác định đạt 100% pass (2/2 pass)
-- ✅ Adaptive Threshold: Tăng +0.02, giảm -0.02, kẹp giới hạn `[0.65, 0.90]` (5/5 pass)
-- ✅ Reviewer Feedback Endpoint: Chặn sinh viên 403, cho phép cán bộ 200 (2/2 pass)
-- ✅ Benchmark Formulas: Decision Accuracy, Missed Escalation, Unnecessary Escalation (3/3 pass)
+Backend unit tests, frontend lint/build, and the PostgreSQL-backed competition integration suite run as separate CI jobs. The integration suite requires a disposable local database named `eduassistant_test` (or another database ending in `_test`); it refuses remote database URLs and live AI keys. See `.github/workflows/ci.yml` for the exact isolated test environment. No fixed pass count is claimed here.
 
 ---
 
 ## 10. BẰNG CHỨNG THỬ NGHIỆM NGƯỜI DÙNG (USER VALIDATION EVIDENCE)
 
-- **Quy trình & Biểu mẫu phỏng vấn:** Chi tiết tại `docs/user-validation/`
-- **Mã Commit Gốc (Before):** `01f0fb94d724801db2e46231db4c2fb6b6d51081`
-- **Báo cáo tổng hợp:** `docs/user-validation/summary-template.md`
-- **User validation status:** PENDING. The repository currently contains templates and reserved folders for real participant evidence.
+- **Quy trình và biểu mẫu:** `EDUASSISTANT/docs/user-validation/`
+- **User validation status:** **PENDING** until real participants complete sessions.
 
 ---
 Live AI sanity check là evaluation riêng, không thay thế metric Track A:
