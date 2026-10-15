@@ -3,6 +3,8 @@
 Check an item only after reviewing evidence for the final submission revision.
 User Validation items must remain unchecked until real sessions are complete.
 
+The latest observed CI run is for baseline `3f80e484e8c1c4da6d720b983ffac019258b8c25` and failed the competition-readiness job. Local fixes are unverified, so the final-commit CI item below remains unchecked. Frozen Holdout is **NOT RUN**; User Validation is **PENDING**.
+
 ## Live product
 
 - [ ] Live URL opens

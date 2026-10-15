@@ -11,7 +11,7 @@ This file contains slide content only. It is not a PowerPoint deck.
 
 ## Slide 2 — Input → processing → output → human
 
-- **Input:** student claim and trusted institutional facts.
+- **Input:** student claim and institutional or explicitly synthetic demo facts.
 - **AI support:** address analysis, permitted attachment OCR, and student guidance.
 - **Routing authority:** deterministic Rule Engine checks identity, provenance,
   academic facts, address completeness, conflicts, and confidence.
@@ -21,23 +21,28 @@ This file contains slide content only. It is not a PowerPoint deck.
 
 ## Slide 3 — Impact and measurement
 
-- Last recorded 18-case development benchmark (2026-10-15 03:56:08 UTC):
-  Decision Accuracy **100.0% (18/18)**; Automation Rate **27.78% (5/18)**;
-  Escalation Rate **72.22% (13/18)**; Missed Escalation **0.0% (0/13)**;
-  Unnecessary Escalation **0.0% (0/5)**; AI calls **0**.
-- Label those as a prior fixed synthetic development run; it has not been
-  rerun on the current working tree. Frozen Holdout result: **NOT RUN**.
-- Show a before/after comparison only if a measured baseline exists. The
-  current task has no verified before-change user or production baseline; do
-  not claim improvement from synthetic metrics alone.
-- Note: AI sanity checks are not Track A routing metrics.
+- Historical fixed synthetic development result (2026-10-15 03:56:08 UTC; not
+  rerun on this working tree): Decision Accuracy **100.0% (18/18)**; Automation
+  Rate **27.78% (5/18)**; Escalation Rate **72.22% (13/18)**; Missed Escalation
+  **0.0% (0/13)**; Unnecessary Escalation **0.0% (0/5)**; AI calls **0**.
+- Transparent reference: if every case were sent to a human, **18/18 (100%)**
+  would receive manual review. On this synthetic set, EDUASSISTANT routed
+  **13/18 (72.22%)** to a human and internally auto-processed **5/18
+  (27.78%)**. The difference is a synthetic reviewer-workload reference of
+  **5/18 (27.78%)**.
+- Label the comparison: **“Synthetic workload reference, not measured production impact.”** It is not a measured before/after user or production
+  result.
+- Frozen Holdout v1: **NOT RUN**; show no holdout metrics. User Validation:
+  **PENDING**.
+- AI sanity checks are not Track A routing metrics.
 
 ## Slide 4 — Architecture and demo components
 
-- **Real application paths:** Student, Reviewer, and Admin portals; FastAPI;
+- **Implemented application paths:** Student, Reviewer, and Admin portals; FastAPI;
   PostgreSQL; audit trail; workflow guard; public Judge and Verify pages.
-- **AI support:** configured Gemini/OpenRouter address services, student RAG,
-  and validated attachment OCR.
+- **Optional AI support:** Gemini/OpenRouter services, student RAG, and
+  attachment OCR run only when their providers and keys are configured; mock,
+  cached, and fallback results are not live AI evidence.
 - **Decision:** deterministic Rule Engine owns final internal routing; a human
   reviewer handles escalated cases.
 - **Demo/synthetic:** internal demo SIS data, Verify fixtures, development
