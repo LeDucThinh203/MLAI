@@ -23,6 +23,8 @@ const connectivityLabel = (value) => ({
   CONNECTED: 'Đã kết nối', AVAILABLE: 'Đã kết nối',
   UNAVAILABLE: 'Chưa kết nối', UNKNOWN: 'Chưa kiểm tra'
 }[value] || 'Chưa kiểm tra');
+const serviceLabel = (value) => value === 'AVAILABLE' ? 'Sẵn sàng' : 'Không sẵn sàng';
+const shortSha = (value) => typeof value === 'string' ? value.slice(0, 12) : '—';
 
 export default function JudgeModePage({ onNavigateTab }) {
   const { token } = useAuth();
@@ -192,8 +194,8 @@ export default function JudgeModePage({ onNavigateTab }) {
             <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Tình trạng hệ thống</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 8px #34d399' }} />
-              <strong style={{ fontSize: '1.05rem', color: metrics?.apiStatus === 'AVAILABLE' ? '#34d399' : '#ef4444' }}>API: {metrics?.apiStatus === 'AVAILABLE' ? 'Sẵn sàng' : 'Không khả dụng'}</strong>
-              <small style={{ color: '#94a3b8' }}>PostgreSQL: {connectivityLabel(metrics?.databaseStatus)}</small>
+              <strong style={{ fontSize: '1.05rem', color: metrics?.apiStatus === 'AVAILABLE' ? '#34d399' : '#ef4444' }}>Dịch vụ: {serviceLabel(metrics?.apiStatus)}</strong>
+              <small style={{ color: '#94a3b8' }}>Kho dữ liệu: {serviceLabel(metrics?.databaseStatus)}</small>
             </div>
           </div>
 
@@ -241,7 +243,7 @@ export default function JudgeModePage({ onNavigateTab }) {
           <li>Tham khảo kết quả trên bộ tình huống cố định và mức tin cậy.</li>
         </ol>
         <p style={{ margin: '10px 0 0', color: '#94a3b8', fontSize: '0.78rem' }}>
-          Verify Harness chạy 9 tình huống tổng hợp có tính xác định, không gọi AI hoặc mạng, không truy cập cơ sở dữ liệu và không thay đổi ngưỡng. Benchmark cố định 18 tình huống tổng hợp được hiển thị riêng bên dưới; đánh giá độc lập và kiểm chứng người dùng thật đang PENDING.
+          Kiểm tra nhanh 9 tình huống, benchmark phát triển 18 tình huống tổng hợp và kết quả frozen holdout được hiển thị thành các mục riêng. User validation vẫn PENDING cho đến khi có phiên thử nghiệm với người dùng thật.
         </p>
       </section>
 
@@ -317,7 +319,7 @@ export default function JudgeModePage({ onNavigateTab }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Play size={18} color="#38bdf8" /> Verify Harness · 9 tình huống tổng hợp
+              <Play size={18} color="#38bdf8" /> Kiểm tra nhanh · 9 tình huống
             </h3>
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0 0' }}>
               Dùng để kiểm tra nhanh cách hệ thống xử lý các tình huống cần cán bộ xem xét.
@@ -457,22 +459,22 @@ export default function JudgeModePage({ onNavigateTab }) {
         )}
       </div>
 
-      {/* TRACK A DETERMINISTIC BENCHMARK */}
+      {/* FIXED SYNTHETIC DEVELOPMENT BENCHMARK */}
       <div className="card-panel" style={{ padding: '24px' }}>
         <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Activity size={18} color="#34d399" /> Fixed Synthetic Track A Benchmark · 18 tình huống
+          <Activity size={18} color="#34d399" /> Benchmark phát triển · 18 tình huống
         </h3>
         <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 16px 0' }}>
           Bộ tình huống tổng hợp cố định, có thể tái lập; không gọi AI và không đại diện cho dữ liệu độc lập hay độ chính xác trên production.
         </p>
 
         {metrics?.benchmark?.totalCases && <div style={{ margin: '0 0 16px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.20)', color: '#cbd5e1', fontSize: '0.78rem' }}>
-          <strong style={{ color: '#38bdf8' }}>Bộ dữ liệu:</strong> FIXED SYNTHETIC · {metrics.benchmark.scenarioCount || metrics.benchmark.totalCases} tình huống · Không độc lập/held-out · Mã lượt chạy {metrics.benchmark.benchmarkRunId || '—'} · Cập nhật {metrics.benchmark.timestamp ? new Date(metrics.benchmark.timestamp).toLocaleString('vi-VN') : '—'}.
+          <strong style={{ color: '#38bdf8' }}>Fixed Synthetic Development Benchmark:</strong> {metrics.benchmark.scenarioCount || metrics.benchmark.totalCases} tình huống · Không độc lập/held-out · SHA {shortSha(metrics.benchmark.datasetSha256)} · Mã lượt chạy {metrics.benchmark.benchmarkRunId || '—'} · Cập nhật {metrics.benchmark.timestamp ? new Date(metrics.benchmark.timestamp).toLocaleString('vi-VN') : '—'}.
         </div>}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
           <div style={{ background: '#090d16', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-            <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Độ chính xác</span>
+            <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Decision Accuracy</span>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34d399', marginTop: '6px' }}>
               {typeof metrics?.benchmark?.decisionAccuracy === 'number' ? `${metrics.benchmark.decisionAccuracy}%` : 'Chưa có dữ liệu'}
             </div>
@@ -480,7 +482,7 @@ export default function JudgeModePage({ onNavigateTab }) {
           </div>
 
           <div style={{ background: '#090d16', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-            <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Tỷ lệ xử lý tự động</span>
+            <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Automation Rate</span>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#38bdf8', marginTop: '6px' }}>
               {typeof metrics?.benchmark?.automationRate === 'number' ? `${metrics.benchmark.automationRate}%` : 'Chưa có dữ liệu'}
             </div>
@@ -488,7 +490,7 @@ export default function JudgeModePage({ onNavigateTab }) {
           </div>
 
           <div style={{ background: '#090d16', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-            <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Tỷ lệ chuyển cán bộ</span>
+            <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Escalation Rate</span>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b', marginTop: '6px' }}>
               {typeof metrics?.benchmark?.escalationRate === 'number' ? `${metrics.benchmark.escalationRate}%` : 'Chưa có dữ liệu'}
             </div>
@@ -496,7 +498,7 @@ export default function JudgeModePage({ onNavigateTab }) {
           </div>
 
           <div style={{ background: '#090d16', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-            <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Tỷ lệ bỏ sót hồ sơ cần cán bộ</span>
+            <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Missed Escalation Rate</span>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: metrics?.benchmark?.missedEscalationRate === 0 ? '#34d399' : '#ef4444', marginTop: '6px' }}>
               {typeof metrics?.benchmark?.missedEscalationRate === 'number' ? `${metrics.benchmark.missedEscalationRate}%` : 'Chưa có dữ liệu'}
             </div>
@@ -506,7 +508,7 @@ export default function JudgeModePage({ onNavigateTab }) {
           </div>
 
           <div style={{ background: '#090d16', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-            <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Tỷ lệ chuyển cán bộ chưa cần thiết</span>
+            <span style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Unnecessary Escalation Rate</span>
             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b', marginTop: '6px' }}>
               {typeof metrics?.benchmark?.unnecessaryEscalationRate === 'number' ? `${metrics.benchmark.unnecessaryEscalationRate}%` : 'Chưa có dữ liệu'}
             </div>
@@ -518,21 +520,25 @@ export default function JudgeModePage({ onNavigateTab }) {
       </div>
 
       <section className="card-panel" style={{ padding: '18px 22px', border: '1px solid rgba(129, 140, 248, .35)' }}>
-        <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>Independent Evaluation</h3>
-        {metrics?.independentEvaluation?.status === 'VERIFIED' ? (
+        <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>Kết quả đánh giá cuối trên bộ frozen holdout</h3>
+        {metrics?.frozenHoldout?.status === 'COMPLETED' ? (
           <>
-            <p style={{ margin: '0 0 8px', color: '#cbd5e1', fontSize: '.82rem' }}>Dataset {metrics.independentEvaluation.datasetId}</p>
+            <p style={{ margin: '0 0 12px', color: '#cbd5e1', fontSize: '.82rem' }}>
+              {metrics.frozenHoldout.scenarioCount} tình huống · Phiên bản {metrics.frozenHoldout.datasetVersion} · SHA {shortSha(metrics.frozenHoldout.datasetSha256)} · {metrics.frozenHoldout.timestamp ? new Date(metrics.frozenHoldout.timestamp).toLocaleString('vi-VN') : '—'}.
+            </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
-              {Object.entries(metrics.independentEvaluation.metrics || {}).map(([key, value]) => (
+              {Object.entries(metrics.frozenHoldout.metrics || {}).map(([key, value]) => (
                 <div key={key} style={{ background: '#090d16', padding: '12px', borderRadius: '8px' }}>
                   <small style={{ color: '#94a3b8' }}>{key}</small>
-                  <div style={{ color: '#f8fafc', fontWeight: 700 }}>{key.toLowerCase().includes('rate') || key === 'decisionAccuracy' || key === 'automationRate' || key === 'escalationRate' ? `${value}%` : value}</div>
+                  <div style={{ color: '#f8fafc', fontWeight: 700 }}>{value}%</div>
                 </div>
               ))}
             </div>
           </>
+        ) : metrics?.frozenHoldout?.status === 'INVALID' ? (
+          <p style={{ margin: 0, color: '#f87171', fontSize: '.86rem' }}>Kết quả frozen holdout không khớp manifest; chưa hiển thị metrics.</p>
         ) : (
-          <p style={{ margin: 0, color: '#fbbf24', fontSize: '.86rem' }}>PENDING — chưa có bộ dữ liệu độc lập được đóng băng và cung cấp.</p>
+          <p style={{ margin: 0, color: '#fbbf24', fontSize: '.86rem' }}>Chưa chạy đánh giá final holdout.</p>
         )}
       </section>
 
@@ -540,7 +546,7 @@ export default function JudgeModePage({ onNavigateTab }) {
         <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>Bằng chứng live và đánh giá tổng hợp</h3>
         <ul style={{ margin: 0, paddingLeft: '20px', color: '#cbd5e1', fontSize: '.82rem', lineHeight: 1.7 }}>
           <li>Live application: frontend/API đang triển khai, PostgreSQL và trạng thái cấu hình Gemini/OpenRouter được báo ở đầu trang; hoạt động AI phụ thuộc cấu hình máy chủ.</li>
-          <li>Verify Harness (9) và Fixed Synthetic Benchmark (18) dùng tình huống tổng hợp, không gọi AI; Verify không ghi cơ sở dữ liệu.</li>
+          <li>Verify Harness (9) và Fixed Synthetic Development Benchmark (18) dùng tình huống tổng hợp, không gọi AI; Verify không ghi cơ sở dữ liệu.</li>
           <li>Registry SIS nội bộ là dữ liệu demo; chưa có kết nối SIS đại học bên ngoài.</li>
           <li>User Validation với người tham gia thật: <strong>PENDING</strong>.</li>
         </ul>
@@ -550,7 +556,7 @@ export default function JudgeModePage({ onNavigateTab }) {
         <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>Giới hạn và rủi ro</h3>
         <ul style={{ margin: 0, paddingLeft: '20px', color: '#cbd5e1', fontSize: '.82rem', lineHeight: 1.7 }}>
           <li>AI có thể chuẩn hóa địa chỉ sai; điểm confidence chưa được hiệu chỉnh thống kê trên quần thể production. Lỗi xử lý được chuyển sang human review.</li>
-          <li>Fixed synthetic benchmark không phải independent/held-out evaluation.</li>
+          <li>Fixed synthetic benchmark là bộ phát triển, không phải frozen holdout hay độ chính xác production.</li>
           <li>AUTO_APPROVE chỉ là kết quả workflow nội bộ, không quyết định việc hoãn NVQS và không phải giấy xác nhận pháp lý chính thức.</li>
           <li>HMAC-SHA256 kiểm tra integrity/status trong EDUASSISTANT; không chứng nhận tính xác thực pháp lý bên ngoài hệ thống.</li>
         </ul>
