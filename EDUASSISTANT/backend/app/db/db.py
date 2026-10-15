@@ -928,8 +928,9 @@ class DatabaseService:
         return [format_audit_row(r) for r in rows]
 
     @staticmethod
-    async def get_audits_page(filter_dict: dict = None, page: int = 1, page_size: int = DEFAULT_AUDIT_PAGE_SIZE):
-        """Return one audit page and its total without loading the full audit trail."""
+    async def get_audits_page(filter_dict: dict = None, page: int = 1, page_size: int = DEFAULT_AUDIT_PAGE_SIZE,
+                              include_input: bool = False):
+        """Return one audit page, optionally including input for a privileged detail view."""
         filter_dict = filter_dict or {}
         where = ' WHERE 1=1'
         params = []
@@ -962,9 +963,14 @@ class DatabaseService:
         safe_size = min(MAX_AUDIT_PAGE_SIZE, max(MIN_AUDIT_PAGE_SIZE, int(page_size)))
         total_pages = max(1, (total + safe_size - 1) // safe_size)
         safe_page = min(safe_page, total_pages)
-        # The audit viewer never displays request payloads. Avoid transferring
-        # potentially large JSON in inputData for every history row.
-        rows = get_all('SELECT id, action, caseId, actorId, actorName, actorRole, actorUsername, result, reason, timestamp FROM audits' + where + ' ORDER BY timestamp DESC LIMIT ? OFFSET ?', tuple(params + [safe_size, (safe_page - 1) * safe_size]))
+        # Keep payloads out of student-visible audit results. Reviewer/Admin
+        # detail views may request them to inspect the action that was audited.
+        columns = (
+            'id, action, caseId, actorId, actorName, actorRole, actorUsername, inputData, result, reason, timestamp'
+            if include_input else
+            'id, action, caseId, actorId, actorName, actorRole, actorUsername, result, reason, timestamp'
+        )
+        rows = get_all('SELECT ' + columns + ' FROM audits' + where + ' ORDER BY timestamp DESC LIMIT ? OFFSET ?', tuple(params + [safe_size, (safe_page - 1) * safe_size]))
         return {'audits': [format_audit_row(row) for row in rows], 'total': total, 'page': safe_page, 'pageSize': safe_size, 'totalPages': total_pages, 'hasPrevious': safe_page > 1, 'hasNext': safe_page < total_pages}
 
     @staticmethod

@@ -20,6 +20,7 @@ async def get_audits(
     search: Optional[str] = Query(None, max_length=120),
     page: int = Query(1, ge=1),
     pageSize: int = Query(DEFAULT_AUDIT_PAGE_SIZE, ge=MIN_AUDIT_PAGE_SIZE, le=MAX_AUDIT_PAGE_SIZE),
+    includeInput: bool = False,
     user: dict = Depends(get_current_user)
 ):
     filter_dict = {}
@@ -46,7 +47,8 @@ async def get_audits(
     if search and search.strip():
         filter_dict['search'] = search
 
-    result = await db_service.get_audits_page(filter_dict, page, pageSize)
+    include_input = includeInput and str(user.get('role') or '').upper() in ('REVIEWER', 'ADMIN')
+    result = await db_service.get_audits_page(filter_dict, page, pageSize, include_input=include_input)
     return api_response(200, True, 'Lấy danh sách nhật ký kiểm toán thành công.', result)
 
 

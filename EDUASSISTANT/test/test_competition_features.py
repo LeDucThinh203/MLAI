@@ -296,7 +296,7 @@ def run_tests():
             record_assertion("OVERRIDE có overrideReason được chấp thuận 200 OK", ov_valid.status_code == 200)
 
             # Kiểm tra audit log có HUMAN_OVERRIDE
-            res_audits_raw = session_rev.get(f"{base_url}/api/audits").json()
+            res_audits_raw = session_rev.get(f"{base_url}/api/audits?caseId={cid}&includeInput=true").json()
             res_audits = (res_audits_raw.get("data") or {}).get("audits", []) if isinstance(res_audits_raw, dict) else []
             override_audit = next((a for a in res_audits if a.get("action") == "HUMAN_OVERRIDE" and a.get("caseId") == cid), None)
             override_input = (override_audit or {}).get("input") or {}
@@ -339,7 +339,7 @@ def run_tests():
                 record_assertion("Reviewer STOP action succeeds", stop_response.status_code == 200)
 
                 if stop_response.status_code == 200:
-                    audits_list_raw = session_rev.get(f"{base_url}/api/audits").json()
+                    audits_list_raw = session_rev.get(f"{base_url}/api/audits?caseId={c2_id}&includeInput=true").json()
                     audits_list = (audits_list_raw.get("data") or {}).get("audits", []) if isinstance(audits_list_raw, dict) else []
                     stop_audit = next((a for a in audits_list if a.get("caseId") == c2_id and a.get("action") == "CASE_STATUS_STOPPED"), None)
                     stop_input = (stop_audit or {}).get("input") or {}
@@ -417,6 +417,14 @@ def run_tests():
         print("\n[TEST 13-14] Kiểm tra Reviewer Feedback Endpoint & Phân Quyền RBAC", flush=True)
         from app.db.database import get_all, get_one
         if cid and c2_id:
+            student_audit_response = session_stu.get(f"{base_url}/api/audits?caseId={c2_id}&includeInput=true")
+            student_audits = (student_audit_response.json().get('data') or {}).get('audits', []) if student_audit_response.ok else []
+            record_assertion(
+                "Student audit view does not expose request input payloads",
+                student_audit_response.status_code == 200
+                and all(not item.get('input') for item in student_audits)
+            )
+
             # Sinh viên gọi feedback -> 403
             fb_stu = session_stu.post(f"{base_url}/api/cases/{c2_id}/feedback", json={
                 "type": "CORRECT",
@@ -448,7 +456,7 @@ def run_tests():
                          and persisted_feedback.get('createdAt')
                          and persisted_feedback.get('oldThreshold') == persisted_feedback.get('newThreshold'))
                 )
-                audit_response = session_rev.get(f"{base_url}/api/audits")
+                audit_response = session_rev.get(f"{base_url}/api/audits?caseId={c2_id}&includeInput=true")
                 feedback_audits = (audit_response.json().get('data') or {}).get('audits', []) if audit_response.ok else []
                 feedback_audit = next((item for item in feedback_audits
                                        if item.get('caseId') == c2_id
@@ -502,6 +510,11 @@ def run_tests():
         expected_new_thresholds = [0.77, 0.79, 0.81, 0.83, 0.85, 0.87, 0.89, 0.90]
         actual_old_thresholds = sorted(round(float(item['oldThreshold']), 2) for item in concurrent_history)
         actual_new_thresholds = sorted(round(float(item['newThreshold']), 2) for item in concurrent_history)
+        concurrent_details = (
+            f"final={final_threshold}; count={len(concurrent_history)}; "
+            f"old={actual_old_thresholds}; new={actual_new_thresholds}; "
+            f"caseIds={sorted(item.get('caseId') for item in concurrent_history)}"
+        )
         record_assertion(
             "Concurrent reviewer feedback preserves every bounded, valid threshold transition",
             len(concurrent_results) == concurrent_count
@@ -519,7 +532,8 @@ def run_tests():
                 and item.get('note')
                 and item.get('createdAt')
                 for item in concurrent_history
-            )
+            ),
+            concurrent_details
         )
         reset_threshold()
 
