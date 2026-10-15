@@ -1,63 +1,71 @@
-version: '3.8'
-
+# Local demo stack only. The PostgreSQL service and credentials below are
+# disposable local defaults; production must use its own protected settings.
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-eduassistant}
+      POSTGRES_USER: ${POSTGRES_USER:-eduassistant_local}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_only_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - eduassistant_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - eduassistant_redis_data:/data
+
   eduassistant-backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: eduassistant-backend
-    restart: unless-stopped
     ports:
       - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - PORT=3001
-      - DB_TYPE=${DB_TYPE:-mssql}
-      - DB_SERVER=${DB_SERVER:-THINH\SQL2025}
-      - DB_NAME=${DB_NAME:-CaseFlowAI}
-      - JWT_SECRET=${JWT_SECRET}
-      - REFRESH_SECRET=${REFRESH_SECRET}
-      - SIGNATURE_KEY=${SIGNATURE_KEY}
-      - AI_MODE=${AI_MODE:-mock}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
-      - DATA_DIR=/app/data
+      APP_ENV: ${APP_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3001
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      ALLOW_ADMIN_VERIFIED_DEMO_SIS: ${ALLOW_ADMIN_VERIFIED_DEMO_SIS:-true}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-eduassistant_local}:${POSTGRES_PASSWORD:-local_only_password}@postgres:5432/${POSTGRES_DB:-eduassistant}
+      JWT_SECRET: ${JWT_SECRET:-}
+      REFRESH_SECRET: ${REFRESH_SECRET:-}
+      SIGNATURE_KEY: ${SIGNATURE_KEY:-}
+      AI_MODE: ${AI_MODE:-mock}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      AGENT_ENABLED: ${AGENT_ENABLED:-true}
+      GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-}
+      REDIS_URL: redis://redis:6379/0
+      EVIDENCE_STORAGE_PATH: /app/storage/evidence
     volumes:
-      - eduassistant_persistent_data:/app/data
-    networks:
-      - eduassistant-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: eduassistant-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    volumes:
-      - eduassistant_redis_data:/data
-    networks:
-      - eduassistant-network
+      - eduassistant_storage:/app/storage
 
   eduassistant-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: eduassistant-frontend
-    restart: unless-stopped
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3001/api}
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001/api}
     depends_on:
       - eduassistant-backend
-    networks:
-      - eduassistant-network
 
 volumes:
-  eduassistant_persistent_data:
-    name: eduassistant_persistent_data
+  eduassistant_postgres_data:
   eduassistant_redis_data:
-    name: eduassistant_redis_data
-
-networks:
-  eduassistant-network:
-    driver: bridge
+  eduassistant_storage:
