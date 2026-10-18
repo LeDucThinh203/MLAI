@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import threading
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
@@ -26,6 +27,7 @@ except ImportError:
     ConnectionPool = None  # type: ignore[assignment,misc]
 
 _connection_pool = None
+_connection_pool_lock = threading.Lock()
 _database_host = urlparse(DATABASE_URL).hostname if DATABASE_URL else None
 DB_SERVER = "Neon PostgreSQL" if _database_host and _database_host.endswith(".neon.tech") else "PostgreSQL"
 ACTIVE_ENGINE = DB_SERVER
@@ -75,23 +77,27 @@ def get_db_connection():
     if ConnectionPool is None or dict_row is None:
         raise RuntimeError("psycopg and psycopg-pool are required; install backend requirements.")
     if _connection_pool is None:
-        _connection_pool = ConnectionPool(
-            conninfo=_url(),
-            min_size=DB_POOL_MIN_SIZE,
-            max_size=DB_POOL_MAX_SIZE,
-            max_idle=DB_POOL_MAX_IDLE_SECONDS,
-            timeout=DB_POOL_TIMEOUT_SECONDS,
-            kwargs={"row_factory": dict_row, "connect_timeout": 8},
-            open=True,
-        )
-    return _connection_pool.connection(timeout=DB_POOL_TIMEOUT_SECONDS)
+        with _connection_pool_lock:
+            if _connection_pool is None:
+                _connection_pool = ConnectionPool(
+                    conninfo=_url(),
+                    min_size=DB_POOL_MIN_SIZE,
+                    max_size=DB_POOL_MAX_SIZE,
+                    max_idle=DB_POOL_MAX_IDLE_SECONDS,
+                    timeout=DB_POOL_TIMEOUT_SECONDS,
+                    kwargs={"row_factory": dict_row, "connect_timeout": 8},
+                    open=True,
+                )
+    pool = _connection_pool
+    return pool.connection(timeout=DB_POOL_TIMEOUT_SECONDS)
 
 
 def close_database_pool() -> None:
     global _connection_pool
-    if _connection_pool is not None:
-        _connection_pool.close()
-        _connection_pool = None
+    with _connection_pool_lock:
+        if _connection_pool is not None:
+            _connection_pool.close()
+            _connection_pool = None
 
 
 def _sql(sql: str) -> str:
@@ -124,7 +130,7 @@ def get_all(sql: str, params: tuple = ()) -> List[Dict[str, Any]]:
 
 
 def get_dashboard_statistics(recent_cutoff: str) -> Dict[str, Any]:
-    """Fetch administrator dashboard aggregates using PostgreSQL native JSONB filtering."""
+    """Fetch all dashboard metrics in one database round trip."""
     json_case = "COALESCE(NULLIF(aiExtraction, ''), '{}')::jsonb"
     json_audit = "COALESCE(NULLIF(inputData, ''), '{}')::jsonb"
     escalation_reason = (
@@ -132,69 +138,62 @@ def get_dashboard_statistics(recent_cutoff: str) -> Dict[str, Any]:
         f"NULLIF({json_case} -> 'ruleEngine' ->> 'escalationReason', ''))"
     )
 
-    with get_db_connection() as c, c.cursor() as q:
-        q.execute("SELECT COUNT(id) AS total_users FROM users")
-        users = _row(q.fetchone()) or {'total_users': 0}
-
-        q.execute("SELECT role, COUNT(id) AS count FROM users GROUP BY role")
-        role_rows = [_row(row) for row in q.fetchall()]
-
-        q.execute(f"""
-            SELECT
-                COUNT(id) AS total_cases,
-                COUNT(id) FILTER (WHERE createdAt >= %s) AS today_cases_count,
-                COUNT(id) FILTER (WHERE status IN ('SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED')) AS pending_cases,
-                COUNT(id) FILTER (WHERE status = 'APPROVED') AS approved_cases,
-                COUNT(id) FILTER (WHERE status = 'REJECTED') AS rejected_cases,
-                COUNT(id) FILTER (WHERE {json_case} -> 'ruleEngine' ->> 'decision' = 'AUTO_APPROVE') AS auto_approved_cases,
-                COUNT(id) FILTER (WHERE {json_case} -> 'ruleEngine' ->> 'decision' = 'ESCALATE_TO_HUMAN' OR {escalation_reason} IS NOT NULL) AS escalated_cases
-            FROM cases
-        """, (recent_cutoff,))
-        cases = _row(q.fetchone()) or {}
-
-        q.execute("SELECT status, COUNT(id) AS count FROM cases GROUP BY status")
-        status_rows = [_row(row) for row in q.fetchall()]
-
-        q.execute("SELECT category, COUNT(id) AS count FROM cases GROUP BY category")
-        category_rows = [_row(row) for row in q.fetchall()]
-
-        q.execute("SELECT COALESCE(priority, 'MEDIUM') AS priority, COUNT(id) AS count FROM cases GROUP BY COALESCE(priority, 'MEDIUM')")
-        priority_rows = [_row(row) for row in q.fetchall()]
-
-        q.execute(f"""
+    sql = f"""
+        WITH role_counts AS (
+            SELECT role, COUNT(id) AS count FROM users GROUP BY role
+        ),
+        status_counts AS (
+            SELECT status, COUNT(id) AS count FROM cases GROUP BY status
+        ),
+        category_counts AS (
+            SELECT category, COUNT(id) AS count FROM cases GROUP BY category
+        ),
+        priority_counts AS (
+            SELECT COALESCE(priority, 'MEDIUM') AS priority, COUNT(id) AS count
+            FROM cases GROUP BY COALESCE(priority, 'MEDIUM')
+        ),
+        escalation_counts AS (
             SELECT {escalation_reason} AS reason, COUNT(id) AS count
             FROM cases
             WHERE {escalation_reason} IS NOT NULL
             GROUP BY {escalation_reason}
-        """)
-        escalation_rows = [_row(row) for row in q.fetchall()]
+        ),
+        recent_cases AS (
+            SELECT * FROM cases ORDER BY createdAt DESC LIMIT 5
+        )
+        SELECT
+            jsonb_build_object('total_users', (SELECT COUNT(id) FROM users)) AS users,
+            COALESCE((SELECT jsonb_agg(jsonb_build_object('role', role, 'count', count) ORDER BY role) FROM role_counts), '[]'::jsonb) AS roles,
+            (SELECT jsonb_build_object(
+                'total_cases', COUNT(id),
+                'today_cases_count', COUNT(id) FILTER (WHERE createdAt >= %s),
+                'pending_cases', COUNT(id) FILTER (WHERE status IN ('SUBMITTED', 'UNDER_REVIEW', 'RESUBMITTED')),
+                'approved_cases', COUNT(id) FILTER (WHERE status = 'APPROVED'),
+                'rejected_cases', COUNT(id) FILTER (WHERE status = 'REJECTED'),
+                'auto_approved_cases', COUNT(id) FILTER (WHERE {json_case} -> 'ruleEngine' ->> 'decision' = 'AUTO_APPROVE'),
+                'escalated_cases', COUNT(id) FILTER (WHERE {json_case} -> 'ruleEngine' ->> 'decision' = 'ESCALATE_TO_HUMAN' OR {escalation_reason} IS NOT NULL)
+            ) FROM cases) AS cases,
+            COALESCE((SELECT jsonb_agg(jsonb_build_object('status', status, 'count', count) ORDER BY status) FROM status_counts), '[]'::jsonb) AS statuses,
+            COALESCE((SELECT jsonb_agg(jsonb_build_object('category', category, 'count', count) ORDER BY category) FROM category_counts), '[]'::jsonb) AS categories,
+            COALESCE((SELECT jsonb_agg(jsonb_build_object('priority', priority, 'count', count) ORDER BY priority) FROM priority_counts), '[]'::jsonb) AS priorities,
+            COALESCE((SELECT jsonb_agg(jsonb_build_object('reason', reason, 'count', count) ORDER BY reason) FROM escalation_counts), '[]'::jsonb) AS escalations,
+            COALESCE((SELECT jsonb_agg(to_jsonb(recent_cases)) FROM recent_cases), '[]'::jsonb) AS "recentCases",
+            (SELECT jsonb_build_object(
+                'total_audits', COUNT(id),
+                'total_human_overrides', COUNT(id) FILTER (WHERE action = 'HUMAN_OVERRIDE'),
+                'total_reviewer_feedback', COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED'),
+                'missed_escalation_feedback_count', COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED' AND {json_audit} ->> 'feedbackType' = 'MISSED_ESCALATION'),
+                'unnecessary_escalation_feedback_count', COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED' AND {json_audit} ->> 'feedbackType' = 'UNNECESSARY_ESCALATION'),
+                'correct_feedback_count', COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED' AND {json_audit} ->> 'feedbackType' = 'CORRECT')
+            ) FROM audits) AS audits
+    """
 
-        q.execute("SELECT * FROM cases ORDER BY createdAt DESC LIMIT 5")
-        recent_cases = [_row(row) for row in q.fetchall()]
+    with get_db_connection() as c, c.cursor() as q:
+        q.execute(sql, (recent_cutoff,))
+        data = _row(q.fetchone()) or {}
 
-        q.execute(f"""
-            SELECT
-                COUNT(id) AS total_audits,
-                COUNT(id) FILTER (WHERE action = 'HUMAN_OVERRIDE') AS total_human_overrides,
-                COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED') AS total_reviewer_feedback,
-                COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED' AND {json_audit} ->> 'feedbackType' = 'MISSED_ESCALATION') AS missed_escalation_feedback_count,
-                COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED' AND {json_audit} ->> 'feedbackType' = 'UNNECESSARY_ESCALATION') AS unnecessary_escalation_feedback_count,
-                COUNT(id) FILTER (WHERE action = 'REVIEWER_FEEDBACK_SUBMITTED' AND {json_audit} ->> 'feedbackType' = 'CORRECT') AS correct_feedback_count
-            FROM audits
-        """)
-        audits = _row(q.fetchone()) or {}
-
-    return {
-        'users': users,
-        'roles': role_rows,
-        'cases': cases,
-        'statuses': status_rows,
-        'categories': category_rows,
-        'priorities': priority_rows,
-        'escalations': escalation_rows,
-        'recentCases': recent_cases,
-        'audits': audits,
-    }
+    data['recentCases'] = [_row(row) for row in data.get('recentCases', [])]
+    return data
 
 
 def init_database():

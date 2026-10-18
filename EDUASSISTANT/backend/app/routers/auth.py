@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 import io
@@ -113,7 +114,11 @@ async def login(req: LoginRequest):
     try:
         user_pw = user.get('password', '')
         if user_pw.startswith(('$2a$', '$2b$', '$2y$')):
-            is_match = bcrypt.checkpw(password.encode('utf-8'), user_pw.encode('utf-8'))
+            is_match = await asyncio.to_thread(
+                bcrypt.checkpw,
+                password.encode('utf-8'),
+                user_pw.encode('utf-8'),
+            )
         else:
             is_match = (password == user_pw)
     except Exception:

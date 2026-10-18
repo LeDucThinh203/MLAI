@@ -11,6 +11,7 @@ Module tầng nghiệp vụ thao tác dữ liệu:
 ============================================================================
 """
 
+import asyncio
 import os
 import sys
 
@@ -48,6 +49,18 @@ def _mask_public_code(value: Optional[str]) -> Optional[str]:
 DEFAULT_AUDIT_PAGE_SIZE = 10
 MIN_AUDIT_PAGE_SIZE = 5
 MAX_AUDIT_PAGE_SIZE = 100
+
+
+async def _db_one(sql: str, params: tuple = ()):
+    return await asyncio.to_thread(get_one, sql, params)
+
+
+async def _db_all(sql: str, params: tuple = ()):
+    return await asyncio.to_thread(get_all, sql, params)
+
+
+async def _db_query(sql: str, params: tuple = ()):
+    return await asyncio.to_thread(run_query, sql, params)
 
 DEPARTMENT_MAP = {
     'MILITARY_SERVICE_CONFIRMATION': 'Phòng Quản lý Đào tạo'
@@ -151,7 +164,7 @@ class DatabaseService:
     # ================= USERS =================
     @staticmethod
     async def get_users():
-        rows = get_all('SELECT * FROM users ORDER BY createdAt DESC')
+        rows = await _db_all('SELECT * FROM users ORDER BY createdAt DESC')
         return [
             {**u, 'twoFactorEnabled': bool(u.get('twoFactorEnabled')), 'mustChangePassword': bool(u.get('mustChangePassword'))}
             for u in rows
@@ -161,7 +174,11 @@ class DatabaseService:
     async def get_user_by_username(username: str):
         if not username:
             return None
-        row = get_one('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', (username.strip(),))
+        row = await asyncio.to_thread(
+            get_one,
+            'SELECT * FROM users WHERE LOWER(username) = LOWER(?)',
+            (username.strip(),),
+        )
         if not row:
             return None
         return {**row, 'twoFactorEnabled': bool(row.get('twoFactorEnabled')), 'mustChangePassword': bool(row.get('mustChangePassword'))}
@@ -170,10 +187,36 @@ class DatabaseService:
     async def get_user_by_id(user_id: str):
         if not user_id:
             return None
-        row = get_one('SELECT * FROM users WHERE id = ?', (user_id,))
+        row = await asyncio.to_thread(get_one, 'SELECT * FROM users WHERE id = ?', (user_id,))
         if not row:
             return None
         return {**row, 'twoFactorEnabled': bool(row.get('twoFactorEnabled')), 'mustChangePassword': bool(row.get('mustChangePassword'))}
+
+    @staticmethod
+    async def get_authenticated_user(user_id: str, jti: Optional[str] = None):
+        """Load the account and check access-token revocation in one DB round trip."""
+        if not user_id:
+            return None, False
+        now_iso = datetime.utcnow().isoformat() + 'Z'
+        row = await asyncio.to_thread(
+            get_one,
+            '''SELECT users.*,
+                      EXISTS (
+                          SELECT 1 FROM revoked_access_tokens
+                          WHERE jti = ? AND expiresAt > ?
+                      ) AS "accessTokenRevoked"
+               FROM users WHERE id = ?''',
+            (jti, now_iso, user_id),
+        )
+        if not row:
+            return None, False
+        token_revoked = bool(row.pop('accessTokenRevoked', False))
+        user = {
+            **row,
+            'twoFactorEnabled': bool(row.get('twoFactorEnabled')),
+            'mustChangePassword': bool(row.get('mustChangePassword')),
+        }
+        return user, token_revoked
 
     @staticmethod
     async def create_user(data: dict):
@@ -203,7 +246,7 @@ class DatabaseService:
         must_change_pwd = bool(data.get('mustChangePassword'))
         now_iso = datetime.utcnow().isoformat() + 'Z'
 
-        run_query("""
+        await _db_query("""
             INSERT INTO users (id, username, password, fullName, studentCode, email, role, department, avatar, bio, twoFactorEnabled, twoFactorSecret, mustChangePassword, createdAt, updatedAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
@@ -235,7 +278,7 @@ class DatabaseService:
         old_role = target_user['role']
         updated_at = datetime.utcnow().isoformat() + 'Z'
 
-        run_query('UPDATE users SET role = ?, updatedAt = ? WHERE id = ?', (new_role, updated_at, user_id))
+        await _db_query('UPDATE users SET role = ?, updatedAt = ? WHERE id = ?', (new_role, updated_at, user_id))
 
         await DatabaseService.log_audit({
             'action': 'ADMIN_ROLE_UPDATED',
@@ -267,7 +310,7 @@ class DatabaseService:
 
         updated_at = datetime.utcnow().isoformat() + 'Z'
 
-        run_query("""
+        await _db_query("""
             UPDATE users SET fullName = ?, bio = ?, avatar = ?, department = ?, email = ?, studentCode = ?, updatedAt = ? WHERE id = ?
         """, (full_name, bio, avatar, department, email, student_code, updated_at, user_id))
 
@@ -305,7 +348,7 @@ class DatabaseService:
         hashed_new = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         updated_at = datetime.utcnow().isoformat() + 'Z'
 
-        run_query('UPDATE users SET password = ?, mustChangePassword = FALSE, updatedAt = ? WHERE id = ?', (hashed_new, updated_at, user_id))
+        await _db_query('UPDATE users SET password = ?, mustChangePassword = FALSE, updatedAt = ? WHERE id = ?', (hashed_new, updated_at, user_id))
         
         # Thu hồi toàn bộ refresh token
         await DatabaseService.revoke_all_user_refresh_tokens(user_id)
@@ -327,7 +370,7 @@ class DatabaseService:
         if not target_user:
             return False
 
-        run_query('DELETE FROM users WHERE id = ?', (user_id,))
+        await _db_query('DELETE FROM users WHERE id = ?', (user_id,))
         await DatabaseService.revoke_all_user_refresh_tokens(user_id)
 
         await DatabaseService.log_audit({
@@ -343,7 +386,7 @@ class DatabaseService:
     # ================= 2FA =================
     @staticmethod
     async def save_2fa_secret(user_id: str, secret: str):
-        run_query('UPDATE users SET twoFactorSecret = ? WHERE id = ?', (secret, user_id))
+        await _db_query('UPDATE users SET twoFactorSecret = ? WHERE id = ?', (secret, user_id))
         return await DatabaseService.get_user_by_id(user_id)
 
     @staticmethod
@@ -353,7 +396,7 @@ class DatabaseService:
             return None
 
         secret_val = target_user.get('twoFactorSecret') if enabled else None
-        run_query('UPDATE users SET twoFactorEnabled = ?, twoFactorSecret = ? WHERE id = ?', (enabled, secret_val, user_id))
+        await _db_query('UPDATE users SET twoFactorEnabled = ?, twoFactorSecret = ? WHERE id = ?', (enabled, secret_val, user_id))
 
         await DatabaseService.log_audit({
             'action': '2FA_ENABLED' if enabled else '2FA_DISABLED',
@@ -371,54 +414,67 @@ class DatabaseService:
         token_id = f"rt_{int(datetime.now().timestamp() * 1000)}_{secrets.token_hex(3)}"
         now_iso = datetime.utcnow().isoformat() + 'Z'
         token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
-        run_query("""
+        await asyncio.to_thread(
+            run_query,
+            """
             INSERT INTO refresh_tokens (id, userId, token, expiresAt, createdAt)
             VALUES (?, ?, ?, ?, ?)
-        """, (token_id, user_id, token_hash, expires_at, now_iso))
+            """,
+            (token_id, user_id, token_hash, expires_at, now_iso),
+        )
 
     @staticmethod
     async def find_refresh_token(token: str):
         token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
-        rec = get_one('SELECT * FROM refresh_tokens WHERE token = ?', (token_hash,))
-        if not rec:
-            rec = get_one('SELECT * FROM refresh_tokens WHERE token = ?', (token,))
-        return rec
+        return await _db_one(
+            'SELECT * FROM refresh_tokens WHERE token IN (?, ?) ORDER BY CASE WHEN token = ? THEN 0 ELSE 1 END LIMIT 1',
+            (token_hash, token, token_hash),
+        )
 
     @staticmethod
     async def get_refresh_token(token: str):
         token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
-        rec = get_one('SELECT * FROM refresh_tokens WHERE token = ?', (token_hash,))
-        if not rec:
-            rec = get_one('SELECT * FROM refresh_tokens WHERE token = ?', (token,))
-        return rec
+        return await _db_one(
+            'SELECT * FROM refresh_tokens WHERE token IN (?, ?) ORDER BY CASE WHEN token = ? THEN 0 ELSE 1 END LIMIT 1',
+            (token_hash, token, token_hash),
+        )
 
     @staticmethod
     async def delete_refresh_token(token: str):
         token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
-        return run_query('DELETE FROM refresh_tokens WHERE token = ? OR token = ?', (token_hash, token))
+        return await asyncio.to_thread(
+            run_query,
+            'DELETE FROM refresh_tokens WHERE token = ? OR token = ?',
+            (token_hash, token),
+        )
 
     @staticmethod
     async def revoke_all_user_refresh_tokens(user_id: str):
-        return run_query('DELETE FROM refresh_tokens WHERE userId = ?', (user_id,))
+        return await _db_query('DELETE FROM refresh_tokens WHERE userId = ?', (user_id,))
 
     # ================= ACCESS TOKEN DENYLIST =================
     @staticmethod
     async def revoke_access_token(jti: str, expires_at: str):
         now_iso = datetime.utcnow().isoformat() + 'Z'
-        run_query('DELETE FROM revoked_access_tokens WHERE expiresAt <= ?', (now_iso,))
-        return run_query("""
-            INSERT INTO revoked_access_tokens (jti, expiresAt, createdAt)
-            VALUES (?, ?, ?)
-            ON CONFLICT (jti) DO NOTHING
-        """, (jti, expires_at, now_iso))
+        def persist_revocation():
+            run_query('DELETE FROM revoked_access_tokens WHERE expiresAt <= ?', (now_iso,))
+            return run_query("""
+                INSERT INTO revoked_access_tokens (jti, expiresAt, createdAt)
+                VALUES (?, ?, ?)
+                ON CONFLICT (jti) DO NOTHING
+            """, (jti, expires_at, now_iso))
+
+        return await asyncio.to_thread(persist_revocation)
 
     @staticmethod
     async def is_access_token_revoked(jti: str):
         now_iso = datetime.utcnow().isoformat() + 'Z'
-        return get_one(
+        row = await asyncio.to_thread(
+            get_one,
             'SELECT jti FROM revoked_access_tokens WHERE jti = ? AND expiresAt > ?',
-            (jti, now_iso)
-        ) is not None
+            (jti, now_iso),
+        )
+        return row is not None
 
     # ================= EVIDENCE UPLOADS =================
     @staticmethod
@@ -432,15 +488,15 @@ class DatabaseService:
         ocr_is_live = bool(data.get('ocrIsLive'))
         now_iso = datetime.utcnow().isoformat() + 'Z'
 
-        existing = get_one('SELECT fileName FROM evidence_uploads WHERE fileName = ?', (file_name,))
+        existing = await _db_one('SELECT fileName FROM evidence_uploads WHERE fileName = ?', (file_name,))
         if existing:
-            run_query("""
+            await _db_query("""
                 UPDATE evidence_uploads
                 SET metadata = ?, ocrData = ?, ocrProvider = ?, ocrIsLive = ?
                 WHERE fileName = ? AND ownerId = ?
             """, (metadata, ocr_data, ocr_provider, ocr_is_live, file_name, owner_id))
         else:
-            run_query("""
+            await _db_query("""
                 INSERT INTO evidence_uploads (fileName, ownerId, metadata, ocrData, ocrProvider, ocrIsLive, createdAt)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (file_name, owner_id, metadata, ocr_data, ocr_provider, ocr_is_live, now_iso))
@@ -449,7 +505,7 @@ class DatabaseService:
 
     @staticmethod
     async def get_evidence_upload(file_name: str, owner_id: str):
-        row = get_one('SELECT * FROM evidence_uploads WHERE fileName = ? AND ownerId = ?', (file_name, owner_id))
+        row = await _db_one('SELECT * FROM evidence_uploads WHERE fileName = ? AND ownerId = ?', (file_name, owner_id))
         if not row:
             return None
         res = dict(row)
@@ -487,12 +543,12 @@ class DatabaseService:
         if filter_dict.get('limit'):
             sql += ' LIMIT ?'
             params.append(max(1, min(50, int(filter_dict['limit']))))
-        rows = get_all(sql, tuple(params))
+        rows = await asyncio.to_thread(get_all, sql, tuple(params))
         return [format_case_row(r) for r in rows]
 
     @staticmethod
     async def get_admin_dashboard_statistics(recent_cutoff: str):
-        data = get_dashboard_statistics(recent_cutoff)
+        data = await asyncio.to_thread(get_dashboard_statistics, recent_cutoff)
         data['recentCases'] = [format_case_row(case) for case in data.get('recentCases', [])]
         return data
 
@@ -500,7 +556,7 @@ class DatabaseService:
     async def get_case_by_id(case_id: str):
         if not case_id:
             return None
-        row = get_one('SELECT * FROM cases WHERE id = ?', (case_id,))
+        row = await _db_one('SELECT * FROM cases WHERE id = ?', (case_id,))
         return format_case_row(row)
 
     @staticmethod
@@ -508,7 +564,7 @@ class DatabaseService:
         """Load a case and its owner in one indexed INNER JOIN."""
         if not case_id:
             return None, None
-        row = get_one("""
+        row = await _db_one("""
             SELECT c.*, u.id AS joined_student_id, u.username AS joined_student_username,
                    u.fullName AS joined_student_full_name, u.studentCode AS joined_student_code,
                    u.department AS joined_student_department
@@ -553,7 +609,7 @@ class DatabaseService:
             'escalation': case_data.get('escalation')
         }
 
-        run_query("""
+        await _db_query("""
             INSERT INTO cases (id, studentId, studentName, studentCode, title, category, priority, assignedDepartment, deadline, digitalSignature, description, status, reviewResult, supplementHistory, aiExtraction, evidenceFiles, createdAt, updatedAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
@@ -610,7 +666,7 @@ class DatabaseService:
         })
 
         # Tạo thông báo cho Reviewer & Admin
-        staff_users = get_all("SELECT id FROM users WHERE role IN ('REVIEWER', 'ADMIN')")
+        staff_users = await _db_all("SELECT id FROM users WHERE role IN ('REVIEWER', 'ADMIN')")
         for staff in staff_users:
             await DatabaseService.create_notification({
                 'userId': staff['id'],
@@ -647,7 +703,7 @@ class DatabaseService:
             sign_payload = f"{target_case['id']}:{target_case.get('studentCode')}:{target_case.get('studentName')}:APPROVED:{updated_at}"
             digital_signature = hmac.new(get_signature_key().encode('utf-8'), sign_payload.encode('utf-8'), hashlib.sha256).hexdigest()
 
-        run_query("""
+        await _db_query("""
             UPDATE cases SET status = ?, reviewResult = ?, supplementHistory = ?, evidenceFiles = ?, assignedDepartment = ?, digitalSignature = ?, reviewerFeedback = ?, updatedAt = ? WHERE id = ?
         """, (
             status,
@@ -739,7 +795,7 @@ class DatabaseService:
     # ================= COMMENTS =================
     @staticmethod
     async def get_comments(case_id: str):
-        rows = get_all('SELECT * FROM comments WHERE caseId = ? ORDER BY createdAt ASC', (case_id,))
+        rows = await _db_all('SELECT * FROM comments WHERE caseId = ? ORDER BY createdAt ASC', (case_id,))
         return rows
 
     @staticmethod
@@ -747,7 +803,7 @@ class DatabaseService:
         """Load the case required for access control and its comments in one LEFT JOIN."""
         if not case_id:
             return None, []
-        rows = get_all("""
+        rows = await _db_all("""
             SELECT c.*, cm.id AS comment_id, cm.caseId AS comment_case_id,
                    cm.authorId AS comment_author_id, cm.authorName AS comment_author_name,
                    cm.authorRole AS comment_author_role, cm.authorAvatar AS comment_author_avatar,
@@ -787,7 +843,7 @@ class DatabaseService:
         author_name = author.get('fullName') or author.get('username')
         created_at = datetime.utcnow().isoformat() + 'Z'
 
-        run_query("""
+        await _db_query("""
             INSERT INTO comments (id, caseId, authorId, authorName, authorRole, authorAvatar, content, createdAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (comment_id, case_id, author.get('id'), author_name, author.get('role'), author.get('avatar'), content.strip(), created_at))
@@ -813,7 +869,7 @@ class DatabaseService:
         })
 
         if author.get('role') == 'STUDENT':
-            staff_users = get_all("SELECT id FROM users WHERE role IN ('REVIEWER', 'ADMIN')")
+            staff_users = await _db_all("SELECT id FROM users WHERE role IN ('REVIEWER', 'ADMIN')")
             for staff in staff_users:
                 await DatabaseService.create_notification({
                     'userId': staff['id'],
@@ -837,14 +893,18 @@ class DatabaseService:
     # ================= NOTIFICATIONS =================
     @staticmethod
     async def get_notifications(user_id: str):
-        rows = get_all('SELECT * FROM notifications WHERE userId = ? ORDER BY createdAt DESC', (user_id,))
+        rows = await asyncio.to_thread(
+            get_all,
+            'SELECT * FROM notifications WHERE userId = ? ORDER BY createdAt DESC',
+            (user_id,),
+        )
         return rows
 
     @staticmethod
     async def create_notification(data: dict):
         notif_id = f"notif_{int(datetime.now().timestamp() * 1000)}_{secrets.token_hex(2)}"
         now_iso = datetime.utcnow().isoformat() + 'Z'
-        run_query("""
+        await _db_query("""
             INSERT INTO notifications (id, userId, title, message, type, caseId, isRead, createdAt)
             VALUES (?, ?, ?, ?, ?, ?, FALSE, ?)
         """, (
@@ -872,14 +932,14 @@ class DatabaseService:
 
     @staticmethod
     async def mark_notification_as_read(notif_id: str, user_id: str):
-        res = run_query('UPDATE notifications SET isRead = TRUE WHERE id = ? AND userId = ?', (notif_id, user_id))
+        res = await _db_query('UPDATE notifications SET isRead = TRUE WHERE id = ? AND userId = ?', (notif_id, user_id))
         if res['changes'] > 0:
             await bump_cache_version(f"notifications:{user_id}")
         return res['changes'] > 0
 
     @staticmethod
     async def mark_all_notifications_as_read(user_id: str):
-        run_query('UPDATE notifications SET isRead = TRUE WHERE userId = ?', (user_id,))
+        await _db_query('UPDATE notifications SET isRead = TRUE WHERE userId = ?', (user_id,))
         await bump_cache_version(f"notifications:{user_id}")
         return True
 
@@ -924,7 +984,7 @@ class DatabaseService:
             params.append(f"{filter_dict['date']}%")
 
         sql += ' ORDER BY timestamp DESC'
-        rows = get_all(sql, tuple(params))
+        rows = await _db_all(sql, tuple(params))
         return [format_audit_row(r) for r in rows]
 
     @staticmethod
@@ -958,7 +1018,7 @@ class DatabaseService:
             where += " AND (LOWER(action) LIKE ? OR LOWER(COALESCE(caseId, '')) LIKE ? OR LOWER(COALESCE(actorName, '')) LIKE ? OR LOWER(COALESCE(actorUsername, '')) LIKE ? OR LOWER(COALESCE(reason, '')) LIKE ?)"
             params.extend([term] * 5)
 
-        total = (get_one('SELECT COUNT(id) AS count FROM audits' + where, tuple(params)) or {}).get('count', 0)
+        total = (await _db_one('SELECT COUNT(id) AS count FROM audits' + where, tuple(params)) or {}).get('count', 0)
         safe_page = max(1, int(page))
         safe_size = min(MAX_AUDIT_PAGE_SIZE, max(MIN_AUDIT_PAGE_SIZE, int(page_size)))
         total_pages = max(1, (total + safe_size - 1) // safe_size)
@@ -970,7 +1030,7 @@ class DatabaseService:
             if include_input else
             'id, action, caseId, actorId, actorName, actorRole, actorUsername, result, reason, timestamp'
         )
-        rows = get_all('SELECT ' + columns + ' FROM audits' + where + ' ORDER BY timestamp DESC LIMIT ? OFFSET ?', tuple(params + [safe_size, (safe_page - 1) * safe_size]))
+        rows = await _db_all('SELECT ' + columns + ' FROM audits' + where + ' ORDER BY timestamp DESC LIMIT ? OFFSET ?', tuple(params + [safe_size, (safe_page - 1) * safe_size]))
         return {'audits': [format_audit_row(row) for row in rows], 'total': total, 'page': safe_page, 'pageSize': safe_size, 'totalPages': total_pages, 'hasPrevious': safe_page > 1, 'hasNext': safe_page < total_pages}
 
     @staticmethod
@@ -983,22 +1043,26 @@ class DatabaseService:
         input_json = json.dumps(input_data, ensure_ascii=False) if isinstance(input_data, (dict, list)) else (str(input_data) if input_data is not None else None)
         result_val = str(data.get('result', 'SUCCESS'))
 
-        run_query("""
+        await asyncio.to_thread(
+            run_query,
+            """
             INSERT INTO audits (id, action, caseId, actorId, actorName, actorRole, actorUsername, inputData, result, reason, timestamp)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            audit_id,
-            data.get('action'),
-            data.get('caseId'),
-            safe_actor.get('id'),
-            safe_actor.get('name'),
-            safe_actor.get('role'),
-            safe_actor.get('username'),
-            input_json,
-            result_val,
-            data.get('reason', ''),
-            timestamp
-        ))
+            """,
+            (
+                audit_id,
+                data.get('action'),
+                data.get('caseId'),
+                safe_actor.get('id'),
+                safe_actor.get('name'),
+                safe_actor.get('role'),
+                safe_actor.get('username'),
+                input_json,
+                result_val,
+                data.get('reason', ''),
+                timestamp,
+            ),
+        )
 
         return {
             'id': audit_id,

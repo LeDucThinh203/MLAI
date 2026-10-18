@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Response
@@ -17,10 +18,22 @@ from typing import Optional
 
 router = APIRouter(tags=["Admin"])
 
+
+async def _db_one(sql: str, params: tuple = ()):
+    return await asyncio.to_thread(get_one, sql, params)
+
+
+async def _db_all(sql: str, params: tuple = ()):
+    return await asyncio.to_thread(get_all, sql, params)
+
+
+async def _db_query(sql: str, params: tuple = ()):
+    return await asyncio.to_thread(run_query, sql, params)
+
 @router.get("/api/sis/me")
 async def get_my_sis_record(user: dict = Depends(require_roles('ADMIN'))):
     """Return the authenticated administrator's SIS row; student SIS data is admin-only."""
-    record = get_one("""SELECT studentCode, fullName, academicStatus, courseStartDate, courseEndDate,
+    record = await _db_one("""SELECT studentCode, fullName, academicStatus, courseStartDate, courseEndDate,
         currentTermActive, hasCurrentSchedule, registeredPermanentAddress, faculty,
         source, recordStatus, updatedAt FROM sis_student_records WHERE userId = ?""", (user['id'],))
     return api_response(200, True, 'SIS record loaded.', {'record': record})
@@ -48,8 +61,8 @@ class SisDemoVerificationRequest(BaseModel):
 
 @router.get('/api/admin/policies')
 async def get_policy_registry(user: dict = Depends(require_roles('ADMIN'))):
-    state = get_one('SELECT * FROM escalation_policy_state WHERE id = ?', ('GLOBAL_NVQS_POLICY',))
-    history = get_all('SELECT * FROM escalation_threshold_history ORDER BY createdAt DESC LIMIT 10')
+    state = await _db_one('SELECT * FROM escalation_policy_state WHERE id = ?', ('GLOBAL_NVQS_POLICY',))
+    history = await _db_all('SELECT * FROM escalation_threshold_history ORDER BY createdAt DESC LIMIT 10')
     return api_response(200, True, 'Policy registry loaded.', {'policies': POLICY_REGISTRY, 'domain': 'MILITARY_SERVICE_CONFIRMATION', 'adaptivePolicy': state, 'thresholdHistory': history})
 
 
@@ -62,15 +75,15 @@ async def list_sis_records(search: str = '', academicStatus: str = '', faculty: 
     for column, value in [('academicStatus', academicStatus), ('faculty', faculty), ('recordStatus', recordStatus)]:
         if value.strip(): clauses.append(f'{column} = ?'); params.append(value.strip())
     where = ' WHERE ' + ' AND '.join(clauses)
-    total = (get_one('SELECT COUNT(*) AS count FROM sis_student_records' + where, tuple(params)) or {}).get('count', 0)
+    total = (await _db_one('SELECT COUNT(*) AS count FROM sis_student_records' + where, tuple(params)) or {}).get('count', 0)
     size = min(20, max(1, pageSize)); safe_page = max(1, page)
-    records = get_all('SELECT * FROM sis_student_records' + where + ' ORDER BY updatedAt DESC LIMIT ? OFFSET ?', tuple(params + [size, (safe_page - 1) * size]))
+    records = await _db_all('SELECT * FROM sis_student_records' + where + ' ORDER BY updatedAt DESC LIMIT ? OFFSET ?', tuple(params + [size, (safe_page - 1) * size]))
     return api_response(200, True, 'SIS records loaded.', {'records': records, 'total': int(total), 'page': safe_page, 'pageSize': size})
 
 
 @router.get('/api/admin/sis/available-students')
 async def list_students_without_sis(user: dict = Depends(require_roles('ADMIN'))):
-    students = get_all('''SELECT u.id, u.studentCode, u.fullName, u.faculty, u.academicStatus
+    students = await _db_all('''SELECT u.id, u.studentCode, u.fullName, u.faculty, u.academicStatus
         FROM users u LEFT JOIN sis_student_records s ON s.userId = u.id
         WHERE u.role = ? AND s.id IS NULL ORDER BY u.fullName ASC''', ('STUDENT',))
     return api_response(200, True, 'Students available for SIS registration loaded.', {'students': students})
@@ -79,10 +92,10 @@ async def list_students_without_sis(user: dict = Depends(require_roles('ADMIN'))
 @router.post('/api/admin/sis')
 async def create_sis_record(req: SisCreateRequest, user: dict = Depends(require_roles('ADMIN'))):
     data = req.dict()
-    student = get_one('SELECT * FROM users WHERE id = ? AND role = ?', (data['userId'], 'STUDENT'))
+    student = await _db_one('SELECT * FROM users WHERE id = ? AND role = ?', (data['userId'], 'STUDENT'))
     if not student:
         return api_response(400, False, 'Select an existing student account for this SIS record.', None, 'INVALID_STUDENT')
-    if get_one('SELECT id FROM sis_student_records WHERE userId = ?', (data['userId'],)):
+    if await _db_one('SELECT id FROM sis_student_records WHERE userId = ?', (data['userId'],)):
         return api_response(409, False, 'This student already has an SIS record.', None, 'SIS_RECORD_EXISTS')
 
     data['studentCode'] = data['studentCode'].strip().upper() if data.get('studentCode') else student.get('studentCode')
@@ -98,19 +111,19 @@ async def create_sis_record(req: SisCreateRequest, user: dict = Depends(require_
         return api_response(400, False, 'Course dates must use YYYY-MM-DD.', None, 'VALIDATION_ERROR')
     if start and end and start > end:
         return api_response(400, False, 'Course start must not be after course end.', None, 'VALIDATION_ERROR')
-    if data['studentCode'] and get_one('SELECT id FROM sis_student_records WHERE studentCode = ?', (data['studentCode'],)):
+    if data['studentCode'] and await _db_one('SELECT id FROM sis_student_records WHERE studentCode = ?', (data['studentCode'],)):
         return api_response(409, False, 'Student code already exists.', None, 'DUPLICATE_STUDENT_CODE')
 
     record_id = f"SIS-{data['userId']}"
     now = datetime.utcnow().isoformat() + 'Z'
-    run_query('''INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,sourceType,verificationStatus,recordStatus,createdAt,updatedAt,updatedBy)
+    await _db_query('''INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,sourceType,verificationStatus,recordStatus,createdAt,updatedAt,updatedBy)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
         record_id, data['userId'], data['studentCode'], data['fullName'], data.get('academicStatus'),
         data.get('courseStartDate'), data.get('courseEndDate'), data.get('currentTermActive'), data.get('hasCurrentSchedule'),
         data.get('registeredPermanentAddress'), data.get('faculty'), 'INTERNAL_SIS_ADMIN', 'INTERNAL_DEMO_SIS',
         'UNVERIFIED', data.get('recordStatus') or 'ACTIVE', now, now, user.get('id')
     ))
-    record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    record = await _db_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
     await db_service.log_audit({'action': 'ADMIN_SIS_RECORD_CREATED', 'actor': user, 'caseId': None,
         'input': {'recordId': record_id, 'userId': data['userId'], 'studentCode': data['studentCode']},
         'result': 'SUCCESS', 'reason': 'Admin created an unverified record in the internal demo SIS registry.'})
@@ -119,12 +132,12 @@ async def create_sis_record(req: SisCreateRequest, user: dict = Depends(require_
 
 @router.get('/api/admin/sis/{record_id}')
 async def get_sis_record(record_id: str, user: dict = Depends(require_roles('ADMIN'))):
-    record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    record = await _db_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
     return api_response(200 if record else 404, bool(record), 'SIS record loaded.' if record else 'SIS record not found.', {'record': record} if record else None)
 
 @router.put('/api/admin/sis/{record_id}')
 async def update_sis_record(record_id: str, req: SisUpdateRequest, user: dict = Depends(require_roles('ADMIN'))):
-    record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    record = await _db_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
     if not record: return api_response(404, False, 'SIS record not found.', None, 'NOT_FOUND')
     data = req.dict()
     data['studentCode'] = data['studentCode'].strip().upper() if data.get('studentCode') else None
@@ -138,7 +151,7 @@ async def update_sis_record(record_id: str, req: SisUpdateRequest, user: dict = 
     except ValueError: return api_response(400, False, 'Course dates must use YYYY-MM-DD.', None, 'VALIDATION_ERROR')
     if start and end and start > end: return api_response(400, False, 'Course start must not be after course end.', None, 'VALIDATION_ERROR')
     if data['studentCode']:
-        duplicate = get_one('SELECT id FROM sis_student_records WHERE studentCode = ? AND id <> ?', (data['studentCode'], record_id))
+        duplicate = await _db_one('SELECT id FROM sis_student_records WHERE studentCode = ? AND id <> ?', (data['studentCode'], record_id))
         if duplicate: return api_response(409, False, 'Student code already exists.', None, 'DUPLICATE_STUDENT_CODE')
     changed = {key: {'old': record.get(key), 'new': value} for key, value in data.items() if record.get(key) != value}
     if changed:
@@ -153,9 +166,9 @@ async def update_sis_record(record_id: str, req: SisUpdateRequest, user: dict = 
             changed['verifiedBy'] = {'old': record['verifiedBy'], 'new': None}
         if record.get('verifiedAt'):
             changed['verifiedAt'] = {'old': record['verifiedAt'], 'new': None}
-        run_query('''UPDATE sis_student_records SET studentCode=?, fullName=?, academicStatus=?, courseStartDate=?, courseEndDate=?, currentTermActive=?, hasCurrentSchedule=?, registeredPermanentAddress=?, faculty=?, recordStatus=?, verificationStatus='UNVERIFIED', verifiedBy=NULL, verifiedAt=NULL, updatedAt=?, updatedBy=? WHERE id=?''', tuple([data[k] for k in data] + [updated_at, user.get('id'), record_id]))
+        await _db_query('''UPDATE sis_student_records SET studentCode=?, fullName=?, academicStatus=?, courseStartDate=?, courseEndDate=?, currentTermActive=?, hasCurrentSchedule=?, registeredPermanentAddress=?, faculty=?, recordStatus=?, verificationStatus='UNVERIFIED', verifiedBy=NULL, verifiedAt=NULL, updatedAt=?, updatedBy=? WHERE id=?''', tuple([data[k] for k in data] + [updated_at, user.get('id'), record_id]))
         await db_service.log_audit({'action':'ADMIN_SIS_RECORD_UPDATED','actor':user,'caseId':None,'input':{'recordId':record_id,'studentCode':data['studentCode'],'changedFields':changed},'result':'SUCCESS','reason':'Admin edited internal demo SIS facts; any previous demo verification was cleared.'})
-    updated = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    updated = await _db_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
     return api_response(200, True, 'SIS record updated.', {'record': updated})
 
 
@@ -165,7 +178,7 @@ async def verify_demo_sis_record(
     req: SisDemoVerificationRequest,
     user: dict = Depends(require_roles('ADMIN')),
 ):
-    record = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    record = await _db_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
     if not record:
         return api_response(404, False, 'SIS record not found.', None, 'NOT_FOUND')
     if record.get('sourceType') != 'INTERNAL_DEMO_SIS':
@@ -177,7 +190,7 @@ async def verify_demo_sis_record(
         'Admin confirmed this internal record for the EDUASSISTANT demo workflow; '
         'this does not verify data against a university SIS.'
     )
-    run_query('''UPDATE sis_student_records
+    await _db_query('''UPDATE sis_student_records
         SET verificationStatus='ADMIN_VERIFIED_DEMO', verifiedBy=?, verifiedAt=?, updatedAt=?, updatedBy=?
         WHERE id=?''', (user.get('id'), verified_at, verified_at, user.get('id'), record_id))
     await db_service.log_audit({
@@ -195,7 +208,7 @@ async def verify_demo_sis_record(
         'result': 'SUCCESS',
         'reason': reason,
     })
-    updated = get_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
+    updated = await _db_one('SELECT * FROM sis_student_records WHERE id = ?', (record_id,))
     return api_response(200, True, 'Internal SIS record marked as verified for demo use.', {'record': updated})
 
 @router.get("/api/admin/users")
@@ -228,7 +241,7 @@ async def admin_create_user(req: CreateAdminUserRequest, user: dict = Depends(re
     created = await db_service.create_user(req.dict())
     if created and created.get('role') == 'STUDENT':
         now = datetime.utcnow().isoformat() + 'Z'
-        run_query('''INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,sourceType,verificationStatus,recordStatus,createdAt,updatedAt,updatedBy)
+        await _db_query('''INSERT INTO sis_student_records (id,userId,studentCode,fullName,academicStatus,courseStartDate,courseEndDate,currentTermActive,hasCurrentSchedule,registeredPermanentAddress,faculty,source,sourceType,verificationStatus,recordStatus,createdAt,updatedAt,updatedBy)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (userId) DO NOTHING''', (
             f"SIS-{created['id']}", created['id'], created.get('studentCode'), created['fullName'], None,
             None, None, False, False, None, created.get('department'), 'ADMIN_ACCOUNT_PROVISIONING',
@@ -371,7 +384,7 @@ async def get_system_metrics(user: dict = Depends(require_roles('ADMIN'))):
         'uploadStorageSizeMB': round(total_upload_size / (1024 * 1024), 2),
         'aiMode': get_ai_mode(),
         'systemStatus': 'ONLINE',
-        'currentEscalationThreshold': get_confidence_threshold(),
+        'currentEscalationThreshold': await asyncio.to_thread(get_confidence_threshold),
         'totalHumanOverrides': int(audit_summary.get('total_human_overrides') or 0),
         'totalReviewerFeedback': int(audit_summary.get('total_reviewer_feedback') or 0),
         'missedEscalationFeedbackCount': int(audit_summary.get('missed_escalation_feedback_count') or 0),

@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import datetime
 from typing import Optional, List, Any
@@ -33,16 +34,19 @@ from app.schemas.cases import (
 router = APIRouter(tags=["Cases"])
 
 
-async def _get_websocket_identity(websocket: WebSocket) -> Optional[dict]:
+async def _get_websocket_identity(websocket: WebSocket) -> Optional[tuple[dict, dict]]:
     """WebSockets authenticate with the same HttpOnly access cookie as HTTP."""
     raw_token = websocket.cookies.get(ACCESS_COOKIE_NAME)
     if not raw_token:
         return None
     try:
         identity = jwt.decode(raw_token, JWT_SECRET, algorithms=["HS256"])
-        if identity.get('jti') and await db_service.is_access_token_revoked(identity['jti']):
+        user, token_revoked = await db_service.get_authenticated_user(identity.get('id'), identity.get('jti'))
+        if token_revoked:
             return None
-        return identity
+        if not user:
+            return None
+        return identity, user
     except jwt.PyJWTError:
         return None
 
@@ -54,11 +58,11 @@ async def comment_websocket(
 ):
     """Subscribe an authenticated participant to one case's comment room."""
     try:
-        identity = await _get_websocket_identity(websocket)
-        if not identity:
+        authenticated = await _get_websocket_identity(websocket)
+        if not authenticated:
             await websocket.close(code=1008)
             return
-        user = await db_service.get_user_by_id(identity.get("id"))
+        _identity, user = authenticated
         target_case = await db_service.get_case_by_id(case_id)
         if not user or not target_case:
             await websocket.close(code=1008)
@@ -83,14 +87,11 @@ async def comment_websocket(
 async def case_events_websocket(websocket: WebSocket):
     """Push new and updated cases to authenticated reviewer/admin queues."""
     try:
-        identity = await _get_websocket_identity(websocket)
-        if not identity:
+        authenticated = await _get_websocket_identity(websocket)
+        if not authenticated:
             await websocket.close(code=1008)
             return
-        user = await db_service.get_user_by_id(identity.get("id"))
-        if not user:
-            await websocket.close(code=1008)
-            return
+        _identity, user = authenticated
     except Exception:
         await websocket.close(code=1008)
         return
@@ -191,7 +192,11 @@ async def create_case_endpoint(req: CreateCaseRequest, user: dict = Depends(get_
     # Lấy thông tin sinh viên Authoritative Record (Tuyệt đối không invent fallback giả)
     student_user = await db_service.get_user_by_id(user['id']) or user
 
-    sis_record = get_one('SELECT * FROM sis_student_records WHERE userId = ?', (user['id'],))
+    sis_record = await asyncio.to_thread(
+        get_one,
+        'SELECT * FROM sis_student_records WHERE userId = ?',
+        (user['id'],),
+    )
     authoritative = sis_record or {}
     # SIS is canonical when present. If migration data is absent, preserve only
     # explicit legacy fields; do not invent academic facts or use username as MSSV.
