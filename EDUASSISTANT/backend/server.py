@@ -5,7 +5,7 @@ EDUASSISTANT - UNIFIED ENTERPRISE BACKEND SERVER ENGINE (PYTHON FASTAPI)
 Máy chủ Backend Python duy nhất hợp nhất toàn bộ 3 phân hệ nghiệp vụ:
   🔐 PHÂN HỆ 1: AUTHENTICATION & ACCESS CONTROL (JWT, Bcrypt, 2FA TOTP, RBAC)
   📝 PHÂN HỆ 2: CASE SUBMISSION & MULTIMODAL AI OCR WORKFLOW (Rule Engine)
-  🛡️ PHÂN HỆ 3: AUDIT TRAIL & SECURITY MONITORING (IDOR Guard, Render PostgreSQL)
+  🛡️ PHÂN HỆ 3: AUDIT TRAIL & SECURITY MONITORING (IDOR Guard, PostgreSQL)
 ============================================================================
 """
 
@@ -28,7 +28,7 @@ from app.db.database import ACTIVE_ENGINE
 __all__ = ["app"]
 
 if __name__ == "__main__":
-    db_status = "Render PostgreSQL"
+    db_status = ACTIVE_ENGINE
     print(f"""
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║             🚀 EDUASSISTANT - ENTERPRISE PYTHON ENGINE 3.0               ║

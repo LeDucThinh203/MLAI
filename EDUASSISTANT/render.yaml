@@ -16,6 +16,14 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false
+      - key: DB_POOL_MIN_SIZE
+        value: 1
+      - key: DB_POOL_MAX_SIZE
+        value: 10
+      - key: DB_POOL_TIMEOUT_SECONDS
+        value: 8
+      - key: DB_POOL_MAX_IDLE_SECONDS
+        value: 300
       - key: JWT_SECRET
         generateValue: true
       - key: REFRESH_SECRET

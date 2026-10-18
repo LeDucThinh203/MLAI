@@ -1,17 +1,23 @@
-"""PostgreSQL-only persistence layer for Render PostgreSQL."""
+"""PostgreSQL persistence layer with a bounded application connection pool."""
 import json
 import os
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 import bcrypt
-from app.config import SEED_DEMO_DATA
+from app.config import (
+    DATABASE_URL,
+    DB_POOL_MAX_IDLE_SECONDS,
+    DB_POOL_MAX_SIZE,
+    DB_POOL_MIN_SIZE,
+    DB_POOL_TIMEOUT_SECONDS,
+    SEED_DEMO_DATA,
+)
 
 try:
-    from psycopg import connect  # type: ignore
     from psycopg.rows import dict_row  # type: ignore
 except ImportError:
-    connect = None
     dict_row = None
 
 try:
@@ -19,10 +25,10 @@ try:
 except ImportError:
     ConnectionPool = None  # type: ignore[assignment,misc]
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 _connection_pool = None
-ACTIVE_ENGINE = "postgresql"
-DB_SERVER = "Render PostgreSQL"
+_database_host = urlparse(DATABASE_URL).hostname if DATABASE_URL else None
+DB_SERVER = "Neon PostgreSQL" if _database_host and _database_host.endswith(".neon.tech") else "PostgreSQL"
+ACTIVE_ENGINE = DB_SERVER
 DB_NAME = "eduassistant_db"
 
 _KEYS = {
@@ -58,27 +64,27 @@ _KEYS = {
 def _url():
     if not DATABASE_URL:
         raise RuntimeError("DATABASE_URL is required for PostgreSQL.")
+    if _database_host and _database_host.endswith(".neon.tech") and "-pooler." not in _database_host:
+        raise RuntimeError("DATABASE_URL must use Neon's pooled endpoint (hostname containing -pooler).")
     return DATABASE_URL
 
 
 def get_db_connection():
     """Borrow a PostgreSQL connection from the connection pool."""
     global _connection_pool
-    if ConnectionPool is None:
-        if connect is None:
-            raise RuntimeError("psycopg package is not available.")
-        return connect(_url(), row_factory=dict_row, connect_timeout=8)
+    if ConnectionPool is None or dict_row is None:
+        raise RuntimeError("psycopg and psycopg-pool are required; install backend requirements.")
     if _connection_pool is None:
         _connection_pool = ConnectionPool(
             conninfo=_url(),
-            min_size=1,
-            max_size=4,
-            max_idle=300,
-            timeout=8,
+            min_size=DB_POOL_MIN_SIZE,
+            max_size=DB_POOL_MAX_SIZE,
+            max_idle=DB_POOL_MAX_IDLE_SECONDS,
+            timeout=DB_POOL_TIMEOUT_SECONDS,
             kwargs={"row_factory": dict_row, "connect_timeout": 8},
             open=True,
         )
-    return _connection_pool.connection(timeout=8)
+    return _connection_pool.connection(timeout=DB_POOL_TIMEOUT_SECONDS)
 
 
 def close_database_pool() -> None:
@@ -400,7 +406,7 @@ CREATE TABLE IF NOT EXISTS rag_chunks (
             if statement.strip():
                 q.execute(statement)
 
-        # Existing Render databases predate the academic/SIS fields.  CREATE
+        # Existing databases may predate the academic/SIS fields. CREATE
         # TABLE IF NOT EXISTS does not evolve those tables, so add every field
         # required by the one-time SIS seed before querying it below.
         for statement in (
@@ -523,10 +529,10 @@ CREATE TABLE IF NOT EXISTS rag_chunks (
                         registeredPermanentAddress = COALESCE(registeredPermanentAddress, %s),
                         faculty = COALESCE(faculty, %s)
                     WHERE userId = %s''', facts)
-    print('[Database] Render PostgreSQL ready.')
+    print(f'[Database] {DB_SERVER} ready (pool max={DB_POOL_MAX_SIZE}).')
 
 
 try:
     init_database()
 except Exception as e:
-    print(f"[Database] Render PostgreSQL ready (connection deferred: {e})")
+    print(f"[Database] Initialization deferred (connection error: {type(e).__name__}).")

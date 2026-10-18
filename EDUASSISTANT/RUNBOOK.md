@@ -23,7 +23,7 @@
 * **Python**: Phiên bản `>= 3.11`
 * **Node.js**: Phiên bản `22` (giống CI)
 * **NPM**: Phiên bản `>= 10`
-* **Hệ cơ sở dữ liệu**: PostgreSQL 15/16 (`DATABASE_URL` required by the backend)
+* **Hệ cơ sở dữ liệu**: Neon PostgreSQL (`DATABASE_URL` dùng pooled connection string)
 * **Cổng mạng (Ports)**:
   * Backend API: `3001`
   * Frontend Web: `5173`
@@ -54,12 +54,18 @@ cd ..
 
 ## 3. Cấu Hình Biến Môi Trường (.env)
 
-Tạo `EDUASSISTANT/.env` từ các giá trị phù hợp với môi trường. Local development cần PostgreSQL:
+Tạo `EDUASSISTANT/.env` từ các giá trị phù hợp với môi trường. Trong Neon Console, chọn **Connect** và bật **Connection pooling** để lấy URL có hostname chứa `-pooler`. Dùng URL này cho `DATABASE_URL`:
 ```ini
 APP_ENV=development
 SEED_DEMO_DATA=true
 PORT=3001
-DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/eduassistant
+DATABASE_URL=postgresql://USER:PASSWORD@ep-example-pooler.region.aws.neon.tech/DATABASE?sslmode=require
+# Optional for Alembic migrations: direct Neon URL without -pooler.
+DIRECT_DATABASE_URL=postgresql://USER:PASSWORD@ep-example.region.aws.neon.tech/DATABASE?sslmode=require
+DB_POOL_MIN_SIZE=1
+DB_POOL_MAX_SIZE=10
+DB_POOL_TIMEOUT_SECONDS=8
+DB_POOL_MAX_IDLE_SECONDS=300
 ALLOW_ADMIN_VERIFIED_DEMO_SIS=false
 AI_MODE=live
 GEMINI_API_KEY=your_gemini_api_key
@@ -67,6 +73,11 @@ JWT_SECRET=replace_with_a_random_secret
 REFRESH_SECRET=replace_with_a_random_secret
 SIGNATURE_KEY=replace_with_a_random_hmac_secret_at_least_32_characters
 ```
+
+The application reuses up to 10 psycopg connections per backend process. Keep
+the Neon pooled URL in `DATABASE_URL`; use `DIRECT_DATABASE_URL` only for
+Alembic migrations. If the backend stays on Render, set the pooled URL in the
+Render service environment. Changing a URL does not copy existing database data.
 
 Demo accounts are seeded only when `SEED_DEMO_DATA=true`; set it to `false` in production. Keep secrets private. In production set `APP_ENV=production` and
 `ALLOW_ADMIN_VERIFIED_DEMO_SIS=false`. No Admin AI Mode selector exists; provider
@@ -223,8 +234,8 @@ database.
    ```powershell
    Get-Process -Id (Get-NetTCPConnection -LocalPort 3001).OwningProcess | Stop-Process -Force
    ```
-2. **Khởi chạy kiểm tra kết nối Render PostgreSQL:**
-   Đảm bảo cấu hình biến môi trường `DATABASE_URL=postgresql://...` chính xác từ Render Dashboard.
+2. **Khởi chạy kiểm tra kết nối Neon PostgreSQL:**
+   Đảm bảo `DATABASE_URL` là pooled URL từ Neon Console (hostname có `-pooler`); đặt giá trị đó trong `.env` hoặc biến môi trường của backend host.
 3. **Build Frontend kiểm tra lỗi:**
    ```powershell
    cd EDUASSISTANT/frontend

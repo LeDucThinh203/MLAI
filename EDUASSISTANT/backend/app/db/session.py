@@ -10,20 +10,26 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.config import DATABASE_URL
+from app.config import DATABASE_URL, DIRECT_DATABASE_URL
 
 
 _engine = None
 
 
 def get_engine():
-    """Return the shared PostgreSQL ORM engine."""
+    """Return the bounded ORM engine used by migration and legacy helpers."""
     global _engine
-    if not DATABASE_URL:
+    connection_url = DIRECT_DATABASE_URL or DATABASE_URL
+    if not connection_url:
         raise RuntimeError("DATABASE_URL is required for PostgreSQL.")
     if _engine is None:
-        sqlalchemy_url = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
-        _engine = create_engine(sqlalchemy_url, pool_pre_ping=True)
+        sqlalchemy_url = connection_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        _engine = create_engine(
+            sqlalchemy_url,
+            pool_pre_ping=True,
+            pool_size=1,
+            max_overflow=0,
+        )
     return _engine
 
 

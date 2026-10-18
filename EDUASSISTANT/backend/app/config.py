@@ -74,6 +74,28 @@ REDIS_KEY_PREFIX = os.environ.get('REDIS_KEY_PREFIX', 'eduassistant').strip() or
 
 # PostgreSQL is the sole supported database engine.
 DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
+# Use this direct endpoint for Alembic and other schema migrations that need
+# persistent PostgreSQL session behavior. Application queries use DATABASE_URL.
+DIRECT_DATABASE_URL = os.environ.get('DIRECT_DATABASE_URL', '').strip()
+
+
+def _positive_int_setting(name: str, default: int) -> int:
+    raw_value = os.environ.get(name, str(default)).strip()
+    try:
+        value = int(raw_value)
+    except ValueError as exc:
+        raise RuntimeError(f'{name} must be a positive integer.') from exc
+    if value < 1:
+        raise RuntimeError(f'{name} must be a positive integer.')
+    return value
+
+
+DB_POOL_MIN_SIZE = _positive_int_setting('DB_POOL_MIN_SIZE', 1)
+DB_POOL_MAX_SIZE = _positive_int_setting('DB_POOL_MAX_SIZE', 10)
+if DB_POOL_MAX_SIZE < DB_POOL_MIN_SIZE:
+    raise RuntimeError('DB_POOL_MAX_SIZE must be greater than or equal to DB_POOL_MIN_SIZE.')
+DB_POOL_TIMEOUT_SECONDS = _positive_int_setting('DB_POOL_TIMEOUT_SECONDS', 8)
+DB_POOL_MAX_IDLE_SECONDS = _positive_int_setting('DB_POOL_MAX_IDLE_SECONDS', 300)
 
 # Admin-verified internal SIS records are trusted only in explicit demo modes.
 ALLOW_ADMIN_VERIFIED_DEMO_SIS = os.environ.get(
