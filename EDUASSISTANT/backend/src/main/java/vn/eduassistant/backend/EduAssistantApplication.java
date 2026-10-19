@@ -2,6 +2,7 @@ package vn.eduassistant.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,7 +14,11 @@ import java.util.List;
 public class EduAssistantApplication {
     public static void main(String[] args) {
         loadDotEnv();
-        SpringApplication.run(EduAssistantApplication.class, args);
+        ConfigurableApplicationContext context = SpringApplication.run(EduAssistantApplication.class, args);
+        if (Boolean.parseBoolean(context.getEnvironment().getProperty("eduassistant.bulk-accounts.direct-seed", "false"))) {
+            int status = vn.eduassistant.backend.service.DirectNeonAccountSeedCommand.execute(context);
+            System.exit(SpringApplication.exit(context, () -> status));
+        }
     }
     private static void loadDotEnv(){
         Path cwd=Paths.get(System.getProperty("user.dir",".")).toAbsolutePath().normalize();

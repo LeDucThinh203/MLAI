@@ -315,8 +315,8 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   };
 
   const startBulkAccountGeneration = async () => {
-    const confirmation = window.prompt('Thao tác này sẽ ghi 1.000.000 tài khoản sinh viên vào bảng users thật và tạo hồ sơ SIS tương ứng. Nhập CREATE_1000000_USERS để xác nhận:');
-    if (confirmation !== 'CREATE_1000000_USERS') return;
+    const confirmation = window.prompt('Thao tác này sẽ ghi 100.000 tài khoản sinh viên vào bảng users thật và tạo hồ sơ SIS tương ứng. Nhập CREATE_100000_USERS để xác nhận:');
+    if (confirmation !== 'CREATE_100000_USERS') return;
     setBulkUserBusy(true);
     setAdminMessage(null);
     try {
@@ -325,7 +325,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
       });
       if (!res.data?.success) throw new Error(res.data?.message || 'Không thể bắt đầu tạo tài khoản.');
       setBulkUserJob(res.data.data.job);
-      setAdminMessage({ type: 'success', text: 'Đã bắt đầu tạo 1.000.000 tài khoản; mật khẩu tạm riêng sẽ được cấp trong tệp tải xuống khi hoàn tất.' });
+      setAdminMessage({ type: 'success', text: 'Đã bắt đầu tạo 100.000 tài khoản; mật khẩu tạm riêng sẽ được cấp trong tệp tải xuống khi hoàn tất.' });
     } catch (err) {
       setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể bắt đầu tạo tài khoản.' });
     } finally {
@@ -955,12 +955,12 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   <Cpu size={18} color="#38bdf8" /> Benchmark truy vấn tài khoản
                 </h3>
                 <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.6 }}>
-                  Tạo 1.000.000 tài khoản đăng nhập trong bảng users thật và hồ sơ SIS tương ứng. Mỗi tài khoản có username cùng mật khẩu tạm riêng, bắt buộc đổi mật khẩu lần đầu; tệp thông tin đăng nhập chỉ dành cho Admin. Tên/MSSV được sinh tự động, email dùng miền example.invalid.
+                  Tạo 100.000 tài khoản đăng nhập trong bảng users thật và hồ sơ SIS tương ứng. Mỗi tài khoản có username cùng mật khẩu tạm riêng, bắt buộc đổi mật khẩu lần đầu; tệp thông tin đăng nhập chỉ dành cho Admin. Tên/MSSV được sinh tự động, email dùng miền example.invalid.
                 </p>
               </div>
               {!bulkUserJob && (
                 <button type="button" className="btn-primary" onClick={startBulkAccountGeneration} disabled={bulkUserBusy}>
-                  <Users size={15} /> {bulkUserBusy ? 'Đang bắt đầu...' : 'Tạo 1.000.000 tài khoản thật'}
+                  <Users size={15} /> {bulkUserBusy ? 'Đang bắt đầu...' : 'Tạo 100.000 tài khoản thật'}
                 </button>
               )}
             </div>
@@ -971,10 +971,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
               <div style={{ marginTop: '14px', padding: '12px', borderRadius: '8px', background: 'rgba(15, 23, 42, .75)', border: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', fontSize: '0.82rem' }}>
                   <span>Lô <code>{bulkUserJob.id}</code> · Trạng thái <strong>{bulkUserJob.status}</strong></span>
-                  <span>{Number(bulkUserJob.generated || 0).toLocaleString('vi-VN')} / {Number(bulkUserJob.total || 1000000).toLocaleString('vi-VN')} tài khoản</span>
+                  <span>{Number(bulkUserJob.generated || 0).toLocaleString('vi-VN')} / {Number(bulkUserJob.total || 100000).toLocaleString('vi-VN')} tài khoản</span>
                 </div>
                 <div style={{ height: '8px', marginTop: '10px', overflow: 'hidden', borderRadius: '99px', background: '#1e293b' }}>
-                  <div style={{ width: `${Math.min(100, Number(bulkUserJob.generated || 0) / Number(bulkUserJob.total || 1000000) * 100)}%`, height: '100%', background: '#38bdf8', transition: 'width .25s ease' }} />
+                  <div style={{ width: `${Math.min(100, Number(bulkUserJob.generated || 0) / Number(bulkUserJob.total || 100000) * 100)}%`, height: '100%', background: '#38bdf8', transition: 'width .25s ease' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
                   {bulkUserJob.status === 'COMPLETE' && bulkUserJob.credentialsReady && (

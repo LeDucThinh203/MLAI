@@ -61,7 +61,11 @@ public class BackendConfiguration {
             if (hostAuthority.isEmpty()) throw new IllegalArgumentException("DATABASE_URL must include a PostgreSQL host.");
             String path = uri.getRawPath();
             String jdbc = "jdbc:postgresql://" + hostAuthority + (path == null || path.isEmpty() ? "/" : path);
-            if (uri.getRawQuery() != null) jdbc += "?" + uri.getRawQuery();
+            String query = uri.getRawQuery();
+            if (query == null || !query.toLowerCase(java.util.Locale.ROOT).contains("rewritebatchedinserts=")) {
+                query = query == null || query.isEmpty() ? "reWriteBatchedInserts=true" : query + "&reWriteBatchedInserts=true";
+            }
+            jdbc += "?" + query;
             config.setJdbcUrl(jdbc);
             config.setDriverClassName("org.postgresql.Driver");
             if (rawUserInfo != null) {

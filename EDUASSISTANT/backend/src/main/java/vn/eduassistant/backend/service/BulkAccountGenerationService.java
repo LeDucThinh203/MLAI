@@ -3,12 +3,15 @@ package vn.eduassistant.backend.service;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.postgresql.PGConnection;
+import org.postgresql.copy.CopyManager;
 import vn.eduassistant.backend.config.AppConfig;
 import vn.eduassistant.backend.db.JdbcSupport;
 
 import java.io.BufferedWriter;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -31,11 +34,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 @Service
 public class BulkAccountGenerationService {
-    public static final int ACCOUNT_COUNT = 1_000_000;
-    private static final int BATCH_SIZE = 1000;
-    private static final String INSERT_USERS = "INSERT INTO users(id,username,password,fullname,studentcode,email,role,department,avatar,bio,twofactorenabled,mustchangepassword,createdat,updatedat,accountsource,accountbatchid) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-    private static final String INSERT_SIS = "INSERT INTO sis_student_records(id,userid,studentcode,fullname,faculty,source,sourcetype,verificationstatus,recordstatus,createdat,updatedat,updatedby) VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(userid) DO NOTHING";
-
+    public static final int ACCOUNT_COUNT = 100_000;
+    private static final int BATCH_SIZE = 5000;
     private final JdbcSupport db;
     private final JdbcTemplate jdbc;
     private final UserService users;
@@ -233,8 +233,48 @@ public class BulkAccountGenerationService {
     }
 
     private void flush(List<Object[]> userBatch, List<Object[]> sisBatch) {
-        jdbc.batchUpdate(INSERT_USERS, userBatch);
-        jdbc.batchUpdate(INSERT_SIS, sisBatch);
+        jdbc.execute((org.springframework.jdbc.core.ConnectionCallback<Void>) connection -> {
+            boolean previousAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                CopyManager copy = connection.unwrap(PGConnection.class).getCopyAPI();
+                long usersCopied = copy.copyIn("COPY users(id,username,password,fullname,studentcode,email,role,department,avatar,bio,twofactorenabled,mustchangepassword,createdat,updatedat,accountsource,accountbatchid) FROM STDIN WITH (FORMAT CSV)",
+                        new StringReader(toCsv(userBatch)));
+                long sisCopied = copy.copyIn("COPY sis_student_records(id,userid,studentcode,fullname,faculty,source,sourcetype,verificationstatus,recordstatus,createdat,updatedat,updatedby) FROM STDIN WITH (FORMAT CSV)",
+                        new StringReader(toCsv(sisBatch)));
+                if (usersCopied != userBatch.size() || sisCopied != sisBatch.size()) {
+                    throw new java.sql.SQLException("PostgreSQL COPY row count did not match the generated batch.");
+                }
+                connection.commit();
+                return null;
+            } catch (Exception e) {
+                connection.rollback();
+                if (e instanceof java.sql.SQLException) throw (java.sql.SQLException)e;
+                throw new java.sql.SQLException("PostgreSQL COPY batch failed.", e);
+            } finally {
+                connection.setAutoCommit(previousAutoCommit);
+            }
+        });
+    }
+
+    private String toCsv(List<Object[]> rows) {
+        StringBuilder csv = new StringBuilder(rows.size() * 256);
+        for (Object[] row : rows) {
+            for (int column = 0; column < row.length; column++) {
+                if (column > 0) csv.append(',');
+                Object value = row[column];
+                if (value == null) {
+                    csv.append("\\N");
+                } else {
+                    String text = value instanceof Boolean
+                            ? (((Boolean)value).booleanValue() ? "true" : "false")
+                            : String.valueOf(value);
+                    csv.append('"').append(text.replace("\"", "\"\"")).append('"');
+                }
+            }
+            csv.append('\n');
+        }
+        return csv.toString();
     }
 
     private void updateJob(String id, String status, int generated, String error) {
