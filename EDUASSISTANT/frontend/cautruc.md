@@ -1,4 +1,4 @@
-﻿# đŸ›ï¸ Cáº¤U TRĂC VĂ€ KIáº¾N TRĂC MĂƒ NGUá»’N FRONTEND - CASEFLOW AI
+# đŸ›ï¸ Cáº¤U TRĂC VĂ€ KIáº¾N TRĂC MĂƒ NGUá»’N FRONTEND - CASEFLOW AI
 
 TĂ i liá»‡u nĂ y mĂ´ táº£ chi tiáº¿t sÆ¡ Ä‘á»“ tá»• chá»©c thÆ° má»¥c, chá»©c nÄƒng cá»§a tá»«ng module/component vĂ  luá»“ng dá»¯ liá»‡u trong giao diá»‡n ngÆ°á»i dĂ¹ng **CaseFlow AI (React + Vite)**.
 
@@ -129,7 +129,7 @@ flowchart TD
     ProtectedRoute -->|Tab Settings| AccountSettings[AccountSettingsPortal.jsx]
     
     StudentPortal & ReviewerPortal & AdminPortal -->|Gá»i API| ApiClient[src/api/client.js]
-    ApiClient -->|XĂ¡c Thá»±c Bearer Token| BackendServer[(Python FastAPI Backend :3001)]
+    ApiClient -->|XĂ¡c Thá»±c Bearer Token| BackendServer[(Java Spring Boot Backend :3001)]
 ```
 
 ---

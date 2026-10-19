@@ -11,7 +11,7 @@ adaptive threshold. It is a fast functional check, not a model-accuracy estimate
 
 ## B. Fixed Synthetic Development Benchmark — 18 cases
 
-Run `python benchmark/run_benchmark.py`. It evaluates the fixed scenarios in
+Run `benchmark/run_benchmark.bat`. It evaluates the fixed scenarios in
 `benchmark/fixed_synthetic_cases.json`, calls no AI provider, and writes
 `benchmark/results/latest.json` and `latest.csv`. The JSON records its run ID,
 timestamp, exact dataset SHA-256, raw counts, denominators, rates, and case
@@ -38,9 +38,9 @@ SHA-256 and count. The runner checks the hash before evaluation, uses only the
 Rule Engine with deterministic synthetic context, and writes aggregate and
 case results to `benchmark/holdout/results/`.
 
-Run manually with `python benchmark/run_holdout_eval.py` after implementation
-work is complete. Routine CI and runtime application code do not read or run
-this dataset. Do not tune on v1 or edit it after seeing its results. If a
+Run manually with `benchmark/run_holdout_eval.bat` after implementation
+work is complete. Only the explicit manual holdout command reads this dataset;
+normal application requests and routine CI do not. Do not tune on v1 or edit it after seeing its results. If a
 correction is needed, publish a new version and explain it in the manifest.
 This set is separate from the 18-case development benchmark. It was authored
 for this repository; it is not claimed to be externally or independently
@@ -51,7 +51,7 @@ manifest. If no result file exists, it says the final holdout has not been run.
 
 ## D. Optional Live AI sanity check — not a Track A metric
 
-`python benchmark/run_live_ai_eval.py` calls configured live AI providers to
+`benchmark/run_live_ai_eval.bat` calls configured live AI providers to
 check address extraction. It can incur provider usage and requires network and
 secrets. It does not replace missed-escalation or unnecessary-escalation rates,
 and it is not an official Track A score.

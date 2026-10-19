@@ -10,6 +10,8 @@ dist
 .localappdata
 .venv
 venv
+**/target
+**/node_modules
 .pytest_cache
 __pycache__
 npm-debug.log*

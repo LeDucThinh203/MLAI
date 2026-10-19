@@ -39,7 +39,7 @@ This file contains slide content only. It is not a PowerPoint deck.
 
 ## Slide 4 — Architecture and demo components
 
-- **Implemented application paths:** Student, Reviewer, and Admin portals; FastAPI;
+- **Implemented application paths:** Student, Reviewer, and Admin portals; Java Spring Boot;
   PostgreSQL; audit trail; workflow guard; public Judge and Verify pages.
 - **Optional AI support:** Gemini/OpenRouter services, student RAG, and
   attachment OCR run only when their providers and keys are configured; mock,

@@ -1,6 +1,6 @@
 # Prisma Studio
 
-Prisma uses the same `DATABASE_URL` as the FastAPI backend.
+Prisma uses the same `DATABASE_URL` as the Java Spring Boot backend.
 
 ```powershell
 npm install --save-dev prisma

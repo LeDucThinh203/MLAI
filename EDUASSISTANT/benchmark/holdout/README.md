@@ -7,9 +7,9 @@ scenarios cover valid internal workflow processing, formatting, missing facts,
 conflicts, academic authority, out-of-scope requests, ownership, provenance,
 and the 0.75 confidence boundary.
 
-This dataset is separate from the 18-case development benchmark and is not read
-by runtime application code, routine CI, training, or unit tests. Unit tests for
-the runner use temporary fixtures only. The dataset is frozen in
+This dataset is separate from the 18-case development benchmark. Only the
+explicit manual holdout command reads it; normal requests, routine CI, training,
+and tests do not. The dataset is frozen in
 `manifest.json`; the runner checks the SHA-256 of the exact file bytes before
 it calls the Rule Engine.
 
@@ -22,7 +22,7 @@ Run it manually after implementation work is complete:
 
 ```powershell
 cd EDUASSISTANT
-python benchmark/run_holdout_eval.py
+benchmark\run_holdout_eval.bat
 ```
 
 The command uses only the deterministic Rule Engine and explicit synthetic test

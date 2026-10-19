@@ -43,7 +43,7 @@ flowchart LR
 - **Development benchmark:** the 18-case fixed synthetic suite measures the
   policy against development fixtures and records dataset provenance.
 - **Frozen Holdout:** a separate manually run 36-case final evaluation. Its
-  dataset is not read by runtime application code, CI, training, or unit tests.
+  dataset is only read by the explicit holdout command, not by normal runtime requests, CI, or training.
 
 ## Trust boundaries
 
@@ -61,9 +61,9 @@ AI confidence is a model-generated score, not a calibrated probability. The Rule
 ## Deterministic evaluation
 
 - Verify Harness: 9 in-memory Rule Engine cases. It performs no network calls, database reads/writes, global AI-mode changes, or threshold mutation.
-- Track A Decision Benchmark: 18 fixed synthetic scenarios. `benchmark/run_benchmark.py` performs no AI calls or network access and writes only the local `benchmark/results/latest.json` and `.csv` artifacts.
-- Frozen Holdout: 36 static synthetic cases in `benchmark/holdout/`. `benchmark/run_holdout_eval.py` verifies the manifest digest before evaluating. It is a manual final evaluation, is not in routine CI, and is not claimed as externally authored.
-- Live AI E2E check: `benchmark/run_live_ai_eval.py` runs five address examples separately. It does not alter Track benchmark metrics.
+- Track A Decision Benchmark: 18 fixed synthetic scenarios. `benchmark/run_benchmark.bat` performs no AI calls or database access and writes only the local `benchmark/results/latest.json` and `.csv` artifacts.
+- Frozen Holdout: 36 static synthetic cases in `benchmark/holdout/`. `benchmark/run_holdout_eval.bat` verifies the manifest digest before evaluating. It is a manual final evaluation, is not in routine CI, and is not claimed as externally authored.
+- Live AI E2E check: `benchmark/run_live_ai_eval.bat` runs five address examples separately. It does not alter Track benchmark metrics.
 
 The five escalation categories are the taxonomy implemented by Team 1; they are not claimed as mandatory Hackathon category names.
 
@@ -79,7 +79,7 @@ HMAC-SHA256 authenticates the integrity of stored case fields using a shared sec
 
 ```mermaid
 flowchart LR
-    Student[Authenticated student] --> Agent[FastAPI Agent router]
+    Student[Authenticated student] --> Agent[Java Spring REST controller]
     Agent --> Planner[Gemini planner]
     Planner -->|Unavailable| Router[OpenRouter fallback]
     Agent --> RAG[Allowlisted RAG knowledge base]

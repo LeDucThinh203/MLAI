@@ -565,7 +565,7 @@ export default function JudgeModePage({ onNavigateTab }) {
       <section className="card-panel" style={{ padding: '18px 22px', border: '1px solid rgba(129, 140, 248, .35)' }}>
         <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>Kiểm tra AI trực tiếp (dành cho kỹ thuật viên)</h3>
         <p style={{ margin: 0, color: '#cbd5e1', fontSize: '.82rem', lineHeight: 1.6 }}>
-          Lệnh kỹ thuật: <code>python benchmark/run_live_ai_eval.py</code>. Bài kiểm tra gọi dịch vụ AI thật; nếu dịch vụ không trả kết quả dùng được, hệ thống sẽ báo rõ và dùng bộ xử lý theo quy tắc. Kết quả này không làm thay đổi các tình huống kiểm tra cố định.
+          Lệnh kỹ thuật: <code>benchmark\\run_live_ai_eval.bat</code>. Bài kiểm tra gọi dịch vụ AI thật; nếu dịch vụ không trả kết quả dùng được, hệ thống sẽ báo rõ và dùng bộ xử lý theo quy tắc. Kết quả này không làm thay đổi các tình huống kiểm tra cố định.
         </p>
         <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '.76rem' }}>
           Mức tin cậy do AI đưa ra chỉ là gợi ý, chưa được hiệu chỉnh bằng dữ liệu vận hành thực tế.

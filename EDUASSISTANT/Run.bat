@@ -1,57 +1,59 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal
 title EduAssistant Launcher
+cd /d "%~dp0"
 
 echo ========================================================
-echo   EDUASSISTANT - Enterprise Platform
+echo   EDUASSISTANT - Java Enterprise Platform
 echo ========================================================
 echo.
 
-:: 1. Check Python
-where python >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [ERROR] Python is not found. Please install Python 3.10+ and add it to PATH.
+where java >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Java is not found. Install Java 8 or newer and add it to PATH.
+    pause
+    exit /b 1
+)
+if not exist "mvnw.cmd" (
+    echo [ERROR] Maven Wrapper is missing from this project.
     pause
     exit /b 1
 )
 
-:: 2. Check Node.js for Frontend
 where node >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [ERROR] Node.js is not found. Please install Node.js from https://nodejs.org/
+if errorlevel 1 (
+    echo [ERROR] Node.js is not found. Install Node.js to run the frontend.
+    pause
+    exit /b 1
+)
+if not exist "frontend\node_modules\" (
+    echo [*] Installing frontend dependencies...
+    pushd frontend
+    call npm install
+    popd
+    if errorlevel 1 exit /b 1
+)
+
+echo [*] Building Java backend...
+call mvnw.cmd -f backend\pom.xml -DskipTests package
+if errorlevel 1 (
+    echo [ERROR] Java backend build failed.
     pause
     exit /b 1
 )
 
-:: 3. Check and install frontend dependencies
-if not exist "%~dp0frontend\node_modules\" (
-    echo [*] Installing frontend dependencies...
-    cd /d "%~dp0frontend"
-    call npm install
-    cd /d "%~dp0"
-)
+echo [*] Starting Java backend on port 3001...
+start "EduAssistant Backend (Java)" cmd /k "cd /d ""%~dp0"" && java -Dfile.encoding=UTF-8 -jar ""%~dp0backend\target\eduassistant-backend.jar"""
 
-echo.
-echo [*] Starting Python Backend Server on port 3001...
-start "EduAssistant Backend (Python)" cmd /k "title EduAssistant Backend [3001] && cd /d "%~dp0backend" && python server.py"
+echo [*] Starting frontend on port 5173...
+start "EduAssistant Frontend" cmd /k "cd /d ""%~dp0frontend"" && npm run dev"
 
-echo [*] Starting Frontend Server on port 5173...
-start "EduAssistant Frontend" cmd /k "title EduAssistant Frontend [5173] && cd /d "%~dp0frontend" && npm run dev"
-
-echo.
-echo [*] Waiting 3 seconds for services to initialize...
-ping -n 4 127.0.0.1 >nul
-
-echo [*] Opening browser at http://localhost:5173 ...
+timeout /t 3 /nobreak >nul
 start http://localhost:5173
 
 echo.
-echo ========================================================
-echo   EDUASSISTANT IS RUNNING:
-echo   - Frontend: http://localhost:5173
-echo   - Backend:  http://localhost:3001/api (Python FastAPI)
-echo   - Docs:     http://localhost:3001/docs
-echo   - Database: Microsoft SQL Server 2025 (THINH\SQL2025 / CaseFlowAI)
-echo ========================================================
+echo   Frontend: http://localhost:5173
+echo   Backend:  http://localhost:3001/api
+echo   API docs: http://localhost:3001/docs
 echo.
 pause

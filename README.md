@@ -128,9 +128,9 @@ Kết quả đạt/chưa đạt được trả về sau mỗi lần chạy trên
 
 ## 6. FIXED SYNTHETIC DEVELOPMENT BENCHMARK (18 KỊCH BẢN CỐ ĐỊNH)
 
-Benchmark phát triển dùng fixed synthetic scenarios để đo quyết định escalation. Nó chạy không phụ thuộc database/network và không gọi AI. Đây không phải production validation hay bộ frozen holdout:
+Benchmark phát triển dùng fixed synthetic scenarios để đo quyết định escalation. Java runner không gọi AI hoặc database. Đây không phải production validation hay bộ frozen holdout:
 ```powershell
-python EDUASSISTANT/benchmark/run_benchmark.py
+EDUASSISTANT\benchmark\run_benchmark.bat
 ```
 
 ### Last recorded result — prior local benchmark run (2026-10-15 03:56:08 UTC)
@@ -153,16 +153,15 @@ This is a real recorded result from before the current holdout/preflight changes
 
 ## 6.1. FROZEN HOLDOUT — ĐÁNH GIÁ CUỐI RIÊNG BIỆT
 
-Bộ `EDUASSISTANT/benchmark/holdout/track_a_holdout_v1.json` gồm 36 kịch bản tổng hợp, có expected labels viết tĩnh và SHA-256 đóng băng trong `manifest.json`. Bộ này tách khỏi benchmark phát triển 18 ca; không được đọc bởi runtime, CI, training hoặc unit tests. Dataset do nhóm dự án soạn và không được nhận là độc lập/được tác giả bên ngoài kiểm định.
+Bộ `EDUASSISTANT/benchmark/holdout/track_a_holdout_v1.json` gồm 36 kịch bản tổng hợp, có expected labels viết tĩnh và SHA-256 đóng băng trong `manifest.json`. Bộ này tách khỏi benchmark phát triển 18 ca; chỉ được đọc bởi lệnh holdout thủ công, không bởi request thông thường, CI hoặc training. Dataset do nhóm dự án soạn và không được nhận là độc lập/được tác giả bên ngoài kiểm định.
 
 Chạy thủ công sau khi hoàn tất thay đổi kỹ thuật:
 
 ```powershell
-cd EDUASSISTANT
-python benchmark/run_holdout_eval.py
+EDUASSISTANT\benchmark\run_holdout_eval.bat
 ```
 
-Runner kiểm tra SHA trước khi đánh giá và ghi `benchmark/holdout/results/latest.json` cùng `.csv`. Không sửa v1 hoặc Rule Engine để làm đẹp kết quả; nếu cần chỉnh bộ dữ liệu, tạo version mới và ghi rõ lý do.
+Java runner kiểm tra SHA trước khi đánh giá và ghi `benchmark/holdout/results/latest.json` cùng `.csv`. Không sửa v1 hoặc Rule Engine để làm đẹp kết quả; nếu cần chỉnh bộ dữ liệu, tạo version mới và ghi rõ lý do.
 
 **Current status:** no result file exists; this working tree has not run the holdout.
 
@@ -170,10 +169,10 @@ Runner kiểm tra SHA trước khi đánh giá và ghi `benchmark/holdout/result
 
 ## 7. HƯỚNG DẪN CÀI ĐẶT & KHỞI CHẠY (QUICKSTART)
 
-### Khởi động Backend (Python FastAPI - Port 3001)
+### Khởi động Backend Java (Spring Boot - Port 3001)
 ```powershell
 cd EDUASSISTANT
-python -m uvicorn backend.server:app --port 3001 --host 0.0.0.0 --reload
+mvnw.cmd -f backend\pom.xml spring-boot:run
 ```
 * API: `http://localhost:3001/api` | Swagger Docs: `http://localhost:3001/docs`
 
@@ -198,17 +197,17 @@ Credentials below are for explicitly seeded local demo accounts. Production uses
 
 ---
 
-## 9. COMPETITION READINESS TESTS
+## 9. JAVA BACKEND BUILD AND CI
 
-Chạy bộ kiểm thử tự động toàn diện:
+Build Java backend từ thư mục `EDUASSISTANT/`:
 ```powershell
-python EDUASSISTANT/test/test_competition_features.py
+mvnw.cmd -f backend\pom.xml -DskipTests package
 ```
-Backend unit tests, frontend lint/build, and the PostgreSQL-backed competition integration suite run as separate CI jobs. The integration suite requires a disposable local database named `eduassistant_test` (or another database ending in `_test`); it refuses remote database URLs and live AI keys. See `.github/workflows/ci.yml` for the exact isolated test environment. No fixed pass count is claimed here.
+This compiles and packages the backend without running tests. The legacy Python test files target the former FastAPI backend and have not been migrated to Java. CI packages the Java backend and lints/builds the frontend.
 
-**Current readiness snapshot (2026-10-15):** code revision `a6bf9076e8b6de471f42e936f7991991ab7cf3de` passed all jobs in GitHub Actions run [38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502): backend-unit, PostgreSQL-backed competition-readiness, and frontend. CI Verify returned 9/9 without network calls or database writes; the 18-case synthetic development benchmark and provenance check passed. Python/Node/npm commands were **NOT RUN** in this local shell. Frozen Holdout is **NOT RUN**, and User Validation is **PENDING**. This push did not deploy the source revision. See [`EDUASSISTANT/docs/final/EVALUATION_EVIDENCE.md`](EDUASSISTANT/docs/final/EVALUATION_EVIDENCE.md) for evidence and limits.
+**Recorded readiness snapshot (2026-10-15):** revision `a6bf9076e8b6de471f42e936f7991991ab7cf3de` passed the prior Python-based CI run [38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502). That evidence predates the Java migration and does not validate this revision. Frozen Holdout is **NOT RUN**, and User Validation is **PENDING**. See [`EDUASSISTANT/docs/final/EVALUATION_EVIDENCE.md`](EDUASSISTANT/docs/final/EVALUATION_EVIDENCE.md) for evidence and limits.
 
-Run the final local preflight with `python EDUASSISTANT/scripts/final_preflight.py`. It runs the critical backend suite, Verify Harness, development benchmark, provenance check, frontend lint/build, and reports holdout status. It does not call production APIs, run the holdout, or deploy.
+Verify Harness is available at `POST /api/verify/run`; benchmark and holdout can be run with the Java `.bat` launchers above. `EDUASSISTANT\benchmark\run_live_ai_eval.bat` invokes configured AI providers and may incur API charges.
 
 ---
 
@@ -220,7 +219,7 @@ Run the final local preflight with `python EDUASSISTANT/scripts/final_preflight.
 ---
 Live AI sanity check là evaluation riêng, không thay thế metric Track A:
 ```powershell
-python EDUASSISTANT/benchmark/run_live_ai_eval.py
+EDUASSISTANT\benchmark\run_live_ai_eval.bat
 ```
 
 Verify Harness: 9 deterministic cases · Development Benchmark: 18 fixed scenarios · Frozen Holdout: 36 fixed scenarios, metrics read from its result artifact · User validation: **PENDING** until real evidence exists.

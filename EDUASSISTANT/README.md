@@ -16,7 +16,7 @@
 6. [Track A Decision Benchmark (18 Kịch Bản Cố Định)](#6-track-a-decision-benchmark-18-kịch-bản-cố-định)
 7. [Hướng Dẫn Cài Đặt & Khởi Chạy (Quickstart)](#7-hướng-dẫn-cài-đặt--khởi-chạy-quickstart)
 8. [Tài Khoản Thử Nghiệm Mặc Định (Demo Accounts)](#8-tài-khoản-thử-nghiệm-mặc-định-demo-accounts)
-9. [Competition Test Suite](#9-competition-test-suite)
+9. [Java Backend Build and CI](#9-java-backend-build-and-ci)
 10. [Bằng Chứng Thử Nghiệm Người Dùng (User Validation Evidence)](#10-bằng-chứng-thử-nghiệm-người-dùng-user-validation-evidence)
 
 ---
@@ -128,9 +128,9 @@ Kết quả đạt/chưa đạt được trả về sau mỗi lần chạy trên
 
 ## 6. FIXED SYNTHETIC DEVELOPMENT BENCHMARK (18 KỊCH BẢN CỐ ĐỊNH)
 
-Benchmark phát triển dùng fixed synthetic scenarios để đo quyết định escalation. Nó chạy không phụ thuộc database/network và không gọi AI. Đây không phải production validation hay bộ frozen holdout:
+Benchmark phát triển dùng fixed synthetic scenarios để đo quyết định escalation. Java runner không gọi AI hoặc database. Đây không phải production validation hay bộ frozen holdout:
 ```powershell
-python benchmark/run_benchmark.py
+benchmark\run_benchmark.bat
 ```
 
 ### Last recorded result — prior local benchmark run (2026-10-15 03:56:08 UTC)
@@ -153,15 +153,15 @@ This is a real recorded result from before the current holdout/preflight changes
 
 ## 6.1. FROZEN HOLDOUT — ĐÁNH GIÁ CUỐI RIÊNG BIỆT
 
-Bộ `benchmark/holdout/track_a_holdout_v1.json` gồm 36 kịch bản tổng hợp, có expected labels viết tĩnh và SHA-256 đóng băng trong `manifest.json`. Bộ này tách khỏi benchmark phát triển 18 ca; không được đọc bởi runtime, CI, training hoặc unit tests. Dataset do nhóm dự án soạn và không được nhận là độc lập/được tác giả bên ngoài kiểm định.
+Bộ `benchmark/holdout/track_a_holdout_v1.json` gồm 36 kịch bản tổng hợp, có expected labels viết tĩnh và SHA-256 đóng băng trong `manifest.json`. Bộ này tách khỏi benchmark phát triển 18 ca; chỉ được đọc bởi lệnh holdout thủ công, không bởi request thông thường, CI hoặc training. Dataset do nhóm dự án soạn và không được nhận là độc lập/được tác giả bên ngoài kiểm định.
 
 Chỉ chạy thủ công sau khi hoàn tất thay đổi kỹ thuật:
 
 ```powershell
-python benchmark/run_holdout_eval.py
+benchmark\run_holdout_eval.bat
 ```
 
-Runner kiểm tra SHA trước khi đánh giá và ghi `benchmark/holdout/results/latest.json` cùng `.csv`. Không sửa v1 hoặc Rule Engine để làm đẹp kết quả; nếu cần chỉnh bộ dữ liệu, tạo version mới và ghi rõ lý do.
+Java runner kiểm tra SHA trước khi đánh giá và ghi `benchmark/holdout/results/latest.json` cùng `.csv`. Không sửa v1 hoặc Rule Engine để làm đẹp kết quả; nếu cần chỉnh bộ dữ liệu, tạo version mới và ghi rõ lý do.
 
 **Trạng thái hiện tại:** result file chưa tồn tại; chưa chạy trên working tree này.
 
@@ -169,9 +169,9 @@ Runner kiểm tra SHA trước khi đánh giá và ghi `benchmark/holdout/result
 
 ## 7. HƯỚNG DẪN CÀI ĐẶT & KHỞI CHẠY (QUICKSTART)
 
-### Khởi động Backend (Python FastAPI - Port 3001)
+### Khởi động Backend Java (Spring Boot - Port 3001)
 ```powershell
-python -m uvicorn backend.server:app --port 3001 --host 0.0.0.0 --reload
+mvnw.cmd -f backend\pom.xml spring-boot:run
 ```
 * API: `http://localhost:3001/api` | Swagger Docs: `http://localhost:3001/docs`
 
@@ -196,17 +196,17 @@ These are credentials for explicitly seeded local demo accounts. The production 
 
 ---
 
-## 9. COMPETITION TEST SUITE
+## 9. JAVA BACKEND BUILD AND CI
 
-Chạy bộ kiểm thử tự động toàn diện:
+Build Java backend từ thư mục `EDUASSISTANT/`:
 ```powershell
-python test/test_competition_features.py
+mvnw.cmd -f backend\pom.xml -DskipTests package
 ```
-This integration suite requires the PostgreSQL-backed application environment. The database-free CI regressions and deterministic checks run separately.
+Lệnh trên biên dịch và đóng gói ứng dụng mà không chạy test. CI đóng gói Java backend và lint/build frontend.
 
-**Current readiness snapshot (2026-10-15):** code revision `a6bf9076e8b6de471f42e936f7991991ab7cf3de` passed all GitHub Actions jobs in run [38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502): backend-unit, PostgreSQL-backed competition-readiness, and frontend. CI Verify returned 9/9 without network calls or database writes; the 18-case synthetic development benchmark and provenance check passed. Local Python, Node.js, and npm commands are **NOT RUN** in this shell. Frozen Holdout is **NOT RUN**, and User Validation is **PENDING**. This push did not deploy the source revision. See `docs/final/EVALUATION_EVIDENCE.md` for the evidence and its limits.
+**Recorded readiness snapshot (2026-10-15):** revision `a6bf9076e8b6de471f42e936f7991991ab7cf3de` passed the prior Python-based CI run [38686079502](https://github.com/LeDucThinh203/MLAI/actions/runs/38686079502). That evidence predates the Java migration and does not validate this revision. Frozen Holdout remains **NOT RUN**, and User Validation is **PENDING**. See `docs/final/EVALUATION_EVIDENCE.md` for its limits.
 
-Chạy final local preflight bằng `python scripts/final_preflight.py`. Script chạy critical backend suite, Verify Harness, benchmark phát triển, kiểm tra provenance, frontend lint/build và báo trạng thái holdout; script không gọi production API, không tự chạy holdout và không deploy.
+Verify Harness chạy tại `POST /api/verify/run`; benchmark và holdout Java có thể chạy bằng các lệnh `.bat` ở trên. Lệnh `benchmark\run_live_ai_eval.bat` gọi provider đã cấu hình và có thể phát sinh chi phí API.
 
 ---
 
@@ -218,7 +218,7 @@ Chạy final local preflight bằng `python scripts/final_preflight.py`. Script 
 ---
 Live AI sanity check là evaluation riêng, không thay thế metric Track A:
 ```powershell
-python benchmark/run_live_ai_eval.py
+benchmark\run_live_ai_eval.bat
 ```
 
 Verify Harness: 9 deterministic cases · Development Benchmark: 18 fixed scenarios · Frozen Holdout: 36 fixed scenarios, metrics đọc từ result artifact · User validation: **PENDING** until real evidence exists.

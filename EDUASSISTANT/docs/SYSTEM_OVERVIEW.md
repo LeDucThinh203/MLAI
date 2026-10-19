@@ -12,7 +12,7 @@ Judge page: <https://edu-sp.pages.dev/judge>
 ## Runtime shape
 
 - Frontend: React and Vite, published on Cloudflare Pages.
-- Backend: Python FastAPI, started with `python -m uvicorn backend.server:app --host 0.0.0.0 --port 3001`.
+- Backend: Java 8 source targeting Spring Boot 2.7, packaged as an executable JAR with Maven and served on port `3001`.
 - Database: PostgreSQL through `DATABASE_URL`.
 - Address extraction: Google Gemini first, OpenRouter fallback when configured, then deterministic parser fallback.
 - SIS facts: Admin-managed internal demo registry. No external university SIS connector is present.
@@ -47,7 +47,7 @@ Benchmark and Verify Harness fixtures use `SYNTHETIC_TEST_SIS` plus `TEST_VERIFI
 | Frozen Holdout | 36 | None | Manual final evaluation on a separate frozen synthetic set |
 | Live AI E2E sanity check | 5 | Gemini and configured OpenRouter fallback | Optional address extraction check; separate from Track metrics |
 
-The 18-case fixed synthetic benchmark writes its result and exact dataset SHA-256 to `benchmark/results/latest.json` and `.csv`. It is development evidence, not an independent or held-out score. The 36-case frozen holdout has a separate manifest and runner; it is not read by runtime code or routine CI and is not claimed as externally authored. Read its latest result only from `benchmark/holdout/results/latest.json`; if absent, it has not been run.
+The 18-case fixed synthetic benchmark writes its result and exact dataset SHA-256 to `benchmark/results/latest.json` and `.csv`. It is development evidence, not an independent or held-out score. The 36-case frozen holdout has a separate manifest and explicit manual runner; normal application requests and routine CI do not read or run it, and it is not claimed as externally authored. Read its latest result only from `benchmark/holdout/results/latest.json`; if absent, it has not been run.
 
 ## Integrity token and confidence limits
 

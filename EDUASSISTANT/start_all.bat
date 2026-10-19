@@ -1,33 +1,37 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal
+cd /d "%~dp0"
 
-echo ========================================================
-echo   EDUASSISTANT - Starting Backend and Frontend
-echo ========================================================
-
-:: 1. Check frontend dependencies
-if not exist "%~dp0frontend\node_modules\" (
-    echo [*] Installing frontend dependencies...
-    cd /d "%~dp0frontend"
+where java >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Java is not found. Install Java 8 or newer and add it to PATH.
+    pause
+    exit /b 1
+)
+where node >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Node.js is not found. Install Node.js and add it to PATH.
+    pause
+    exit /b 1
+)
+if not exist "mvnw.cmd" (
+    echo [ERROR] Maven Wrapper is missing from this project.
+    pause
+    exit /b 1
+)
+if not exist "frontend\node_modules\" (
+    pushd frontend
     call npm install
-    cd /d "%~dp0"
+    popd
+    if errorlevel 1 exit /b 1
 )
 
-:: 2. Launch Python Backend
-echo.
-echo [1/2] Launching Python Backend Server on port 3001...
-start "EduAssistant Backend (Python)" cmd /k "title EduAssistant Backend [3001] && cd /d "%~dp0backend" && python server.py"
-
-:: 3. Launch Frontend
-echo [2/2] Launching Frontend on port 5173...
-start "EduAssistant Frontend" cmd /k "title EduAssistant Frontend [5173] && cd /d "%~dp0frontend" && npm run dev"
+echo [1/2] Building and starting Java backend...
+start "EduAssistant Backend (Java)" cmd /k "cd /d ""%~dp0"" && call mvnw.cmd -f backend\pom.xml -DskipTests spring-boot:run"
+echo [2/2] Starting frontend...
+start "EduAssistant Frontend" cmd /k "cd /d ""%~dp0frontend"" && npm run dev"
 
 echo.
-echo ========================================================
-echo   SYSTEM IS STARTING:
-echo   - Frontend Portal:  http://localhost:5173
-echo   - Backend API:      http://localhost:3001/api (Python FastAPI)
-echo   - Swagger Docs:     http://localhost:3001/docs
-echo   - Database:         Microsoft SQL Server 2025 (THINH\SQL2025 / CaseFlowAI)
-echo ========================================================
-echo.
+echo   Frontend: http://localhost:5173
+echo   Backend:  http://localhost:3001/api
+echo   API docs: http://localhost:3001/docs

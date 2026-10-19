@@ -2,14 +2,12 @@
   "name": "eduassistant",
   "version": "3.0.0",
   "description": "EduAssistant - Nền tảng thẩm định hồ sơ sinh viên thông minh kết hợp AI Multimodal OCR (Gemini), Rule Engine, PostgreSQL và HMAC-SHA256 data integrity checks.",
-  "main": "backend/server.py",
+  "main": "backend/target/eduassistant-backend.jar",
   "scripts": {
-    "start": "python backend/server.py",
-    "dev:backend": "python backend/server.py",
+    "start": "mvnw -f backend/pom.xml spring-boot:run",
+    "dev:backend": "mvnw -f backend/pom.xml spring-boot:run",
     "dev:frontend": "cd frontend && npm run dev",
-    "build:frontend": "cd frontend && npm install && npm run build",
-    "test": "node test/run_security_suite.js",
-    "test:security": "node test/run_security_suite.js"
+    "build:frontend": "cd frontend && npm install && npm run build"
   },
   "keywords": [
     "caseflow",
