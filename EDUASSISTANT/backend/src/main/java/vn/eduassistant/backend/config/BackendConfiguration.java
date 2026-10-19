@@ -21,6 +21,8 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 @Configuration
@@ -48,16 +50,36 @@ public class BackendConfiguration {
                     .replace("postgresql+psycopg2://", "postgresql://");
             if (url.startsWith("postgres://")) url = "postgresql://" + url.substring("postgres://".length());
             URI uri = URI.create(url);
-            String jdbc = "jdbc:postgresql://" + uri.getRawAuthority() + (uri.getRawPath() == null ? "/" : uri.getRawPath());
+            String authority = uri.getRawAuthority();
+            String rawUserInfo = uri.getRawUserInfo();
+            if (authority == null || authority.isEmpty()) {
+                throw new IllegalArgumentException("DATABASE_URL must include a PostgreSQL host.");
+            }
+            // JDBC URLs do not accept URI user-info in the authority. Keep credentials
+            // out of the URL and pass them through Hikari's dedicated setters instead.
+            String hostAuthority = rawUserInfo == null ? authority : authority.substring(rawUserInfo.length() + 1);
+            if (hostAuthority.isEmpty()) throw new IllegalArgumentException("DATABASE_URL must include a PostgreSQL host.");
+            String path = uri.getRawPath();
+            String jdbc = "jdbc:postgresql://" + hostAuthority + (path == null || path.isEmpty() ? "/" : path);
             if (uri.getRawQuery() != null) jdbc += "?" + uri.getRawQuery();
             config.setJdbcUrl(jdbc);
-            if (uri.getUserInfo() != null) {
-                String[] credentials = uri.getUserInfo().split(":", 2);
-                config.setUsername(credentials[0]);
-                if (credentials.length > 1) config.setPassword(credentials[1]);
+            config.setDriverClassName("org.postgresql.Driver");
+            if (rawUserInfo != null) {
+                String[] credentials = rawUserInfo.split(":", 2);
+                config.setUsername(decodeUriComponent(credentials[0]));
+                if (credentials.length > 1) config.setPassword(decodeUriComponent(credentials[1]));
             }
         }
         return new HikariDataSource(config);
+    }
+
+    private static String decodeUriComponent(String value) {
+        try {
+            // URLDecoder treats '+' as a space; in URI user-info it is a literal plus.
+            return URLDecoder.decode(value.replace("+", "%2B"), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("UTF-8 is not available.", e);
+        }
     }
 
     @Bean
