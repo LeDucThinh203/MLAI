@@ -219,7 +219,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
           </div>
         </div>
 
-        {onBack && (
+        {onBack && !user?.mustChangePassword && (
           <button
             onClick={onBack}
             className="btn-secondary"
@@ -230,12 +230,19 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
         )}
       </div>
 
+      {user?.mustChangePassword && (
+        <div style={{ marginBottom: '24px', padding: '16px 20px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.35)', color: '#fbbf24' }}>
+          <strong>Tài khoản mới: cần đổi mật khẩu tạm trước khi sử dụng.</strong>
+          <div style={{ marginTop: '5px', color: 'var(--text-main)', fontSize: '0.86rem' }}>Nhập mật khẩu tạm đã được cấp, sau đó đặt mật khẩu riêng của bạn.</div>
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '24px' }}>
         
         {/* ==========================================
             CỘT 1: HỒ SƠ, AVATAR & GIỚI THIỆU BẢN THÂN
            ========================================== */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ display: user?.mustChangePassword ? 'none' : 'flex', flexDirection: 'column', gap: '24px' }}>
           
           {/* Card: Hồ Sơ & Giới Thiệu Bản Thân */}
           <div style={{
@@ -503,7 +510,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
         {/* ==========================================
             CỘT 2: ĐỔI MẬT KHẨU, 2FA & XÓA TÀI KHOẢN
            ========================================== */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', gridColumn: user?.mustChangePassword ? '1 / -1' : undefined }}>
           
           {/* Card: Đổi Mật Khẩu */}
           <div style={{
@@ -686,6 +693,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
 
           {/* Card: Xác Thực 2FA Shortcut */}
           <div style={{
+            display: user?.mustChangePassword ? 'none' : undefined,
             background: 'rgba(15, 23, 42, 0.75)',
             backdropFilter: 'blur(16px)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -742,6 +750,7 @@ const AccountSettingsPortal = ({ onOpen2FAModal, onBack }) => {
 
           {/* Card: Danger Zone (Xóa Tài Khoản) */}
           <div style={{
+            display: user?.mustChangePassword ? 'none' : undefined,
             background: 'rgba(239, 68, 68, 0.05)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
             borderRadius: '16px',

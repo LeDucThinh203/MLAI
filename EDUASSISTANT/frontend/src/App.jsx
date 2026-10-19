@@ -35,14 +35,17 @@ function MainApp() {
   const [caseToOpen, setCaseToOpen] = useState(null);
   const availableTabs = portalTabsByRole[user?.role] || portalTabsByRole.STUDENT;
   const savedTab = new URLSearchParams(location.search).get('tab');
-  const activeTab = availableTabs.includes(savedTab) ? savedTab : getDefaultTab(user?.role);
+  const activeTab = user?.mustChangePassword
+    ? 'account_settings'
+    : (availableTabs.includes(savedTab) ? savedTab : getDefaultTab(user?.role));
 
   const setActiveTab = useCallback((tab) => {
+    if (user?.mustChangePassword) tab = 'account_settings';
     if (!availableTabs.includes(tab)) return;
     const params = new URLSearchParams(location.search);
     params.set('tab', tab);
     navigate({ pathname: '/', search: `?${params.toString()}` });
-  }, [availableTabs, location.search, navigate]);
+  }, [availableTabs, location.search, navigate, user?.mustChangePassword]);
 
   const handleOpenCase = (caseId) => {
     if (!caseId) return;
@@ -90,6 +93,7 @@ function MainApp() {
       </main>
 
       {user?.role === 'STUDENT'
+        && !user?.mustChangePassword
         && !location.pathname.startsWith('/login')
         && !location.pathname.startsWith('/verify')
         && !location.pathname.startsWith('/judge') && (

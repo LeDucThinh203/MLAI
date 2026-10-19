@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
   Users, RefreshCw, Search, X,
@@ -97,6 +97,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const [users, setUsers] = useState([]);
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [userPage, setUserPage] = useState(1);
+  const [userTotal, setUserTotal] = useState(0);
+  const [userQueryTimeMs, setUserQueryTimeMs] = useState(null);
+  const [bulkUserJob, setBulkUserJob] = useState(null);
+  const [bulkUserBusy, setBulkUserBusy] = useState(false);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adminMessage, setAdminMessage] = useState(null);
@@ -140,7 +144,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
   const [newDepartment, setNewDepartment] = useState('Ban Giám Sát & Xét Duyệt');
   const [creatingUser, setCreatingUser] = useState(false);
 
-  const fetchAdminData = async ({
+  const fetchAdminData = useCallback(async ({
     loadUsers = activeTab === 'admin_users',
     loadStats = activeTab === 'admin_overview'
   } = {}) => {
@@ -148,22 +152,27 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
     setLoading(true);
     try {
       const [usersRes, statsRes] = await Promise.all([
-        loadUsers ? axios.get(`${API_BASE}/admin/users`, { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null),
+        loadUsers ? axios.get(`${API_BASE}/admin/users?page=${userPage}&pageSize=10&search=${encodeURIComponent(userSearchTerm)}`, { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null),
         loadStats ? axios.get(`${API_BASE}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null)
       ]);
 
-      if (usersRes?.data?.success) setUsers(usersRes.data.data.users);
+      if (usersRes?.data?.success) {
+        setUsers(usersRes.data.data.users || []);
+        setUserTotal(usersRes.data.data.total || 0);
+        setUserPage(usersRes.data.data.page || 1);
+        setUserQueryTimeMs(usersRes.data.data.queryTimeMs ?? null);
+      }
       if (statsRes?.data?.success) setStats(statsRes.data.data);
     } catch (err) {
       console.error('Lỗi tải dữ liệu quản trị:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, token, userPage, userSearchTerm]);
 
   useEffect(() => {
     if (token) fetchAdminData();
-  }, [token, activeTab]);
+  }, [token, activeTab, fetchAdminData]);
 
   useEffect(() => {
     if (!token || !['admin_policies', 'admin_sis'].includes(activeTab)) return;
@@ -305,21 +314,100 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
     }
   };
 
-  const filteredUsers = users.filter(u => {
-    if (!userSearchTerm.trim()) return true;
-    const q = userSearchTerm.toLowerCase().trim();
-    return (
-      u.fullName?.toLowerCase().includes(q) ||
-      u.studentCode?.toLowerCase().includes(q) ||
-      u.username?.toLowerCase().includes(q) ||
-      u.department?.toLowerCase().includes(q) ||
-      u.role?.toLowerCase().includes(q)
-    );
-  });
+  const startBulkAccountGeneration = async () => {
+    const confirmation = window.prompt('Thao tác này sẽ ghi 1.000.000 tài khoản sinh viên vào bảng users thật và tạo hồ sơ SIS tương ứng. Nhập CREATE_1000000_USERS để xác nhận:');
+    if (confirmation !== 'CREATE_1000000_USERS') return;
+    setBulkUserBusy(true);
+    setAdminMessage(null);
+    try {
+      const res = await axios.post(`${API_BASE}/admin/users/benchmark/generate`, { confirmation }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.data?.success) throw new Error(res.data?.message || 'Không thể bắt đầu tạo tài khoản.');
+      setBulkUserJob(res.data.data.job);
+      setAdminMessage({ type: 'success', text: 'Đã bắt đầu tạo 1.000.000 tài khoản; mật khẩu tạm riêng sẽ được cấp trong tệp tải xuống khi hoàn tất.' });
+    } catch (err) {
+      setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể bắt đầu tạo tài khoản.' });
+    } finally {
+      setBulkUserBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!token || !bulkUserJob?.id || !['QUEUED', 'RUNNING'].includes(bulkUserJob.status)) return undefined;
+    const timer = window.setInterval(async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/admin/users/benchmark/jobs/${bulkUserJob.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data?.success) {
+          const job = res.data.data.job;
+          setBulkUserJob(job);
+          if (['COMPLETE', 'FAILED'].includes(job.status)) {
+            fetchAdminData({ loadUsers: true, loadStats: false });
+            setAdminMessage({
+              type: job.status === 'COMPLETE' ? 'success' : 'error',
+              text: job.status === 'COMPLETE'
+                ? 'Đã tạo xong tài khoản. Hãy tải tệp mật khẩu tạm và lưu an toàn.'
+                : (job.error || 'Tạo tài khoản thất bại.')
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Không thể tải tiến độ tạo tài khoản:', err);
+      }
+    }, 1500);
+    return () => window.clearInterval(timer);
+  }, [token, bulkUserJob?.id, bulkUserJob?.status, fetchAdminData]);
+
+  const downloadBulkCredentials = async () => {
+    if (!bulkUserJob?.id) return;
+    try {
+      const res = await axios.get(`${API_BASE}/admin/users/benchmark/jobs/${bulkUserJob.id}/credentials.csv.gz`, {
+        headers: { Authorization: `Bearer ${token}` }, responseType: 'blob'
+      });
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `EDUASSISTANT_Benchmark_Accounts_${bulkUserJob.id}.csv.gz`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setAdminMessage({ type: 'error', text: err.response?.data?.message || 'Không thể tải tệp tài khoản.' });
+    }
+  };
+
+  const deleteBulkAccounts = async () => {
+    if (!bulkUserJob?.id || !window.confirm('Xóa toàn bộ tài khoản và hồ sơ SIS thuộc lô benchmark này? Lô đã được sử dụng tạo hồ sơ sẽ không thể xóa.')) return;
+    try {
+      const res = await axios.delete(`${API_BASE}/admin/users/benchmark/jobs/${bulkUserJob.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.data?.success) throw new Error(res.data?.message || 'Không thể xóa lô tài khoản.');
+      setBulkUserJob(null);
+      setAdminMessage({ type: 'success', text: `Đã xóa ${res.data.data.deleted.toLocaleString('vi-VN')} tài khoản benchmark.` });
+      fetchAdminData({ loadUsers: true, loadStats: false });
+    } catch (err) {
+      setAdminMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Không thể xóa lô tài khoản.' });
+    }
+  };
+
+  useEffect(() => {
+    if (!token || activeTab !== 'admin_users') return;
+    axios.get(`${API_BASE}/admin/users/benchmark/jobs/latest`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      const job = res.data?.data?.job;
+      if (res.data?.success && job && job.status !== 'DELETED') setBulkUserJob(job);
+    }).catch(() => {});
+  }, [token, activeTab]);
+
   const userPageSize = 10;
-  const userTotalPages = Math.max(1, Math.ceil(filteredUsers.length / userPageSize));
+  const userTotalPages = Math.max(1, Math.ceil(userTotal / userPageSize));
   const safeUserPage = Math.min(userPage, userTotalPages);
-  const pagedUsers = filteredUsers.slice((safeUserPage - 1) * userPageSize, safeUserPage * userPageSize);
+  const pagedUsers = users;
 
   useEffect(() => { setUserPage(1); }, [userSearchTerm]);
 
@@ -859,6 +947,48 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
       {/* 2. QUẢN LÝ NGƯỜI DÙNG & CẤP TÀI KHOẢN (REVIEWER / ADMIN / SINH VIÊN) */}
       {activeTab === 'admin_users' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.8fr', gap: '24px' }}>
+
+          <section className="card-panel" style={{ padding: '20px', gridColumn: '1 / -1', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 440px' }}>
+                <h3 style={{ margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Cpu size={18} color="#38bdf8" /> Benchmark truy vấn tài khoản
+                </h3>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.6 }}>
+                  Tạo 1.000.000 tài khoản đăng nhập trong bảng users thật và hồ sơ SIS tương ứng. Mỗi tài khoản có username cùng mật khẩu tạm riêng, bắt buộc đổi mật khẩu lần đầu; tệp thông tin đăng nhập chỉ dành cho Admin. Tên/MSSV được sinh tự động, email dùng miền example.invalid.
+                </p>
+              </div>
+              {!bulkUserJob && (
+                <button type="button" className="btn-primary" onClick={startBulkAccountGeneration} disabled={bulkUserBusy}>
+                  <Users size={15} /> {bulkUserBusy ? 'Đang bắt đầu...' : 'Tạo 1.000.000 tài khoản thật'}
+                </button>
+              )}
+            </div>
+            <p style={{ margin: '10px 0 0', color: '#fbbf24', fontSize: '0.78rem' }}>
+              Lô này ghi dữ liệu vào PostgreSQL đang cấu hình cho ứng dụng, dùng dung lượng database thật. Chỉ tạo sau khi xác nhận; có thể xóa nếu tài khoản chưa được dùng tạo hồ sơ.
+            </p>
+            {bulkUserJob && (
+              <div style={{ marginTop: '14px', padding: '12px', borderRadius: '8px', background: 'rgba(15, 23, 42, .75)', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', fontSize: '0.82rem' }}>
+                  <span>Lô <code>{bulkUserJob.id}</code> · Trạng thái <strong>{bulkUserJob.status}</strong></span>
+                  <span>{Number(bulkUserJob.generated || 0).toLocaleString('vi-VN')} / {Number(bulkUserJob.total || 1000000).toLocaleString('vi-VN')} tài khoản</span>
+                </div>
+                <div style={{ height: '8px', marginTop: '10px', overflow: 'hidden', borderRadius: '99px', background: '#1e293b' }}>
+                  <div style={{ width: `${Math.min(100, Number(bulkUserJob.generated || 0) / Number(bulkUserJob.total || 1000000) * 100)}%`, height: '100%', background: '#38bdf8', transition: 'width .25s ease' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+                  {bulkUserJob.status === 'COMPLETE' && bulkUserJob.credentialsReady && (
+                    <button type="button" className="btn-primary" onClick={downloadBulkCredentials}><Download size={14} /> Tải mật khẩu tạm (.csv.gz)</button>
+                  )}
+                  {['COMPLETE', 'FAILED', 'DELETED'].includes(bulkUserJob.status) && bulkUserJob.status !== 'DELETED' && (
+                    <button type="button" className="btn-secondary" onClick={deleteBulkAccounts}>Xóa lô benchmark này</button>
+                  )}
+                </div>
+                {bulkUserJob.status === 'FAILED' && <p style={{ margin: '10px 0 0', color: '#f87171', fontSize: '0.8rem' }}>{bulkUserJob.error}</p>}
+                {bulkUserJob.status === 'COMPLETE' && <p style={{ margin: '10px 0 0', color: '#fbbf24', fontSize: '0.78rem' }}>Tệp chứa mật khẩu tạm riêng của một triệu tài khoản. Lưu an toàn và không chia sẻ công khai.</p>}
+              </div>
+            )}
+          </section>
           
           {/* Form Cấp Tài Khoản Mới từ Admin */}
           <div className="card-panel" style={{ padding: '24px' }}>
@@ -981,9 +1111,11 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
               <div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Users size={18} color="#38bdf8" /> Danh Sách Người Dùng ({filteredUsers.length}/{users.length})
+                  <Users size={18} color="#38bdf8" /> Danh Sách Người Dùng ({userTotal.toLocaleString('vi-VN')} tài khoản)
                 </h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Tra cứu theo tên, MSSV, tài khoản và phân quyền linh hoạt</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                  Tìm theo tiền tố tên, MSSV, username · DB truy vấn trang này: {userQueryTimeMs == null ? '—' : `${Number(userQueryTimeMs).toFixed(2)} ms`}
+                </p>
               </div>
 
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -992,7 +1124,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="Tìm tên, MSSV, user..."
+                    placeholder="Gõ đầu tên, MSSV, username..."
                     value={userSearchTerm}
                     onChange={e => setUserSearchTerm(e.target.value)}
                     style={{ paddingLeft: '30px', paddingRight: userSearchTerm ? '26px' : '8px', fontSize: '0.78rem', height: '34px' }}
@@ -1048,7 +1180,10 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                           <span style={{ color: 'var(--text-sub)', fontSize: '0.75rem' }}>-</span>
                         )}
                       </td>
-                      <td style={{ padding: '10px 8px', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>{u.username}</td>
+                      <td style={{ padding: '10px 8px', color: '#818cf8', fontFamily: 'var(--font-mono)' }}>
+                        {u.username}
+                        {u.accountSource === 'BENCHMARK' && <small style={{ display: 'block', color: '#fbbf24', fontFamily: 'inherit', fontSize: '0.68rem' }}>Tài khoản benchmark</small>}
+                      </td>
                       <td style={{ padding: '10px 8px', color: 'var(--text-muted)', fontSize: '0.78rem' }}>{u.department}</td>
                       <td style={{ padding: '10px 8px' }}>
                         <span className={`badge badge-${u.role.toLowerCase()}`}>{labelFor(u.role, USER_ROLE_LABELS, 'Tài khoản')}</span>
@@ -1068,7 +1203,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                     </tr>
                   ))}
 
-                  {filteredUsers.length === 0 && (
+                  {users.length === 0 && (
                     <tr>
                       <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-sub)' }}>
                         Không tìm thấy người dùng nào phù hợp với từ khóa "{userSearchTerm}".
@@ -1078,7 +1213,7 @@ const AdminPortal = ({ activeTab, caseToOpen, onCaseOpened }) => {
                 </tbody>
               </table>
             </div>
-            <PaginationControls page={safeUserPage} totalItems={filteredUsers.length} pageSize={userPageSize} onPageChange={setUserPage} label="tài khoản" />
+            <PaginationControls page={safeUserPage} totalItems={userTotal} pageSize={userPageSize} onPageChange={setUserPage} label="tài khoản" />
           </div>
 
         </div>

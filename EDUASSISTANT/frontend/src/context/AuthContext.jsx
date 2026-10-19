@@ -174,6 +174,7 @@ export const AuthProvider = ({ children }) => {
         newPassword,
         confirmPassword
       });
+      if (res.data?.success) setUser(prev => prev ? { ...prev, mustChangePassword: false } : prev);
       return { success: res.data?.success, message: res.data?.message || 'Đổi mật khẩu thành công' };
     } catch (err) {
       return { success: false, message: err.response?.data?.message || 'Lỗi đổi mật khẩu' };

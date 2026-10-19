@@ -7,6 +7,14 @@ CREATE TABLE IF NOT EXISTS users (
  currenttermactive BOOLEAN DEFAULT TRUE, hascurrentschedule BOOLEAN DEFAULT TRUE,
  registeredpermanentaddress TEXT, faculty VARCHAR(255), createdat VARCHAR(100), updatedat VARCHAR(100)
 );
+ALTER TABLE users ADD COLUMN IF NOT EXISTS accountsource VARCHAR(50) NOT NULL DEFAULT 'STANDARD';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS accountbatchid VARCHAR(100);
+CREATE TABLE IF NOT EXISTS account_generation_jobs (
+ id VARCHAR(100) PRIMARY KEY, createdby VARCHAR(100) NOT NULL, status VARCHAR(30) NOT NULL,
+ total INTEGER NOT NULL, generated INTEGER NOT NULL DEFAULT 0, error TEXT, credentialseed TEXT,
+ createdat VARCHAR(100) NOT NULL, updatedat VARCHAR(100) NOT NULL
+);
+ALTER TABLE account_generation_jobs ADD COLUMN IF NOT EXISTS credentialseed TEXT;
 CREATE TABLE IF NOT EXISTS cases (
  id VARCHAR(100) PRIMARY KEY, studentid VARCHAR(100) NOT NULL REFERENCES users(id), studentname VARCHAR(255) NOT NULL,
  studentcode VARCHAR(100), title VARCHAR(500) NOT NULL, category VARCHAR(100) NOT NULL, priority VARCHAR(50) DEFAULT 'MEDIUM',
@@ -113,8 +121,15 @@ CREATE INDEX IF NOT EXISTS idx_cases_status_created ON cases (status, createdat 
 CREATE INDEX IF NOT EXISTS idx_cases_category_created ON cases (category, createdat DESC);
 CREATE INDEX IF NOT EXISTS idx_cases_department_created ON cases (assigneddepartment, createdat DESC);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (createdat DESC);
+CREATE INDEX IF NOT EXISTS idx_users_created_at_id ON users (createdat DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_users_role_created ON users (role, createdat DESC);
 CREATE INDEX IF NOT EXISTS idx_users_username_lower ON users (LOWER(username));
+CREATE INDEX IF NOT EXISTS idx_users_username_prefix ON users (LOWER(username) text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_users_fullname_prefix ON users (LOWER(fullname) text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_users_studentcode_prefix ON users (LOWER(COALESCE(studentcode,'')) text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_users_department_prefix ON users (LOWER(COALESCE(department,'')) text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_users_role_prefix ON users (LOWER(role) text_pattern_ops);
+CREATE INDEX IF NOT EXISTS idx_users_account_batch ON users (accountbatchid) WHERE accountbatchid IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_comments_case_created ON comments (caseid, createdat DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications (userid, createdat DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications (userid, isread);

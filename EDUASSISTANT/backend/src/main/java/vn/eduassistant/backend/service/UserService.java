@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import vn.eduassistant.backend.core.Json;
 import vn.eduassistant.backend.db.JdbcSupport;
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.*;
 
 @Service
@@ -25,6 +27,26 @@ public class UserService {
     public List<Map<String,Object>> users() {
         List<Map<String,Object>> rows = db.all("SELECT id,username,fullname AS \"fullName\",studentcode AS \"studentCode\",email,role,department,avatar,bio,twofactorenabled AS \"twoFactorEnabled\",mustchangepassword AS \"mustChangePassword\",createdat AS \"createdAt\" FROM users ORDER BY createdat DESC");
         return rows;
+    }
+    public Map<String,Object> pageUsers(String search, int page, int pageSize) {
+        int size = Math.max(10, Math.min(100, pageSize));
+        int safePage = Math.max(1, page);
+        String term = search == null ? "" : search.trim().toLowerCase(Locale.ROOT).replace("%", "").replace("_", "");
+        StringBuilder where = new StringBuilder(" WHERE 1=1");
+        List<Object> args = new ArrayList<Object>();
+        if (!term.isEmpty()) {
+            where.append(" AND (LOWER(fullname) LIKE ? OR LOWER(COALESCE(studentcode,'')) LIKE ? OR LOWER(username) LIKE ? OR LOWER(COALESCE(department,'')) LIKE ? OR LOWER(role) LIKE ?)");
+            String prefix = term + "%";
+            for (int i = 0; i < 5; i++) args.add(prefix);
+        }
+        long total = db.count("SELECT COUNT(*) FROM users" + where, args.toArray());
+        int totalPages = Math.max(1, (int)Math.ceil(total / (double)size));
+        safePage = Math.min(safePage, totalPages);
+        Object[] pageArgs = Arrays.copyOf(args.toArray(), args.size() + 2);
+        pageArgs[args.size()] = size;
+        pageArgs[args.size() + 1] = (safePage - 1) * size;
+        List<Map<String,Object>> rows = db.all("SELECT id,username,fullname AS \"fullName\",studentcode AS \"studentCode\",email,role,department,avatar,bio,twofactorenabled AS \"twoFactorEnabled\",mustchangepassword AS \"mustChangePassword\",createdat AS \"createdAt\",accountsource AS \"accountSource\",accountbatchid AS \"accountBatchId\" FROM users" + where + " ORDER BY createdat DESC,id DESC LIMIT ? OFFSET ?", pageArgs);
+        return map("users", rows, "total", total, "page", safePage, "pageSize", size, "totalPages", totalPages);
     }
     public Map<String,Object> create(Map<String,Object> data, Map<String,Object> actor) {
         String username = Json.str(data.get("username")).trim(); String role = Json.str(data.get("role")).isEmpty() ? "STUDENT" : Json.str(data.get("role")).toUpperCase();
@@ -73,8 +95,28 @@ public class UserService {
     }
     public boolean passwordMatches(String raw, String encoded) {
         if(encoded==null)return false;
+        if (encoded.startsWith("RND1$")) {
+            try {
+                String[] parts = encoded.split("\\$", -1);
+                if (parts.length != 3) return false;
+                byte[] salt = Base64.getUrlDecoder().decode(parts[1]);
+                byte[] expected = Base64.getUrlDecoder().decode(parts[2]);
+                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                digest.update(salt);
+                byte[] actual = digest.digest((raw == null ? "" : raw).getBytes(StandardCharsets.UTF_8));
+                return MessageDigest.isEqual(expected, actual);
+            } catch (Exception e) { return false; }
+        }
         try { return encoded.startsWith("$2") ? bcrypt.matches(raw == null ? "" : raw, encoded) : encoded.equals(raw); }
         catch(Exception e){return encoded.equals(raw);}
+    }
+    public static String hashGeneratedPassword(String raw, byte[] salt, MessageDigest digest) {
+        digest.reset();
+        digest.update(salt);
+        // Generated passwords have 256 bits of randomness; regular user passwords still use BCrypt.
+        byte[] hash = digest.digest(raw.getBytes(StandardCharsets.UTF_8));
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        return "RND1$" + encoder.encodeToString(salt) + "$" + encoder.encodeToString(hash);
     }
     public void saveRefresh(String userId,String token,String expiry) {
         db.update("INSERT INTO refresh_tokens(id,userid,token,expiresat,createdat) VALUES(?,?,?,?,?)","rt_"+UUID.randomUUID(),userId,sha256(token),expiry,Instant.now().toString());
