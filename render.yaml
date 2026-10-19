@@ -4,8 +4,8 @@ services:
     runtime: docker
     plan: free
     region: singapore
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
+    dockerfilePath: ./EDUASSISTANT/Dockerfile
+    dockerContext: ./EDUASSISTANT
     healthCheckPath: /api/health
     envVars:
       - key: APP_ENV
